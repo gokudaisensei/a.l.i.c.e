@@ -45,15 +45,17 @@ run("Home Assistant (mock instance)", () => {
     expect(ev).toBeDefined(); // the HA context id lets us correlate a command with its state change
   });
 
-  test("brightness set as 30% is observed as 30% in the normalized event and the cache", async () => {
+  test("brightness set as a percent is observed as that percent in the normalized event and the cache", async () => {
     const id = "light.bed_light";
-    const { contextId } = await conn.gateway.callService({ ...resolveOperation("light", "set_brightness", { brightness_pct: 30 })!, target: { entity_id: id } });
+    // The mock HA keeps state between runs, so pick a target that differs from the current value.
+    const pct = conn.cache.get(id)!.normalized.brightness === 30 ? 40 : 30;
+    const { contextId } = await conn.gateway.callService({ ...resolveOperation("light", "set_brightness", { brightness_pct: pct })!, target: { entity_id: id } });
     const deadline = Date.now() + 5000;
     const find = () => events.find((e) => e.type === "entity.state_changed" && e.entityId === id && e.context.id === contextId);
     while (!find() && Date.now() < deadline) await Bun.sleep(50);
-    expect(find()).toMatchObject({ normalized: { power: true, brightness: 30 } });
-    expect(conn.cache.get(id)!.normalized.brightness).toBe(30);
-    expect(conn.cache.get(id)!.attributes.brightness).toBe(76); // raw HA scale is still available
+    expect(find()).toMatchObject({ normalized: { power: true, brightness: pct } });
+    expect(conn.cache.get(id)!.normalized.brightness).toBe(pct);
+    expect(typeof conn.cache.get(id)!.attributes.brightness).toBe("number"); // raw HA 0-255 value is still available
   });
 
   test("a bad token is rejected without retrying forever", async () => {

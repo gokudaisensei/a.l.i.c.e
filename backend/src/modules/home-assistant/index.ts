@@ -9,3 +9,4 @@ export { detectCapabilities, resolveOperation, supportsOperation } from "./capab
 export type { DeviceCapability } from "./capabilities/types";
 export type { Inventory, InventoryEntity } from "./discovery/inventory";
 export { normalizeState, type NormalizedState } from "./capabilities/state-normalizer";
+export * from "./things";

@@ -29,6 +29,13 @@ export interface HaDeviceRegistryEntry {
   manufacturer: string | null;
   model: string | null;
   disabled_by?: string | null;
+  via_device_id?: string | null;
+  /** [integration, id] tuples, e.g. ["esphome", "abc"]. */
+  identifiers?: [string, string][];
+  /** [type, value] tuples, e.g. ["mac", "aa:bb:cc:dd:ee:ff"]. */
+  connections?: [string, string][];
+  /** "service" for non-physical devices such as Sun or Weather. */
+  entry_type?: string | null;
 }
 
 export interface HaEntityRegistryEntry {
@@ -40,6 +47,9 @@ export interface HaEntityRegistryEntry {
   original_name?: string | null;
   disabled_by?: string | null;
   hidden_by?: string | null;
+  entity_category?: "config" | "diagnostic" | null;
+  has_entity_name?: boolean;
+  translation_key?: string | null;
 }
 
 export type HaServices = Record<string, Record<string, { name?: string; description?: string; fields?: Record<string, unknown> }>>;

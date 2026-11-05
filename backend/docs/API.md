@@ -77,7 +77,7 @@ The API exposes **Things** (one per physical device), not raw HA entities. In UR
 | `POST /devices/:id/hide`, `POST /devices/:id/unhide` | A | Hide a Thing from lists |
 | `POST /devices/merge` | A† | `{ ids: [thingId, …] }` merge into one Thing |
 | `POST /devices/:id/split` | A† | `{ entityIds: […] }` move entities out into their own Thing |
-| `PUT /entities/:entityId/role` | A | `{ role, attachTo? }` force a role, or attach a facet to a primary |
+| `PUT /entities/:entityId/role` | A | `{ role?, attachTo?, onMeans? }` force a role, attach a facet to a primary, or say what a facet means when "on" (e.g. `"closed"`) |
 | `GET /suggestions?status=pending` | A | Proposed names, roles, merges and attachments |
 | `POST /suggestions/:id/accept`, `POST /suggestions/:id/reject` | A | Accept writes the override; reject is remembered |
 | `POST /suggestions/run` | A | Queue the (optional, off by default) LLM suggestion job |
@@ -94,15 +94,17 @@ The API exposes **Things** (one per physical device), not raw HA entities. In UR
 {
   "id": "thing_01J…", "name": "Kitchen display", "area": "kitchen",
   "nameSource": "computed", "sourceName": "echolocal kitchen Media Player",
+  "kind": "device",
   "primary": { "entityId": "media_player.kitchen_display", "values": { "power": true } },
+  "others": [ { "entityId": "camera.kitchen_display_camera", "name": "Camera" } ],
   "controls": [ { "entityId": "switch.kitchen_display_mic_mute", "name": "Microphone mute", "values": { "power": true }, "sensitive": true } ],
-  "facets": [ { "key": "privacy_shutter", "entityId": "binary_sensor.kitchen_display_camera_shutter", "value": "closed", "sensitive": true } ],
+  "facets": [ { "key": "privacy_shutter", "entityId": "binary_sensor.kitchen_display_camera_shutter", "value": "closed", "label": "Closed", "active": true, "tone": "ok", "ambiguous": false, "basis": "override", "sensitive": true } ],
   "sensors": [],
   "diagnostics": { "count": 3 }
 }
 ```
 
-Facets are properties, not devices: they appear on their primary and never as their own item in `GET /devices`.
+Facets are properties, not devices: they appear on their primary and never as their own item in `GET /devices`. A facet value is resolved server-side from the entity's `device_class`, then wording in its name, then a user override (`onMeans`). When none of those say what "on" means (a bare "Camera shutter"), the facet is returned with `ambiguous: true` and an On/Off label, and the admin UI should offer to resolve it (`PUT /entities/:entityId/role` accepts `onMeans`).
 
 **Command object**
 

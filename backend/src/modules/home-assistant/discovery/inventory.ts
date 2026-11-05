@@ -19,6 +19,10 @@ export interface InventoryDevice {
   areaId: string | null;
   manufacturer: string | null;
   model: string | null;
+  viaDeviceId: string | null;
+  identifiers: [string, string][];
+  connections: [string, string][];
+  entryType: string | null;
 }
 export interface InventoryEntity {
   entityId: string;
@@ -27,6 +31,14 @@ export interface InventoryEntity {
   deviceId: string | null;
   areaId: string | null;
   platform: string | null;
+  /** HA's `friendly_name` as shown in states; the noisy source name. */
+  sourceName: string;
+  /** The entity's own name part when `hasEntityName` (HA prefixes it with the device name). */
+  ownName: string | null;
+  hasEntityName: boolean;
+  entityCategory: "config" | "diagnostic" | null;
+  deviceClass: string | null;
+  translationKey: string | null;
   capabilities: DeviceCapability[];
 }
 export interface Inventory {
@@ -61,6 +73,12 @@ export function buildInventory(raw: RawDiscovery, at = new Date().toISOString())
       entityId: s.entity_id,
       domain,
       name: (s.attributes.friendly_name as string | undefined) ?? reg?.name ?? reg?.original_name ?? s.entity_id,
+      sourceName: (s.attributes.friendly_name as string | undefined) ?? reg?.name ?? reg?.original_name ?? s.entity_id,
+      ownName: reg?.name ?? reg?.original_name ?? null,
+      hasEntityName: reg?.has_entity_name ?? false,
+      entityCategory: reg?.entity_category ?? null,
+      deviceClass: typeof s.attributes.device_class === "string" ? s.attributes.device_class : null,
+      translationKey: reg?.translation_key ?? null,
       deviceId: reg?.device_id ?? null,
       areaId: reg?.area_id ?? device?.area_id ?? null,
       platform: reg?.platform ?? null,
@@ -76,6 +94,10 @@ export function buildInventory(raw: RawDiscovery, at = new Date().toISOString())
       areaId: d.area_id,
       manufacturer: d.manufacturer,
       model: d.model,
+      viaDeviceId: d.via_device_id ?? null,
+      identifiers: d.identifiers ?? [],
+      connections: d.connections ?? [],
+      entryType: d.entry_type ?? null,
     })),
     entities,
     services: raw.services,
