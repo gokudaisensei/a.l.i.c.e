@@ -5,6 +5,7 @@ import { env } from "@/core/config/env";
 import { AppError } from "@/core/errors/errors";
 import { logger } from "@/core/logging/logger";
 import { buildModules } from "@/modules";
+import { realtimeController } from "@/realtime/ws.controller";
 import type { Services } from "@/services";
 
 export const buildApp = (services: Services) =>
@@ -25,6 +26,7 @@ export const buildApp = (services: Services) =>
       return { error: { code: "internal_error", message: "Internal server error" } };
     })
     .get("/health", () => ({ status: "ok" as const, uptime: process.uptime() }), { tags: ["system"] })
+    .use(realtimeController(services))
     .use(buildModules(services));
 
 /** Import this type from the frontend for Eden Treaty. */

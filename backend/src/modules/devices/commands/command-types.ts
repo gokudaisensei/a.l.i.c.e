@@ -32,7 +32,8 @@ export type FailureCode =
   | "ha_rejected"
   | "ha_unreachable"
   | "not_confirmed"
-  | "interrupted";
+  | "interrupted"
+  | "internal";
 
 export interface DeviceCommand {
   id: string;

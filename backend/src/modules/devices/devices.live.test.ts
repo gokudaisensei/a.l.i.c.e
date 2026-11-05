@@ -25,7 +25,10 @@ run("Alice over HTTP against the mock Home Assistant", () => {
     expect(put.status).toBe(200);
     connectionId = put.json.id;
   }, 30_000);
-  afterAll(() => services.manager.stopAll());
+  afterAll(async () => {
+    await services.manager.stopAll();
+    await Promise.race([app.stop(true), Bun.sleep(300)]); // see note in realtime/ws.test.ts
+  });
 
   test("real devices appear as Things with capabilities and live values", async () => {
     const list = await things(admin);
@@ -60,5 +63,25 @@ run("Alice over HTTP against the mock Home Assistant", () => {
     expect((await things(guest))[0].primary.values.power).toBe(!before);
     const lamp = byPrimary(await things(admin), "light.bed_light");
     expect((await guest.call("POST", `/devices/${lamp.id}/commands`, { action: "turn_on" })).status).toBe(404);
+  });
+
+  test("a change made in Home Assistant itself is pushed to a client over a real WebSocket", async () => {
+    app.listen(0);
+    const ws = new WebSocket(`ws://localhost:${app.server!.port}/ws`, { headers: { cookie: admin.cookie } } as never);
+    const got: any[] = [];
+    ws.onmessage = (e) => got.push(JSON.parse(String(e.data)));
+    const until = async (pred: () => boolean) => { const end = Date.now() + 5000; while (!pred() && Date.now() < end) await Bun.sleep(20); expect(pred()).toBe(true); };
+    await until(() => got.some((m) => m.type === "hello"));
+    ws.send(JSON.stringify({ type: "subscribe", resource: "devices" }));
+    ws.send(JSON.stringify({ type: "subscribe", resource: "commands" }));
+    await until(() => got.filter((m) => m.type === "subscribed").length === 2);
+
+    const helper = byPrimary(await things(admin), "input_boolean.test_switch_2");
+    const was = helper.primary.values.power;
+    const res = await admin.call("POST", `/devices/${helper.id}/commands`, { action: was ? "turn_off" : "turn_on" });
+    await until(() => got.some((m) => m.type === "command.confirmed" && m.data.id === res.json.id));
+    const update = got.find((m) => m.type === "entity.updated" && m.data.entityId === "input_boolean.test_switch_2");
+    expect(update.data.values.power).toBe(!was);
+    ws.close();
   });
 });

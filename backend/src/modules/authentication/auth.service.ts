@@ -291,6 +291,12 @@ export class AuthService {
     };
   }
 
+  /** Is this session still valid (not revoked, not expired)? Long-lived sockets re-check this. */
+  isSessionActive(sessionId: string): boolean {
+    const row = this.db.select({ revokedAt: sessions.revokedAt, expiresAt: sessions.expiresAt }).from(sessions).where(eq(sessions.id, sessionId)).get();
+    return !!row && row.revokedAt === null && row.expiresAt > this.now();
+  }
+
   logout(sessionId: string) {
     this.db.update(sessions).set({ revokedAt: this.now() }).where(eq(sessions.id, sessionId)).run();
   }

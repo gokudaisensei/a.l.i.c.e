@@ -17,6 +17,7 @@ import { ThingsService } from "@/modules/home-assistant/things/things.service";
 import { HouseholdService } from "@/modules/households/household.service";
 import { PermissionService } from "@/modules/permissions/permission.service";
 import { UserService } from "@/modules/users/user.service";
+import { RealtimeHub } from "@/realtime/hub";
 
 export interface Services {
   db: Db;
@@ -31,6 +32,7 @@ export interface Services {
   things: ThingsService;
   commands: CommandExecutor;
   devices: DevicesService;
+  realtime: RealtimeHub;
 }
 
 export const defaultAuthConfig = (): AuthConfig => ({
@@ -54,19 +56,22 @@ export function createServices(db: Db, opts: ServiceOptions = {}): Services {
   const gatewayFactory: GatewayFactory = opts.gatewayFactory ?? ((c) => new HaWebSocketGateway(c));
 
   const households = new HouseholdService(db, opts.now);
-  const permissions = new PermissionService(db, households, opts.now);
+  const permissions = new PermissionService(db, households, opts.now, bus);
   const manager = new ConnectionManager(gatewayFactory, bus, logger.child({ module: "home-assistant" }));
-  const things = new ThingsService(db, manager, opts.now);
+  const things = new ThingsService(db, manager, opts.now, bus);
   const commands = new CommandExecutor({
     manager, bus, log, store: new DrizzleCommandStore(db), authorizer: permissions.authorizer(), sensitivity: permissions.sensitivityPolicy(), now: opts.now,
   });
 
+  const auth = new AuthService(db, households, opts.auth ?? defaultAuthConfig(), opts.now);
+  const devices = new DevicesService(things, permissions, commands);
+  const realtime = new RealtimeHub({ bus, things, permissions, households, auth, devices, log: logger.child({ module: "realtime" }), now: opts.now });
+  realtime.start();
+
   return {
-    db, bus, households, permissions, manager, things, commands,
-    auth: new AuthService(db, households, opts.auth ?? defaultAuthConfig(), opts.now),
+    db, bus, households, permissions, manager, things, commands, auth, devices, realtime,
     users: new UserService(db),
     limits: createLimits(opts.now),
     ha: new HaConnectionService(db, manager, bus, gatewayFactory, () => parseKey(opts.secretsKey === undefined ? env.secretsKey : opts.secretsKey), log, opts.now),
-    devices: new DevicesService(things, permissions, commands),
   };
 }

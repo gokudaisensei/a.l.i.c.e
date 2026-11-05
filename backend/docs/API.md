@@ -1,6 +1,6 @@
 # Alice Backend — API
 
-Status: draft v1. Base path `/api/v1` (implemented: auth, users, household, permissions, `/admin/security`, `/ha/connection*`, `/devices*`, `/entities/*/role`, `/areas`, `/commands*`; other areas are stubs. Not yet: `/ws`, activity, settings, undo, favorites). JSON everywhere. OpenAPI is generated at `/docs`. Realtime on `/ws`. See [ARCHITECTURE.md](./ARCHITECTURE.md).
+Status: draft v1. Base path `/api/v1` (implemented: auth, users, household, permissions, `/admin/security`, `/ha/connection*`, `/devices*`, `/entities/*/role`, `/areas`, `/commands*`; other areas are stubs. `/ws` realtime. Not yet: activity, settings, undo, favorites). JSON everywhere. OpenAPI is generated at `/docs`. Realtime on `/ws`. See [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 ## Conventions
 
@@ -217,32 +217,35 @@ Triggers (from the UI): `arrive, leave, time, sunset, door_opens, motion, power_
 
 ## WebSocket `/ws`
 
-Authenticate with the same session cookie during the upgrade. JSON text frames: `{ "type": "…", "id"?: "…", "data"?: … }`.
+Implemented. `GET /ws` (WebSocket upgrade, at the root, not under `/api/v1`). It authenticates with the same session cookie as the REST API during the upgrade: no valid session (or no household access) is a plain `401` and no socket opens. JSON text frames: `{ "type": "…", "data"?: …, "requestId"?: "…", "ts": 1700000000000 }` from the server; clients send `{ "type": "…", "requestId"?: "…", …fields }`.
 
-**Client → server**
+**Client to server**
 
-| type | data | Notes |
+| type | fields | Notes |
 |---|---|---|
-| `subscribe` | `{ resource, id? }` | `resource`: `household`, `area`, `device`, `commands`, `notifications`, `activity`, `alerts` |
-| `unsubscribe` | same | |
-| `ping` | — | Server replies `pong`; also used for keepalive |
+| `subscribe` / `unsubscribe` | `resource`, `id?` | Answered with `subscribed` / `unsubscribed` (or `error`) carrying your `requestId` |
+| `ping` | - | Answered with `pong` |
 
-**Server → client**
+Resources: `devices` (every device you may see), `device` + `id` (one Thing id), `area` + `id` (an HA area id), `commands` (your commands; admins: all), `household` (connection health, admins only receive it). `notifications`, `activity` and `alerts` are reserved and answer `unknown_resource` until those modules exist. Subscribing to a device you cannot see answers `not_found`, exactly like one that does not exist.
+
+**Server to client**
 
 | type | data |
 |---|---|
-| `subscribed` / `error` | confirmation or `{code,message}` (e.g. `forbidden`) |
-| `entity.updated` | `{ entityId, state, attributes, lastChanged }` |
-| `entity.availability_changed` | `{ entityId, availability }` |
-| `command.created`, `command.dispatched`, `command.accepted`, `command.confirmed`, `command.failed`, `command.timed_out`, `command.cancelled` | Command object |
-| `automation.triggered`, `automation.updated` | `{ id, … }` |
-| `notification.created`, `notification.read` | Notification |
-| `activity.created` | Activity event |
-| `alert.created`, `alert.cleared` | Alert |
-| `household.mode_changed` | `{ mode, changedBy }` |
-| `connection.connected`, `connection.disconnected` | HA connection status (admins) |
+| `hello` | `{ userId, role, resources }`, sent once on connect |
+| `subscribed`, `unsubscribed`, `pong` | acknowledgement |
+| `error` | `{ code, message, resource?, id? }`: `bad_message`, `unknown_message_type`, `unknown_resource`, `validation_error`, `not_found`, `too_many_subscriptions`, `rate_limited` |
+| `entity.updated` | `{ thingId, entityId, role, availability, values, lastChanged, facet? }`. `values` are application-level (brightness in %, lock state, ...); `facet` is the resolved meaning (`{ key, value, label, ambiguous, sensitive, name, ... }`) when the entity is a facet |
+| `entity.availability_changed` | `{ thingId, entityId, availability }` |
+| `devices.changed` | `{ reason: "inventory" \| "overrides" \| "permissions" }`. The set or shape of devices changed (resync, rename, hide, merge, split, policy). Refetch `GET /devices` |
+| `command.created`, `command.authorized`, `command.dispatched`, `command.accepted`, `command.confirmed`, `command.failed`, `command.timed_out`, `command.cancelled` | the command in public form (same as `GET /commands/:id`) |
+| `connection.connected`, `connection.disconnected` | `{ connectionId, status, error? }`, admins subscribed to `household` |
 
-Every subscription is authorized, and every event is filtered by the member's permissions (guests never receive events for devices they cannot see). On reconnect the client re-subscribes and fetches a fresh snapshot via REST, so there is no event replay requirement in v1.
+Rules the server enforces on every event: you only receive updates for entities you may see (guests: allowed devices only; denied devices never), diagnostics and config entities and hidden devices are not pushed, and commands go only to the person who sent them (and admins). Roles are re-read every couple of seconds, and sockets whose session ended are closed by a 15 s sweep (`4401`).
+
+Limits: 10 connections per user (`4429`), 50 subscriptions per socket, 60 messages per 10 s, 16 KB per message, and a client with more than 1 MB queued is dropped (`1013`). On shutdown the server closes sockets with `1001`. There is no replay: after a reconnect, resubscribe and refetch over REST.
+
+**Command objects** (REST and WebSocket) leave out internal ids and never carry Home Assistant's own error text: a `ha_rejected` failure always reads "Home Assistant refused the command".
 
 ## Authorization summary
 

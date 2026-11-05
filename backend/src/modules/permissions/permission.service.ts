@@ -1,5 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { Db } from "@/core/database/client";
+import type { AppEvent } from "@/core/events/app-events";
+import type { EventBus } from "@/core/events/event-bus";
 import { devicePolicies, sensitiveOperationRules } from "@/core/database/schema";
 import { AppError, notFound } from "@/core/errors/errors";
 import { newId } from "@/core/ids";
@@ -20,7 +22,11 @@ export interface NewDevicePolicy {
 }
 
 export class PermissionService {
-  constructor(private readonly db: Db, private readonly households: HouseholdService, private readonly now: () => number = Date.now) {}
+  constructor(private readonly db: Db, private readonly households: HouseholdService, private readonly now: () => number = Date.now, private readonly bus?: EventBus<AppEvent>) {}
+
+  private policiesChanged(householdId: string) {
+    this.bus?.publish({ type: "things.changed", householdId, connectionId: null, reason: "permissions", timestamp: new Date(this.now()).toISOString() });
+  }
 
   // ---- device policies ----
 
@@ -33,6 +39,7 @@ export class PermissionService {
     const row = { id: newId("pol"), householdId, ...p, operations: p.operations ?? null, createdBy: actorId, createdAt: this.now() };
     this.db.insert(devicePolicies).values(row).run();
     writeAudit(this.db, { householdId, actorId, action: "permissions.policy_created", resource: row.id, detail: { entityId: p.entityId, subject: `${p.subjectType}:${p.subjectId}`, effect: p.effect } }, this.now());
+    this.policiesChanged(householdId);
     return row;
   }
 
@@ -40,6 +47,7 @@ export class PermissionService {
     const hit = this.db.delete(devicePolicies).where(and(eq(devicePolicies.id, id), eq(devicePolicies.householdId, householdId))).returning({ id: devicePolicies.id }).all();
     if (!hit.length) throw notFound("Policy");
     writeAudit(this.db, { householdId, actorId, action: "permissions.policy_deleted", resource: id }, this.now());
+    this.policiesChanged(householdId);
   }
 
   // ---- sensitive operations (admin-configurable step-up) ----

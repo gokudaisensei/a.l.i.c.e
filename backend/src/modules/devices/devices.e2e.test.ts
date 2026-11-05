@@ -4,11 +4,10 @@ import { buildApp } from "@/app";
 import { createTestDb } from "@/core/database/client";
 import { haConnections } from "@/core/database/schema";
 import { HaAuthError } from "../home-assistant/clients/ha-ws-gateway";
-import { homeRaw } from "../home-assistant/things/fixtures/home";
 import { FakeGateway, state } from "../home-assistant/testing";
-import type { HaEntityState } from "../home-assistant/types";
 import { createServices } from "@/services";
 import { Browser } from "@/testing/http";
+import { fakeHa } from "@/testing/world";
 
 const KEY = randomBytes(32).toString("base64");
 const TOKEN = "fake-long-lived-token-1234567890";
@@ -20,29 +19,6 @@ let gw: FakeGateway;
 let services: ReturnType<typeof createServices>;
 let app: ReturnType<typeof buildApp>;
 const tokensSeen: string[] = [];
-
-/** A fake Home Assistant loaded with the Echo/plug/lamp fixture, which reacts to turn_on/turn_off and brightness. */
-function fakeHa() {
-  const g = new FakeGateway();
-  const raw = homeRaw();
-  g.states = [...raw.states, state("lock.front_door", "locked", { friendly_name: "Front door", device_class: "door" })];
-  g.areas = raw.areas; g.devices = raw.devices; g.entityRegistry = raw.entityRegistry;
-  g.onCallService = (call) => {
-    const id = (call.target?.entity_id as string) ?? "";
-    const prev = g.states.find((s) => s.entity_id === id);
-    if (!prev) throw new Error(`unknown entity ${id}`);
-    let next: HaEntityState | null = null;
-    if (call.service === "turn_on" || call.service === "turn_off") {
-      const attrs = { ...prev.attributes };
-      if (call.data?.brightness_pct) attrs.brightness = Math.round(Number(call.data.brightness_pct) * 2.55);
-      next = state(id, call.service === "turn_on" ? "on" : "off", attrs);
-    } else if (call.service === "unlock" || call.service === "lock") next = state(id, call.service === "unlock" ? "unlocked" : "locked", prev.attributes);
-    if (!next) return;
-    g.states = g.states.map((s) => (s.entity_id === id ? next! : s));
-    g.emitState(next, prev);
-  };
-  return g;
-}
 
 beforeEach(() => {
   now = 1_700_000_000_000;

@@ -1,5 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { Db } from "@/core/database/client";
+import type { AppEvent } from "@/core/events/app-events";
+import type { EventBus } from "@/core/events/event-bus";
 import { entityOverrides, thingLinks, thingOverrides } from "@/core/database/schema";
 import { AppError, notFound } from "@/core/errors/errors";
 import { newId } from "@/core/ids";
@@ -19,7 +21,7 @@ export class ThingsService {
   private cache = new Map<string, { key: string; value: ConnectionThings }>();
   private version = new Map<string, number>();
 
-  constructor(private readonly db: Db, private readonly manager: ConnectionManager, private readonly now: () => number = Date.now) {}
+  constructor(private readonly db: Db, private readonly manager: ConnectionManager, private readonly now: () => number = Date.now, private readonly bus?: EventBus<AppEvent>) {}
 
   /** Overrides as the pure builder wants them, read from the database. */
   loadOverrides(connectionId: string): ThingOverrides {
@@ -67,8 +69,9 @@ export class ThingsService {
     return null;
   }
 
-  private invalidate(connectionId: string) {
+  private invalidate(connectionId: string, householdId: string) {
     this.version.set(connectionId, (this.version.get(connectionId) ?? 0) + 1);
+    this.bus?.publish({ type: "things.changed", householdId, connectionId, reason: "overrides", timestamp: new Date(this.now()).toISOString() });
   }
 
   private require(householdId: string, thingId: string) {
@@ -83,7 +86,7 @@ export class ThingsService {
     const t = this.now();
     this.db.insert(thingOverrides).values({ id: newId("tov"), householdId, connectionId, ref, updatedBy: userId, updatedAt: t, ...patch })
       .onConflictDoUpdate({ target: [thingOverrides.connectionId, thingOverrides.ref], set: { ...patch, updatedBy: userId, updatedAt: t } }).run();
-    this.invalidate(connectionId);
+    this.invalidate(connectionId, householdId);
   }
 
   rename(householdId: string, userId: string, thingId: string, name: string | null) {
@@ -105,7 +108,7 @@ export class ThingsService {
     if (found.some((f) => f.conn.config.id !== connectionId)) throw new AppError(400, "validation_error", "Devices from different Home Assistant connections cannot be merged");
     if (new Set(thingIds).size < 2) throw new AppError(400, "validation_error", "Pick at least two different devices");
     this.db.insert(thingLinks).values({ id: newId("lnk"), householdId, connectionId, kind: "merge", refs: found.map((f) => f.thing.ref), createdBy: userId, createdAt: this.now() }).run();
-    this.invalidate(connectionId);
+    this.invalidate(connectionId, householdId);
     writeAudit(this.db, { householdId, actorId: userId, action: "devices.merged", detail: { thingIds } }, this.now());
   }
 
@@ -117,7 +120,7 @@ export class ThingsService {
     for (const entityId of entityIds) {
       this.db.insert(thingLinks).values({ id: newId("lnk"), householdId, connectionId: f.conn.config.id, kind: "split", entityId, createdBy: userId, createdAt: this.now() }).run();
     }
-    this.invalidate(f.conn.config.id);
+    this.invalidate(f.conn.config.id, householdId);
     writeAudit(this.db, { householdId, actorId: userId, action: "devices.split", resource: thingId, detail: { entityIds } }, this.now());
   }
 
@@ -130,7 +133,7 @@ export class ThingsService {
     const clean = { ...patch, ...(patch.onMeans !== undefined ? { onMeans: patch.onMeans?.trim().toLowerCase() || null } : {}) };
     this.db.insert(entityOverrides).values({ householdId, connectionId: conn.config.id, entityId, updatedBy: userId, updatedAt: t, ...clean })
       .onConflictDoUpdate({ target: [entityOverrides.connectionId, entityOverrides.entityId], set: { ...clean, updatedBy: userId, updatedAt: t } }).run();
-    this.invalidate(conn.config.id);
+    this.invalidate(conn.config.id, householdId);
     writeAudit(this.db, { householdId, actorId: userId, action: "devices.entity_overridden", resource: entityId, detail: clean }, t);
   }
 }

@@ -55,7 +55,10 @@ export class CommandExecutor {
     };
     this.store.create(cmd);
     this.publish("command.created", cmd);
-    const run = this.run(cmd.id, input).catch((err) => this.fail(cmd.id, "ha_unreachable", `Unexpected error: ${String(err)}`));
+    const run = this.run(cmd.id, input).catch((err) => {
+      this.deps.log.error({ commandId: cmd.id, err: String(err) }, "unexpected error running command");
+      return this.fail(cmd.id, "internal", "Unexpected error");
+    });
     this.runs.set(cmd.id, run);
     void run.finally(() => this.runs.delete(cmd.id)); // finished runs are served from the store
     return cmd;

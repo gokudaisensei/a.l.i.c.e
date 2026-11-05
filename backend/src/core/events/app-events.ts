@@ -56,6 +56,15 @@ export interface ConnectionDisconnectedEvent extends Scope {
   error?: string;
 }
 
+/** The set or shape of devices a person sees changed (rename, hide, merge, split, policy). Clients should refetch. */
+export interface ThingsChangedEvent {
+  type: "things.changed";
+  householdId: string;
+  connectionId: string | null;
+  reason: "overrides" | "permissions";
+  timestamp: string;
+}
+
 export interface CommandEvent {
   type: "command.created" | "command.authorized" | "command.dispatched" | "command.accepted" | "command.confirmed" | "command.failed" | "command.timed_out" | "command.cancelled";
   householdId: string;
@@ -65,6 +74,7 @@ export interface CommandEvent {
 
 export type AppEvent =
   | CommandEvent
+  | ThingsChangedEvent
   | EntityStateChangedEvent
   | EntityAvailabilityChangedEvent
   | EntityRemovedEvent

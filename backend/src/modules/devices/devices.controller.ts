@@ -4,6 +4,7 @@ import { requireMember, requirePermission, requireStepUp, type RequestAuth } fro
 import { sessionPlugin } from "@/core/http/session-plugin";
 import { COMMAND_STATES } from "./command-lifecycle";
 import type { Services } from "@/services";
+import { toPublicCommand } from "./commands/public-command";
 import type { Caller } from "./devices.service";
 
 const caller = (a: RequestAuth, perm: Parameters<typeof requirePermission>[1]): Caller & { session: NonNullable<RequestAuth["session"]> } => {
@@ -49,7 +50,7 @@ export const devicesController = ({ auth, households, devices, things }: Service
       const c = caller(ctx, "device.control");
       const cmd = devices.command(c, ctx.params.id, ctx.body);
       ctx.set.status = 202;
-      return cmd;
+      return toPublicCommand(cmd);
     }, {
       body: t.Object({ entityId: t.Optional(t.String()), action: t.String({ minLength: 1 }), parameters: t.Optional(t.Record(t.String(), t.Unknown())) }),
       detail: { summary: "Run an operation on a device. Returns 202 with the command; follow it with GET /commands/:id" },
@@ -80,10 +81,10 @@ export const commandsController = ({ auth, households, devices }: Services) =>
     .get("/", (ctx) => {
       const { membership, session } = requireMember(ctx);
       if (membership.role !== "admin") throw new AppError(403, "forbidden", "Admins only");
-      return { commands: devices.listCommands({ householdId: membership.householdId, userId: session.userId, role: membership.role, steppedUp: session.steppedUp }, { state: ctx.query.state, limit: ctx.query.limit }) };
+      return { commands: devices.listCommands({ householdId: membership.householdId, userId: session.userId, role: membership.role, steppedUp: session.steppedUp }, { state: ctx.query.state, limit: ctx.query.limit }).map(toPublicCommand) };
     }, { query: t.Object({ state: t.Optional(stateUnion), limit: t.Optional(t.Numeric({ minimum: 1, maximum: 500 })) }) })
-    .get("/:id", (ctx) => devices.getCommand(caller(ctx, "device.view"), ctx.params.id))
-    .post("/:id/cancel", (ctx) => devices.cancelCommand(caller(ctx, "device.control"), ctx.params.id));
+    .get("/:id", (ctx) => toPublicCommand(devices.getCommand(caller(ctx, "device.view"), ctx.params.id)))
+    .post("/:id/cancel", (ctx) => toPublicCommand(devices.cancelCommand(caller(ctx, "device.control"), ctx.params.id)));
 
 export const areasController = ({ auth, households, devices }: Services) =>
   new Elysia({ name: "module.areas", prefix: "/areas", tags: ["areas"] })
