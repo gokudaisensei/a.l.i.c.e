@@ -144,10 +144,12 @@ The server authorizes every subscription and filters each event by the member's 
 
 ## 9. Config-worker (separate process)
 
-- Holds the admin HA token. The main process does not.
-- Consumes `config_jobs` (validated by the main process): create/update/delete scene, script, automation, helper; sync voice exposure.
-- Accepts a fixed set of operations only, never raw WebSocket commands. Logs every operation to `audit_log`; returns results through the job table.
-- Communication starts as the shared SQLite job table, so there is no network surface between the processes. It can move to a Unix socket later.
+Implemented (`bun run worker`, `src/worker/`).
+
+- **The only holder of the admin token.** The admin token is stored *sealed*: the server encrypts it with a public key (`ADMIN_SEAL_PUBLIC_KEY`) and cannot read it back; only the worker has the private key (`ADMIN_SEAL_PRIVATE_KEY`). Generate keys with `bun run keys:generate`.
+- **A fixed set of operations.** The server validates and queues `config_jobs`; the worker validates again and refuses anything outside: `script.upsert/delete`, `automation.upsert/delete/set_enabled`, `helper.ensure_mode_select`, `voice.expose`. Everything it writes is named `alice_*`, services come from an allow-list, templates from a fixed set, events only `alice_notification`. It cannot be asked to call an arbitrary service or write arbitrary config.
+- **Job table, no network surface.** Server and worker share the SQLite file. Jobs have retries (3 attempts, permanent errors fail at once), a dedupe key (a newer version of the same script replaces one still waiting), and a heartbeat so the server can say whether the worker is running (`GET /admin/config-sync`). The server applies finished results to the scene, routine, automation or setting they belong to.
+- **What it applies:** scenes and routines as Home Assistant scripts, automations as Home Assistant automations, the household-mode helper, and voice exposure to Assist. Home Assistant then runs them without Alice.
 
 ## 10. Routines, scenes, automations
 
@@ -186,8 +188,8 @@ Features the current mock UI needs from the backend:
 3. Command executor (stub authorizer), using Thing-level targeting and facets
 4. Identity (done, Run 7): users, passkeys, sessions, households, memberships, permissions, DB authorizer, and the admin-configurable sensitive-operations policy replacing the fixed list in the executor. Memberships are part of the households module
 5. (mostly done, Run 8) HA connection setup, Things API, commands endpoints and overrides (rename/hide/re-role/merge/split). `/ws` realtime is done too (Run 9). Remaining in this step: `/ws` realtime, areas/groups/favorites APIs; alias index and fuzzy resolver
-6. Scenes, routines, modes, config-worker, automations
-7. Activity, notifications, energy, history, insights
+6. (done, Runs 10 and 11) Scenes, routines and modes, the config-worker, automations compiled to Home Assistant, the mode mirror and suggestions. Scenes and routines still run in Alice as the person who starts them, and are also mirrored to Home Assistant as scripts.
+7. (partly done, Run 11: in-app notifications, power-limit alerts, mode suggestions) Activity, push delivery, energy, history, more insights
 8. Backups, updates, admin; then AI (tool layer over the command pipeline with risk classes) and the LLM suggestion job
 
 ## 15. Resolved questions

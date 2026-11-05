@@ -13,7 +13,9 @@
     "ha:up": "docker compose -f dev/ha/docker-compose.yml up -d",
     "ha:bootstrap": "bun dev/ha/bootstrap.ts",
     "ha:down": "docker compose -f dev/ha/docker-compose.yml down -v",
-    "ha:logs": "docker compose -f dev/ha/docker-compose.yml logs -f"
+    "ha:logs": "docker compose -f dev/ha/docker-compose.yml logs -f",
+    "worker": "bun src/worker/index.ts",
+    "keys:generate": "bun scripts/generate-keys.ts"
   },
   "dependencies": {
     "@elysiajs/cors": "^1.4.2",
@@ -22,10 +24,12 @@
     "drizzle-orm": "^0.45.4",
     "elysia": "^1.4.31",
     "home-assistant-js-websocket": "^9.8.1",
-    "pino": "^10.4.0"
+    "pino": "^10.4.0",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@types/bun": "^1.4.4",
+    "@types/web-push": "^3.6.4",
     "drizzle-kit": "^0.31.11",
     "typescript": "^5.9.3"
   }

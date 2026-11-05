@@ -84,4 +84,24 @@ run("Alice over HTTP against the mock Home Assistant", () => {
     expect(update.data.values.power).toBe(!was);
     ws.close();
   });
+
+  test("a scene and a routine run against real devices through the same pipeline", async () => {
+    const list = await things(admin);
+    const lamp = byPrimary(list, "light.bed_light");
+    const pct = lamp.primary.values.brightness === 25 ? 65 : 25;
+    const scene = await admin.call("POST", "/scenes", {
+      name: "Live scene",
+      actions: [{ entityId: "light.bed_light", action: "set_brightness", parameters: { brightness_pct: pct } }, { entityId: "input_boolean.test_switch", action: "turn_on" }],
+    });
+    expect(scene.status).toBe(200);
+    const act = await admin.call("POST", `/scenes/${scene.json.id}/activate`);
+    const done = await Promise.all(act.json.commands.map((c: any) => services.commands.done(c.id)));
+    expect(done.map((c) => c.state)).toEqual(["confirmed", "confirmed"]);
+    expect(byPrimary(await things(admin), "light.bed_light").primary.values.brightness).toBe(pct);
+
+    const routine = await admin.call("POST", "/routines", { name: "Live routine", steps: [{ type: "scene", sceneId: scene.json.id }, { type: "device", entityId: "input_boolean.test_switch", action: "turn_off" }] });
+    const run = await services.routines.finished((await admin.call("POST", `/routines/${routine.json.id}/execute`)).json.id);
+    expect(run.state).toBe("completed");
+    expect(byPrimary(await things(admin), "input_boolean.test_switch").primary.values.power).toBe(false);
+  });
 });

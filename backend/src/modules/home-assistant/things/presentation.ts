@@ -35,6 +35,10 @@ export interface ThingView {
   sensors: EntityView[];
   diagnosticCount: number;
   diagnostics?: EntityView[];
+  /** Is this one of the caller's favorites? Filled in by the devices service. */
+  favorite?: boolean;
+  /** Application settings of the main entity. Filled in by the devices service. */
+  settings?: { powerLimitW: number | null; voiceExposed: boolean; voiceSync: { status: "none" | "pending" | "synced" | "failed"; error: string | null } };
 }
 
 export interface PresentOptions {

@@ -7,7 +7,7 @@ import { HaAuthError } from "../home-assistant/clients/ha-ws-gateway";
 import { FakeGateway, state } from "../home-assistant/testing";
 import { createServices } from "@/services";
 import { Browser } from "@/testing/http";
-import { fakeHa } from "@/testing/world";
+import { fakeHa, SEAL_KEYS } from "@/testing/world";
 
 const KEY = randomBytes(32).toString("base64");
 const TOKEN = "fake-long-lived-token-1234567890";
@@ -26,7 +26,7 @@ beforeEach(() => {
   gw = fakeHa();
   tokensSeen.length = 0;
   services = createServices(db, {
-    now: () => now, secretsKey: KEY,
+    now: () => now, secretsKey: KEY, adminSealPublicKey: SEAL_KEYS.publicKey,
     auth: { rpId: "localhost", rpName: "Alice", origin: "http://localhost:3000", sessionTtlHours: 24 },
     gatewayFactory: (cfg) => {
       tokensSeen.push(cfg.token);

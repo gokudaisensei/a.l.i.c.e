@@ -8,6 +8,7 @@ import type { EventBus } from "@/core/events/event-bus";
 import { newId } from "@/core/ids";
 import { writeAudit } from "@/core/security/audit";
 import { decryptSecret, encryptSecret } from "@/core/security/secrets";
+import { seal } from "@/core/security/sealed";
 import { HaAuthError } from "./clients/ha-ws-gateway";
 import type { ConnectionManager, GatewayFactory } from "./connections/connection-manager";
 
@@ -47,12 +48,21 @@ export class HaConnectionService {
     private readonly bus: EventBus<AppEvent>,
     private readonly createGateway: GatewayFactory,
     private readonly secretsKey: () => Buffer,
+    /** Public half of the admin-token seal. This process can store the admin token but never read it back. */
+    private readonly adminSealPublicKey: () => string | null,
     private readonly log: Logger,
     private readonly now: () => number = Date.now,
   ) {
     // Keep the stored status/error/version current as connections come and go.
     bus.subscribe("connection.connected", (e) => this.record(e.connectionId, { status: "connected", lastError: null, lastConnectedAt: this.now() }));
     bus.subscribe("connection.disconnected", (e) => this.record(e.connectionId, { status: e.status, lastError: e.error ?? null }));
+  }
+
+  private adminTokenHooks: ((householdId: string, userId: string) => void)[] = [];
+
+  /** Runs after an admin token is stored, e.g. to push everything that was waiting for one. */
+  afterAdminToken(fn: (householdId: string, userId: string) => void) {
+    this.adminTokenHooks.push(fn);
   }
 
   private record(connectionId: string, patch: Partial<typeof haConnections.$inferInsert>) {
@@ -117,13 +127,16 @@ export class HaConnectionService {
     return this.get(householdId);
   }
 
-  /** Stores the admin token for the config-worker. Verified by connecting, never decrypted by this process. */
+  /** Stores the admin token for the config-worker, sealed with a public key so this process cannot read it back. */
   async setAdminToken(householdId: string, actorId: string, token: string) {
     const r = this.row(householdId);
     if (!r) throw notFound("Home Assistant connection");
+    const pub = this.adminSealPublicKey();
+    if (!pub) throw new AppError(503, "not_configured", "Admin token storage is not set up (ADMIN_SEAL_PUBLIC_KEY)");
     await this.test({ baseUrl: r.baseUrl, token });
-    this.db.update(haConnections).set({ adminTokenEnc: encryptSecret(token, this.secretsKey()), updatedAt: this.now() }).where(eq(haConnections.id, r.id)).run();
+    this.db.update(haConnections).set({ adminTokenEnc: seal(token, pub), updatedAt: this.now() }).where(eq(haConnections.id, r.id)).run();
     writeAudit(this.db, { householdId, actorId, action: "ha.admin_token_set", resource: r.id }, this.now());
+    for (const fn of this.adminTokenHooks) fn(householdId, actorId);
   }
 
   async remove(householdId: string, actorId: string) {

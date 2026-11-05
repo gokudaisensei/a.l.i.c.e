@@ -2,7 +2,16 @@
 # Reset to a clean instance: docker compose down -v
 name: alice-ha-mock
 services:
+  # Creates the files Home Assistant's config API writes into (scripts.yaml, automations.yaml) if they are missing.
+  init:
+    image: ghcr.io/home-assistant/home-assistant:2026.10.4
+    entrypoint: ["sh", "-c", "touch /config/scripts.yaml /config/automations.yaml"]
+    volumes:
+      - ha-data:/config
   homeassistant:
+    depends_on:
+      init:
+        condition: service_completed_successfully
     image: ghcr.io/home-assistant/home-assistant:2026.10.4
     container_name: alice-ha-mock
     ports:

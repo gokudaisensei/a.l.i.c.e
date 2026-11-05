@@ -1,21 +1,8 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import type { Browser } from "@/testing/http";
 import { changeState, createWorld, homeWithHa, type World } from "@/testing/world";
-import type { ClientSocket, ServerMessage } from "./hub";
+import { FakeSocket } from "@/testing/fake-socket";
 import { WS_LIMITS } from "./hub";
-
-class FakeSocket implements ClientSocket {
-  messages: ServerMessage[] = [];
-  closed: { code: number; reason: string } | null = null;
-  buffered = 0;
-  constructor(public id: string) {}
-  send(m: ServerMessage) { this.messages.push(m); }
-  close(code: number, reason: string) { this.closed = { code, reason }; }
-  bufferedAmount() { return this.buffered; }
-  types() { return this.messages.map((m) => m.type); }
-  of(type: string) { return this.messages.filter((m) => m.type === type); }
-  clear() { this.messages = []; }
-}
 
 let w: World;
 let h: Awaited<ReturnType<typeof homeWithHa>>;

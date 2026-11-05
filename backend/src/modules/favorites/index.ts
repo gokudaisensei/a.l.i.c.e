@@ -1,2 +1,2 @@
-export { favoritesController } from "./controller";
-export { favoritesService } from "./service";
+export { favoritesController } from "./favorites.controller";
+export { FavoritesService, refMatches } from "./favorites.service";

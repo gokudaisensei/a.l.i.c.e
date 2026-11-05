@@ -60,7 +60,7 @@ export class FakeGateway implements HomeAssistantGateway {
   emitState(next: HaEntityState | null, prev: HaEntityState | null = null, entityId = next?.entity_id ?? prev!.entity_id) {
     this.stateCbs.forEach((c) => c({ entity_id: entityId, old_state: prev, new_state: next, context: { id: "c", parent_id: null, user_id: null }, timeFired: "2026-01-01T00:00:01Z" }));
   }
-  emitEvent(type: string) {
-    this.eventCbs.get(type)?.forEach((c) => c({ event_type: type, data: {}, time_fired: "2026-01-01T00:00:01Z", context: { id: "c", parent_id: null, user_id: null } }));
+  emitEvent(type: string, data: Record<string, unknown> = {}) {
+    this.eventCbs.get(type)?.forEach((c) => c({ event_type: type, data, time_fired: "2026-01-01T00:00:01Z", context: { id: "c", parent_id: null, user_id: null } }));
   }
 }

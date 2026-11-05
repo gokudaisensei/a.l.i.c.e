@@ -5,7 +5,9 @@ import type { EventBus, Unsubscribe } from "@/core/events/event-bus";
 import { RateLimiter } from "@/core/http/rate-limit";
 import type { AuthService, SessionContext } from "@/modules/authentication/auth.service";
 import { toPublicCommand } from "@/modules/devices/commands/public-command";
-import type { DevicesService } from "@/modules/devices/devices.service";
+import type { Caller, DevicesService } from "@/modules/devices/devices.service";
+import type { AlertsService } from "@/modules/notifications/alerts.service";
+import type { NotificationsService } from "@/modules/notifications/notifications.service";
 import type { ManagedConnection } from "@/modules/home-assistant";
 import { describeThingFacets } from "@/modules/home-assistant/things/facet-values";
 import type { ThingsService } from "@/modules/home-assistant/things/things.service";
@@ -31,7 +33,7 @@ export interface ServerMessage {
   ts: number;
 }
 
-export const RESOURCES = ["devices", "device", "area", "commands", "household"] as const;
+export const RESOURCES = ["devices", "device", "area", "commands", "household", "alerts", "notifications"] as const;
 type Resource = (typeof RESOURCES)[number];
 
 export const WS_LIMITS = { subscriptions: 50, connectionsPerUser: 10, maxBuffered: 1_000_000, messages: { limit: 60, windowMs: 10_000 }, recheckMs: 2_000 };
@@ -72,6 +74,8 @@ export class RealtimeHub {
       households: HouseholdService;
       auth: AuthService;
       devices: DevicesService;
+      alerts: AlertsService;
+      notifications: NotificationsService;
       log: Logger;
       now?: () => number;
     },
@@ -187,7 +191,7 @@ export class RealtimeHub {
       try { this.deps.devices.get({ householdId: c.householdId, userId: c.userId, role: c.role, steppedUp: false }, msg.id); }
       catch { return fail("not_found", "No such device"); } // same answer whether it is missing or not theirs
     }
-    // "household" is open to everyone; connection health inside it is only sent to admins (see onConnection).
+    // "household" is open to everyone: mode changes go to all, connection health only to admins (see onConnection).
     c.subs.add(k);
     reply({ type: "subscribed", requestId, data: { resource, id: msg.id } });
   }
@@ -221,6 +225,12 @@ export class RealtimeHub {
         case "registry.updated":
         case "inventory.synced": return this.changed(e.householdId, "inventory");
         case "things.changed": return this.changed(e.householdId, e.reason);
+        case "household.mode_changed": return this.onMode(e);
+        case "insights.changed": return this.onInsights(e);
+        case "presence.changed": return this.onPresence(e);
+        case "alert.created":
+        case "alert.cleared": return this.onAlert(e);
+        case "notification.created": return this.onNotification(e);
         case "connection.connected":
         case "connection.disconnected": return this.onConnection(e);
         default:
@@ -274,6 +284,42 @@ export class RealtimeHub {
       if (!c.subs.has("commands")) continue;
       if (c.role !== "admin" && cmd.requestedBy !== c.userId) continue;
       this.send(c.socket, { type: e.type, data: toPublicCommand(cmd) });
+    }
+  }
+
+  private onInsights(e: Extract<AppEvent, { type: "insights.changed" }>) {
+    for (const c of this.forHousehold(e.householdId)) {
+      if (c.subs.has("household") && can(c.role, "mode.change")) this.send(c.socket, { type: "insights.changed", data: {} });
+    }
+  }
+
+  /** Who is home is for members and admins, not guests. */
+  private onPresence(e: Extract<AppEvent, { type: "presence.changed" }>) {
+    for (const c of this.forHousehold(e.householdId)) {
+      if (c.subs.has("household") && can(c.role, "members.view")) this.send(c.socket, { type: "presence.changed", data: { userId: e.userId, personEntityId: e.personEntityId, home: e.home } });
+    }
+  }
+
+  private onAlert(e: Extract<AppEvent, { type: "alert.created" | "alert.cleared" }>) {
+    for (const c of this.forHousehold(e.householdId)) {
+      if (!c.subs.has("alerts") || !can(c.role, "notification.receive")) continue;
+      const who: Caller = { householdId: c.householdId, userId: c.userId, role: c.role, steppedUp: false };
+      const alert = this.deps.alerts.viewFor(who, e.alertId); // each person only hears about devices they can see
+      if (alert) this.send(c.socket, { type: e.type, data: alert });
+    }
+  }
+
+  private onNotification(e: Extract<AppEvent, { type: "notification.created" }>) {
+    const n = this.deps.notifications.get(e.userId, e.notificationId);
+    if (!n) return;
+    for (const c of this.forHousehold(e.householdId)) {
+      if (c.userId === e.userId && c.subs.has("notifications")) this.send(c.socket, { type: "notification.created", data: n });
+    }
+  }
+
+  private onMode(e: Extract<AppEvent, { type: "household.mode_changed" }>) {
+    for (const c of this.forHousehold(e.householdId)) {
+      if (c.subs.has("household")) this.send(c.socket, { type: "household.mode_changed", data: { mode: e.mode, previous: e.previous, changedBy: e.changedBy } });
     }
   }
 

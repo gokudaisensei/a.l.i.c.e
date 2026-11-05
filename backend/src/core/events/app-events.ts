@@ -65,6 +65,84 @@ export interface ThingsChangedEvent {
   timestamp: string;
 }
 
+export interface HouseholdModeChangedEvent {
+  type: "household.mode_changed";
+  householdId: string;
+  mode: "home" | "away" | "night" | "vacation";
+  previous: "home" | "away" | "night" | "vacation";
+  changedBy: string | null;
+  timestamp: string;
+}
+
+export interface AlertEvent {
+  type: "alert.created" | "alert.cleared";
+  householdId: string;
+  alertId: string;
+  timestamp: string;
+}
+
+export interface NotificationCreatedEvent {
+  type: "notification.created";
+  householdId: string;
+  userId: string;
+  notificationId: string;
+  timestamp: string;
+}
+
+/** An entity's application settings (e.g. power limit) changed. */
+export interface SettingsChangedEvent {
+  type: "settings.changed";
+  householdId: string;
+  connectionId: string;
+  entityId: string;
+  timestamp: string;
+}
+
+/** Home Assistant fired `alice_notification` (an Alice automation's notify action). */
+export interface HaNotificationEvent {
+  type: "ha.notification";
+  householdId: string;
+  connectionId: string;
+  title: string;
+  message: string;
+  userIds: string[] | null;
+  timestamp: string;
+}
+
+/** Home Assistant reported that one of its automations ran. */
+export interface HaAutomationTriggeredEvent {
+  type: "ha.automation_triggered";
+  householdId: string;
+  connectionId: string;
+  entityId: string;
+  source: string | null;
+  timestamp: string;
+}
+
+/** The set of suggestions for the household may have changed; clients refetch GET /insights. */
+export interface InsightsChangedEvent {
+  type: "insights.changed";
+  householdId: string;
+  timestamp: string;
+}
+
+/** A household member's Home Assistant person arrived or left. `userId` is null for a person not linked to anyone. */
+export interface PresenceChangedEvent {
+  type: "presence.changed";
+  householdId: string;
+  userId: string | null;
+  personEntityId: string;
+  home: boolean;
+  timestamp: string;
+}
+
+/** Which person is which member changed; things compiled from the list of people need a fresh look. */
+export interface PresenceLinksChangedEvent {
+  type: "presence.links_changed";
+  householdId: string;
+  timestamp: string;
+}
+
 export interface CommandEvent {
   type: "command.created" | "command.authorized" | "command.dispatched" | "command.accepted" | "command.confirmed" | "command.failed" | "command.timed_out" | "command.cancelled";
   householdId: string;
@@ -75,6 +153,15 @@ export interface CommandEvent {
 export type AppEvent =
   | CommandEvent
   | ThingsChangedEvent
+  | HouseholdModeChangedEvent
+  | AlertEvent
+  | InsightsChangedEvent
+  | PresenceChangedEvent
+  | PresenceLinksChangedEvent
+  | NotificationCreatedEvent
+  | SettingsChangedEvent
+  | HaNotificationEvent
+  | HaAutomationTriggeredEvent
   | EntityStateChangedEvent
   | EntityAvailabilityChangedEvent
   | EntityRemovedEvent

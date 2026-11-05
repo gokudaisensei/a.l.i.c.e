@@ -17,8 +17,8 @@ const stateUnion = t.Union(COMMAND_STATES.map((s) => t.Literal(s)));
 export const devicesController = ({ auth, households, devices, things }: Services) =>
   new Elysia({ name: "module.devices", prefix: "/devices", tags: ["devices"] })
     .use(sessionPlugin(auth, households))
-    .get("/", (ctx) => ({ devices: devices.list(caller(ctx, "device.view"), { ...ctx.query, includeHidden: ctx.query.includeHidden === "true" }) }), {
-      query: t.Object({ area: t.Optional(t.String()), type: t.Optional(t.String()), q: t.Optional(t.String()), includeHidden: t.Optional(t.String()) }),
+    .get("/", (ctx) => ({ devices: devices.list(caller(ctx, "device.view"), { ...ctx.query, includeHidden: ctx.query.includeHidden === "true", favorite: ctx.query.favorite === "true" }) }), {
+      query: t.Object({ area: t.Optional(t.String()), type: t.Optional(t.String()), q: t.Optional(t.String()), includeHidden: t.Optional(t.String()), favorite: t.Optional(t.String()) }),
       detail: { summary: "Things (one per physical device) with live values, filtered by what you may see" },
     })
     // static paths first
@@ -38,6 +38,10 @@ export const devicesController = ({ auth, households, devices, things }: Service
       things.rename(c.householdId, c.userId, ctx.params.id, ctx.body.name);
       return devices.get(c, ctx.params.id);
     }, { body: t.Object({ name: t.Nullable(t.String()) }) })
+    .patch("/:id/settings", (ctx) => devices.updateSettings(caller(ctx, "device.manage"), ctx.params.id, ctx.body), {
+      body: t.Object({ entityId: t.Optional(t.String()), powerLimitW: t.Optional(t.Nullable(t.Integer())), voiceExposed: t.Optional(t.Boolean()) }),
+      detail: { summary: "Power limit (W) and voice exposure for a device's main entity. Admins only" },
+    })
     .post("/:id/hide", (ctx) => { const c = caller(ctx, "device.manage"); things.setHidden(c.householdId, c.userId, ctx.params.id, true); return { ok: true }; })
     .post("/:id/unhide", (ctx) => { const c = caller(ctx, "device.manage"); things.setHidden(c.householdId, c.userId, ctx.params.id, false); return { ok: true }; })
     .post("/:id/split", (ctx) => {

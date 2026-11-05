@@ -50,3 +50,21 @@ export function normalizeRegistryEvent(scope: EventScope, ev: HaRawEvent): AppEv
 }
 
 export const REGISTRY_EVENT_TYPES = Object.keys(REGISTRY_EVENTS);
+
+/** `alice_notification` events come from Alice's own automations; the payload is untrusted text and is bounded here. */
+export function normalizeAliceNotification(scope: EventScope, ev: HaRawEvent): AppEvent | null {
+  if (ev.event_type !== "alice_notification") return null;
+  const d = ev.data ?? {};
+  const message = typeof d.message === "string" ? d.message.slice(0, 500) : "";
+  if (!message) return null;
+  const title = typeof d.title === "string" && d.title ? d.title.slice(0, 100) : "Home";
+  const userIds = Array.isArray(d.userIds) ? d.userIds.filter((x): x is string => typeof x === "string").slice(0, 50) : null;
+  return { type: "ha.notification", ...scope, timestamp: ev.time_fired, title, message, userIds };
+}
+
+export function normalizeAutomationTriggered(scope: EventScope, ev: HaRawEvent): AppEvent | null {
+  if (ev.event_type !== "automation_triggered") return null;
+  const entityId = ev.data?.entity_id;
+  if (typeof entityId !== "string") return null;
+  return { type: "ha.automation_triggered", ...scope, timestamp: ev.time_fired, entityId, source: typeof ev.data?.source === "string" ? ev.data.source : null };
+}

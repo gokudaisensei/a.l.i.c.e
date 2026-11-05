@@ -61,10 +61,29 @@ export class ThingsService {
     return out;
   }
 
+  /** A Thing by its stable reference, for things stored by reference (alerts, favorites). */
+  findByRef(householdId: string, connectionId: string, ref: string) {
+    for (const ct of this.forHousehold(householdId)) {
+      if (ct.conn.config.id !== connectionId) continue;
+      const thing = ct.things.find((t) => t.ref === ref);
+      if (thing) return { ...ct, thing };
+    }
+    return null;
+  }
+
   find(householdId: string, thingId: string) {
     for (const ct of this.forHousehold(householdId)) {
       const thing = ct.things.find((t) => t.id === thingId);
       if (thing) return { ...ct, thing };
+    }
+    return null;
+  }
+
+  /** An entity of this household, with the connection it lives on and the Thing it belongs to. */
+  findEntity(householdId: string, entityId: string) {
+    for (const ct of this.forHousehold(householdId)) {
+      const ent = ct.conn.inventory?.entities.find((e) => e.entityId === entityId);
+      if (ent) return { conn: ct.conn, entity: ent, thing: ct.things.find((t) => t.entityIds.includes(entityId)) ?? null };
     }
     return null;
   }

@@ -1,2 +1,1 @@
-export { administrationController } from "./controller";
-export { administrationService } from "./service";
+export { administrationController } from "./admin.controller";

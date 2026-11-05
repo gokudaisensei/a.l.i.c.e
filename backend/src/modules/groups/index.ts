@@ -1,2 +1,2 @@
-export { groupsController } from "./controller";
-export { groupsService } from "./service";
+export { groupsController } from "./groups.controller";
+export { GroupsService, type GroupView } from "./groups.service";

@@ -7,10 +7,13 @@ import { createServices } from "./services";
 const db = createDb(env.databaseUrl);
 runMigrations(db);
 
-const services = createServices(db);
+const services = createServices(db, { background: true });
 const interrupted = services.commands.recoverInterrupted();
 if (interrupted) logger.warn({ interrupted }, "marked commands interrupted by the last shutdown as failed");
-services.ha.startAll(); // stored Home Assistant connections reconnect in the background
+services.ha.startAll();
+services.sync.reconcileAll(); // anything that was waiting for the worker or an admin token goes out now
+const resumed = services.routines.resumeInterrupted();
+if (resumed) logger.warn({ resumed }, "picked up routine runs that were in flight at the last shutdown"); // stored Home Assistant connections reconnect in the background
 
 const app = buildApp(services);
 setInterval(() => services.realtime.sweep(), 15_000).unref(); // end sockets whose session expired or was revoked

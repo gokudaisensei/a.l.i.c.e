@@ -3,7 +3,7 @@ import { requireMember } from "@/core/http/guards";
 import { sessionPlugin } from "@/core/http/session-plugin";
 import type { Services } from "@/services";
 
-export const usersController = ({ auth, households, users }: Services) =>
+export const usersController = ({ auth, households, users, push }: Services) =>
   new Elysia({ name: "module.users", prefix: "/users", tags: ["users"] })
     .use(sessionPlugin(auth, households))
     .get("/me", (ctx) => {
@@ -23,4 +23,22 @@ export const usersController = ({ auth, households, users }: Services) =>
         pushEnabled: t.Optional(t.Boolean()),
         extra: t.Optional(t.Nullable(t.Record(t.String(), t.Unknown()))),
       }),
-    });
+    })
+    // ---- devices that receive push notifications ----
+    .get("/me/push-subscriptions", (ctx) => ({
+      platforms: push.platforms(),
+      vapidPublicKey: push.vapidPublicKey(),
+      devices: push.list(requireMember(ctx).session.userId).map((d) => ({ id: d.id, platform: d.platform, label: d.label, createdAt: d.createdAt, lastUsedAt: d.lastUsedAt })),
+    }), { detail: { summary: "Your devices that get push notifications, and which push channels this server supports" } })
+    .post("/me/push-subscriptions", (ctx) => {
+      const d = push.register(requireMember(ctx).session.userId, ctx.body as never);
+      return { id: d.id, platform: d.platform, label: d.label, createdAt: d.createdAt };
+    }, {
+      body: t.Union([
+        t.Object({ platform: t.Literal("webpush"), token: t.String({ maxLength: 2048 }), keys: t.Object({ p256dh: t.String(), auth: t.String() }), label: t.Optional(t.String({ maxLength: 80 })) }),
+        t.Object({ platform: t.Literal("fcm"), token: t.String({ maxLength: 4096 }), label: t.Optional(t.String({ maxLength: 80 })) }),
+      ]),
+      detail: { summary: "Register this browser (Web Push) or app (Firebase token) for push notifications" },
+    })
+    .delete("/me/push-subscriptions/:id", (ctx) => { push.unregister(requireMember(ctx).session.userId, ctx.params.id); return { ok: true }; })
+    .post("/me/push-subscriptions/test", async (ctx) => push.sendTest(requireMember(ctx).session.userId), { detail: { summary: "Send a test notification to your devices" } });

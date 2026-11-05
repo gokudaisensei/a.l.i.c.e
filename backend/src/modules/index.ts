@@ -13,7 +13,7 @@ import { routinesController } from "./routines";
 import { automationsController } from "./automations";
 import { householdModesController } from "./household-modes";
 import { activityController } from "./activity";
-import { notificationsController } from "./notifications";
+import { alertsController, notificationsController } from "./notifications";
 import { energyController } from "./energy";
 import { insightsController } from "./insights";
 import { historyController } from "./history";
@@ -35,18 +35,19 @@ export const buildModules = (s: Services) =>
     .use(entitiesController(s))
     .use(commandsController(s))
     .use(areasController(s))
-    .use(groupsController)
-    .use(favoritesController)
-    .use(scenesController)
-    .use(routinesController)
-    .use(automationsController)
-    .use(householdModesController)
+    .use(groupsController(s))
+    .use(favoritesController(s))
+    .use(scenesController(s))
+    .use(routinesController(s))
+    .use(automationsController(s))
+    .use(householdModesController(s))
     .use(activityController)
-    .use(notificationsController)
+    .use(notificationsController(s))
+    .use(alertsController(s))
     .use(energyController)
-    .use(insightsController)
+    .use(insightsController(s))
     .use(historyController)
     .use(aiController)
     .use(backupsController)
     .use(updatesController)
-    .use(administrationController);
+    .use(administrationController(s));

@@ -15,6 +15,20 @@
       "when": 1793870794370,
       "tag": "0001_small_midnight",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1793872479585,
+      "tag": "0002_fixed_silver_centurion",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1793877718544,
+      "tag": "0003_bitter_titanium_man",
+      "breakpoints": true
     }
   ]
 }

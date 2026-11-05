@@ -4,3 +4,5 @@ export * from "./households";
 export * from "./access";
 export * from "./operations";
 export * from "./home-assistant";
+export * from "./features";
+export * from "./automation";

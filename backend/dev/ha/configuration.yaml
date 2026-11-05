@@ -13,9 +13,11 @@ config:
 person:
 history:
 logbook:
+sun:
+conversation:
+input_select:
 recorder:
   commit_interval: 1
-  db_url: "sqlite:///:memory:"
 
 # Fake devices: lights, switches, climate, covers, sensors, etc.
 demo:
@@ -36,10 +38,14 @@ scene:
   - name: Test Scene
     entities:
       input_boolean.test_switch: "on"
-script:
-  test_script:
-    alias: Test Script
-    sequence:
-      - action: input_boolean.toggle
-        target:
-          entity_id: input_boolean.test_switch_2
+# Scripts and automations are edited through Home Assistant's config API (as the UI does), so they live in files it can write.
+script: !include scripts.yaml
+automation: !include automations.yaml
+
+# A door sensor driven by a helper, so a test can open and close a "door" without hardware.
+template:
+  - binary_sensor:
+      - name: Test door
+        unique_id: alice_test_door
+        device_class: door
+        state: "{{ is_state('input_boolean.test_switch', 'on') }}"

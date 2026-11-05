@@ -1,6 +1,6 @@
 # Alice Backend — API
 
-Status: draft v1. Base path `/api/v1` (implemented: auth, users, household, permissions, `/admin/security`, `/ha/connection*`, `/devices*`, `/entities/*/role`, `/areas`, `/commands*`; other areas are stubs. `/ws` realtime. Not yet: activity, settings, undo, favorites). JSON everywhere. OpenAPI is generated at `/docs`. Realtime on `/ws`. See [ARCHITECTURE.md](./ARCHITECTURE.md).
+Status: draft v1. Base path `/api/v1` (implemented: auth, users, household, permissions, `/admin/security`, `/ha/connection*`, `/devices*`, `/entities/*/role`, `/areas`, `/commands*`; other areas are stubs. `/ws` realtime, favorites, groups, scenes, routines, modes, device settings. automations, notifications, alerts, insights, `/admin/config-sync`. Not yet: activity, energy, history, backups, updates, AI, undo). JSON everywhere. OpenAPI is generated at `/docs`. Realtime on `/ws`. See [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 ## Conventions
 
@@ -35,7 +35,9 @@ Status: draft v1. Base path `/api/v1` (implemented: auth, users, household, perm
 |---|---|---|
 | `GET /users/me`, `PATCH /users/me` | any | Profile |
 | `GET /users/me/preferences`, `PATCH …` | any | Quiet hours, push toggles |
-| `POST /users/me/push-subscriptions`, `DELETE …/:id` | any | Register device for push |
+| `GET /users/me/push-subscriptions` | A,M,G | Your devices (never their tokens), which push channels the server supports (`webpush`, `fcm`) and the Web Push public key |
+| `POST /users/me/push-subscriptions` | A,M,G | `{ platform: "webpush", token: endpoint, keys: { p256dh, auth }, label? }` or `{ platform: "fcm", token, label? }`. Web Push endpoints must be https on a known push service. Max 10 per person |
+| `DELETE /users/me/push-subscriptions/:id`, `POST /users/me/push-subscriptions/test` | A,M,G | Remove a device; send a test push to yours |
 
 ## Household, members, invitations, permissions
 
@@ -43,6 +45,8 @@ Status: draft v1. Base path `/api/v1` (implemented: auth, users, household, perm
 |---|---|---|
 | `GET /household`, `PATCH /household` | A (read: all) | Name, timezone |
 | `GET /household/members` | A,M | Members with role, presence, expiry |
+| `GET /household/people` | A,M | Members with their linked Home Assistant person, whether they are home (null if not linked), a suggested person when the names match, and unlinked persons |
+| `PUT /household/people/:userId` | A† | `{ personEntityId: string \| null }` link or unlink a member. A person belongs to one member. Once anything is linked only linked non-guest members count for presence |
 | `PATCH /household/members/:id` | A† | Change role, expiry, device visibility |
 | `DELETE /household/members/:id` | A† | Remove member |
 | `GET /household/invitations` | A | Open invitations |
@@ -125,30 +129,41 @@ States: `pending, authorized, dispatched, accepted, confirmed, failed, timed_out
 
 ## Areas, groups, favorites
 
+Implemented. Everything here is filtered by what you may see: a device you cannot see is absent, and a group or scene made only of such devices does not exist for you.
+
 | Method & path | Perm | Purpose |
 |---|---|---|
-| `GET /areas`, `GET /areas/:id`, `GET /areas/:id/devices` | A,M,G (filtered) | Rooms and their devices |
-| `GET /groups`, `POST /groups` | A,M | List / create |
-| `PATCH /groups/:id`, `DELETE /groups/:id` | A,M | Edit / delete |
-| `POST /groups/:id/commands` | per member devices | Fan-out command; returns array of commands |
-| `GET /favorites`, `PUT /favorites` | any | Own ordered favorites (`PUT` replaces the list) |
+| `GET /areas`, `GET /areas/:id/devices` | A,M,G (filtered) | Rooms with the number of devices you can see, and their devices |
+| `GET /groups`, `GET /groups/:id` | A,M,G | Groups with the devices of each that you can see; guests only get groups that hold something of theirs |
+| `POST /groups` | A,M | `{ name, icon?, thingIds[] }`; every device must be visible to you (max 100) |
+| `PATCH /groups/:id`, `DELETE /groups/:id` | A,M | Rename, change members, delete |
+| `POST /groups/:id/commands` | A,M,G (per device) | `{ action, parameters?, target?: "first"\|"all" }` runs one operation on each member, as you. Each device uses its first visible entity that supports it (main entity, other main entities, then controls); `target: "all"` uses every supporting entity. `202` with `{ commands, skipped }`; unsupported members are listed in `skipped` |
+| `GET /favorites`, `PUT /favorites` | A,M,G | Your own favorites in your order. `PUT { thingIds[] }` replaces the list (max 50). Devices also carry `favorite: true/false`, and `GET /devices?favorite=true` filters to them |
+| `PATCH /devices/:id/settings` | A | `{ entityId?, powerLimitW? (1-100000 or null), voiceExposed? }` for the main entity. Shown as `settings` on the device, with `voiceSync` (`none`, `pending`, `synced`, `failed`). A power limit raises alerts at 90%; voice exposure is applied in Home Assistant's Assist |
 
 ## Scenes, routines, automations, modes
 
+Scenes, routines and modes are implemented; automations are not.
+
 | Method & path | Perm | Purpose |
 |---|---|---|
-| `GET /scenes`, `POST /scenes` | A,M | List / create (compiled to HA via config-worker) |
+| `GET /scenes`, `GET /scenes/:id` | A,M,G | Guests only see scenes that touch a device of theirs, and not what is in them |
+| `POST /scenes` | A,M | Also mirrored to Home Assistant as a script (`haScript` shows `not_synced`, `pending`, `synced` or `failed` and why). `{ name, icon?, description?, actions: [{ entityId, action, parameters? }] }`, max 50. Every action is checked: real, visible to you, supported, valid; sensitive ones need a fresh passkey to save |
 | `PATCH /scenes/:id`, `DELETE /scenes/:id` | A,M | |
-| `POST /scenes/:id/activate` | A,M (G if allowed) | Runs as commands per target; returns `202` with command ids |
-| `GET /routines`, `POST /routines`, `PATCH /routines/:id`, `DELETE …` | A,M | Reusable action sequences |
-| `POST /routines/:id/execute` | A,M | Run now |
-| `GET /automations`, `POST /automations`, `GET /automations/:id` | A,M | |
-| `PATCH /automations/:id`, `DELETE /automations/:id` | A,M | |
-| `POST /automations/:id/enable` / `disable` | A,M | |
-| `POST /automations/:id/test` | A,M | Dry run: returns the plain-language summary and the actions that would run; changes nothing |
-| `GET /automations/:id/runs` | A,M | Recent runs |
-| `GET /household/mode` | any | `{ mode, changedAt, changedBy, suggestion? }` |
-| `PUT /household/mode` | A,M (`†` to leave Away/Vacation for Home if configured) | `{ mode: "home"|"away"|"night"|"vacation" }` |
+| `POST /scenes/:id/activate` | A,M,G | Starts every action at once **as you**. `202` with `{ commands, skipped }`; devices that are gone or not yours are skipped, refusals and step-up requirements appear as failed commands |
+| `GET /routines`, `GET /routines/:id` | A,M | |
+| `POST /routines` | A,M | `{ name, icon?, onFailure?: "continue"\|"stop", steps[] }`. Steps: `{ type: "device", entityId, action, parameters? }`, `{ type: "scene", sceneId }`, `{ type: "mode", mode }`, `{ type: "delay", seconds }` (1-3600). Max 50 steps |
+| `PATCH /routines/:id`, `DELETE /routines/:id` | A,M | |
+| `POST /routines/:id/execute` | A,M | Runs the steps in order as you. `202` with a run |
+| `GET /routines/runs/:runId`, `POST /routines/runs/:runId/cancel` | starter, admins | Progress (`running`, `completed`, `failed`, `stopped`, `cancelled`, with each step's state and any problems) and cancel. A passkey confirmation only covers steps that start within 5 minutes of the run starting |
+| `GET /household/mode` | A,M,G | `{ mode, changedAt, changedBy, mirror: { status: "active"\|"waiting"\|"unavailable", reason }, suggestion }`. `mirror` says whether Home Assistant follows the mode through `input_select.alice_household_mode` (needs an admin token and the worker). `suggestion` is for members and admins only. A change made in Home Assistant arrives with `changedBy: null` |
+| `PUT /household/mode` | A,M | `{ mode: "home"\|"away"\|"night"\|"vacation" }`; pushed to `/ws` subscribers of `household` as `household.mode_changed` |
+| `GET /automations`, `GET /automations/:id` | A,M | With a plain-language `summary` and `haAutomation` sync state. Guests have no access |
+| `POST /automations` | A,M | `{ name, enabled?, definition }` (format below). Checked, saved, compiled to a Home Assistant automation by the config-worker |
+| `PATCH /automations/:id`, `DELETE /automations/:id` | A,M | Edit recompiles; delete removes it from Home Assistant |
+| `POST /automations/:id/enable` / `disable` | A,M | Applied in Home Assistant too |
+| `POST /automations/preview`, `POST /automations/:id/test` | A,M | Dry run: the summary, the Home Assistant config that would be sent, and warnings. Saves and runs nothing |
+| `GET /automations/:id/runs` | A,M | When Home Assistant ran it |
 
 **Automation definition** (our schema, versioned):
 
@@ -164,19 +179,27 @@ States: `pending, authorized, dispatched, accepted, confirmed, failed, timed_out
 }
 ```
 
+A member can be the subject of an arrival: `{ "type": "arrive", "userId": "usr_…" }` follows whichever Home Assistant person that member is linked to. Saving an automation with a sensitive action (such as unlock) needs an admin with a fresh passkey; it is shown in `sensitiveActions` and admins get an urgent notification each time it runs. Scripts, scenes, routines and automations show `haScript` / `haAutomation` status `drifted` when they were changed in Home Assistant.
+
 Triggers (from the UI): `arrive, leave, time, sunset, door_opens, motion, power_over_limit`. Conditions: `dark, someone_home, days (any|weekdays|weekends), mode`. Actions: `turn_on, turn_off, set_brightness, set_temperature, lock, notify, run_scene`. The server renders the plain-language summary (`"When someone gets home, if it is dark, …"`) so clients do not have to.
 
 ## Activity, notifications, alerts
 
+Notifications and alerts are implemented (in-app and over `/ws`; delivery to a phone's push service is not). Activity is not built yet.
+
 | Method & path | Perm | Purpose |
 |---|---|---|
-| `GET /activity?cursor=&kind=` | A,M | Household timeline |
-| `POST /activity/seen` | any | Update last-seen marker; clears "new" count |
-| `GET /notifications`, `POST /notifications/:id/read`, `POST /notifications/read-all` | A,M | In-app notifications |
-| `GET /alerts` | A,M | Active alerts (power near limit, door left open, backup unverified), with acknowledge |
-| `POST /alerts/:id/ack` | A,M | Acknowledge / snooze |
+| `GET /notifications?unread=&limit=&before=` | A,M | Your notifications, newest first, with `unread` count |
+| `POST /notifications/:id/read`, `POST /notifications/read-all` | A,M | Mark read (yours only) |
+| `GET /alerts?includeCleared=` | A,M | Active alerts for devices you can see. Today: `power_limit`, raised at 90% of a device's limit and cleared below 85% |
+| `POST /alerts/:id/ack` | A,M | "Seen". It stays until usage drops |
+| `GET /activity`, `POST /activity/seen` | A,M | Not built yet |
+
+Notifications come from power alerts and from automations' `notify` action (Home Assistant fires `alice_notification`, Alice stores one per recipient). Guests receive none.
 
 ## Energy, history, insights
+
+Insights are implemented for one thing so far: household mode suggestions. Energy and history are not built.
 
 | Method & path | Perm | Purpose |
 |---|---|---|
@@ -184,8 +207,8 @@ Triggers (from the UI): `arrive, leave, time, sunset, door_opens, motion, power_
 | `GET /energy/history?from=&to=&resolution=hour|day` | A,M | Aggregated consumption |
 | `GET /energy/devices` | A,M | Per-device consumption and limits |
 | `GET /history/entities/:id?from=&to=` | A,M | State history proxied from HA's recorder (read-only) |
-| `GET /insights` | A,M | Deterministic insights (mode suggestions, anomalies) |
-| `POST /insights/:id/dismiss` | A,M | Snooze a suggestion |
+| `GET /insights` | A,M | Deterministic suggestions, e.g. `{ id: "mode:away", title: "Switch to Away mode?", reason: "Everyone has left.", action: { type: "set_mode", mode: "away" } }`. Rules: everyone gone and mode Home suggests Away; night time and mode Home suggests Night; someone home and mode Away suggests Home; morning and mode Night suggests Home |
+| `POST /insights/:id/dismiss` | A,M | "Not now": hidden for 6 hours |
 
 ## AI (later)
 
@@ -195,6 +218,12 @@ Triggers (from the UI): `arrive, leave, time, sunset, door_opens, motion, power_
 | `POST /ai/plans/:id/confirm` | A,M† | Confirm a planned multi-step action |
 
 ## Backups, updates, administration
+
+| Method & path | Perm | Purpose |
+|---|---|---|
+| `GET /admin/config-sync` | A | `{ connected, adminTokenSet, workerOnline, workerLastSeenAt, pendingJobs, failedJobs, canApply }`: whether scenes, routines, automations, the mode helper and voice exposure can reach Home Assistant |
+| `POST /admin/config-sync/resync` | A | Queue everything that is not in Home Assistant yet, failed to get there, or drifted |
+| `POST /admin/config-sync/verify` | A | Read back what Alice put in Home Assistant and mark anything edited, removed or switched off there as `drifted` (also runs every 15 minutes). `GET /admin/config-sync` includes a `drifted` count |
 
 | Method & path | Perm | Purpose |
 |---|---|---|
@@ -226,7 +255,7 @@ Implemented. `GET /ws` (WebSocket upgrade, at the root, not under `/api/v1`). It
 | `subscribe` / `unsubscribe` | `resource`, `id?` | Answered with `subscribed` / `unsubscribed` (or `error`) carrying your `requestId` |
 | `ping` | - | Answered with `pong` |
 
-Resources: `devices` (every device you may see), `device` + `id` (one Thing id), `area` + `id` (an HA area id), `commands` (your commands; admins: all), `household` (connection health, admins only receive it). `notifications`, `activity` and `alerts` are reserved and answer `unknown_resource` until those modules exist. Subscribing to a device you cannot see answers `not_found`, exactly like one that does not exist.
+Resources: `devices` (every device you may see), `device` + `id` (one Thing id), `area` + `id` (an HA area id), `commands` (your commands; admins: all), `household` (mode changes for everyone, `insights.changed` for members, connection health for admins), `alerts` (members and admins; only alerts about devices you can see), `notifications` (your own). `activity` is reserved and answers `unknown_resource`. Subscribing to a device you cannot see answers `not_found`, exactly like one that does not exist.
 
 **Server to client**
 
@@ -240,6 +269,11 @@ Resources: `devices` (every device you may see), `device` + `id` (one Thing id),
 | `devices.changed` | `{ reason: "inventory" \| "overrides" \| "permissions" }`. The set or shape of devices changed (resync, rename, hide, merge, split, policy). Refetch `GET /devices` |
 | `command.created`, `command.authorized`, `command.dispatched`, `command.accepted`, `command.confirmed`, `command.failed`, `command.timed_out`, `command.cancelled` | the command in public form (same as `GET /commands/:id`) |
 | `connection.connected`, `connection.disconnected` | `{ connectionId, status, error? }`, admins subscribed to `household` |
+| `household.mode_changed` | `{ mode, previous, changedBy }`, everyone subscribed to `household` |
+| `presence.changed` | `{ userId \| null, personEntityId, home }` when a person arrives or leaves; members and admins subscribed to `household` (not guests) |
+| `insights.changed` | `{}`; refetch `GET /insights` (members and admins subscribed to `household`) |
+| `alert.created`, `alert.cleared` | the alert (as `GET /alerts`), to members and admins subscribed to `alerts` who can see the device |
+| `notification.created` | the notification, to its recipient subscribed to `notifications` |
 
 Rules the server enforces on every event: you only receive updates for entities you may see (guests: allowed devices only; denied devices never), diagnostics and config entities and hidden devices are not pushed, and commands go only to the person who sent them (and admins). Roles are re-read every couple of seconds, and sockets whose session ended are closed by a 15 s sweep (`4401`).
 

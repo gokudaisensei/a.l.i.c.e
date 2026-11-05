@@ -1,2 +1,3 @@
-export { notificationsController } from "./controller";
-export { notificationsService } from "./service";
+export { alertsController, notificationsController } from "./notifications.controller";
+export { NotificationsService, type NotificationView } from "./notifications.service";
+export { AlertsService, type AlertView } from "./alerts.service";

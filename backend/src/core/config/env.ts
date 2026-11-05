@@ -31,4 +31,12 @@ export const env = {
   trustProxy: bool("TRUST_PROXY", false),
   /** 32-byte base64 key that encrypts stored Home Assistant tokens. Generate: openssl rand -base64 32 */
   secretsKey: process.env.SECRETS_KEY ?? null,
+  /** Main server: seals the HA admin token so only the config-worker can read it. */
+  adminSealPublicKey: process.env.ADMIN_SEAL_PUBLIC_KEY ?? null,
+  /** Config-worker only. */
+  adminSealPrivateKey: process.env.ADMIN_SEAL_PRIVATE_KEY ?? null,
+  /** Web Push (VAPID). Generate with `bun run keys:generate`. */
+  vapid: process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY ? { publicKey: process.env.VAPID_PUBLIC_KEY, privateKey: process.env.VAPID_PRIVATE_KEY, subject: process.env.VAPID_SUBJECT ?? "mailto:admin@localhost" } : null,
+  /** Firebase Cloud Messaging service account, as base64 of the JSON key file. */
+  fcmServiceAccount: process.env.FCM_SERVICE_ACCOUNT ?? null,
 } as const;

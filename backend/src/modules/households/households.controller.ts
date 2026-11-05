@@ -8,7 +8,7 @@ import type { Services } from "@/services";
 
 const role = t.Union([t.Literal("admin"), t.Literal("member"), t.Literal("guest")]);
 
-export const householdsController = ({ db, auth, households }: Services) =>
+export const householdsController = ({ db, auth, households, presence }: Services) =>
   new Elysia({ name: "module.households", prefix: "/household", tags: ["households"] })
     .use(sessionPlugin(auth, households))
     .get("/", (ctx) => {
@@ -42,6 +42,16 @@ export const householdsController = ({ db, auth, households }: Services) =>
       writeAudit(db, { householdId: membership.householdId, actorId: session.userId, action: "household.member_removed", resource: ctx.params.id });
       return { ok: true };
     })
+    // ---- who is home ----
+    .get("/people", (ctx) => presence.people(requirePermission(ctx, "members.view").membership.householdId), {
+      detail: { summary: "Household members with which Home Assistant person they are linked to and whether they are home" },
+    })
+    .put("/people/:userId", (ctx) => {
+      const { membership, session } = requirePermission(ctx, "members.manage");
+      requireStepUp(session);
+      presence.link(membership.householdId, session.userId, ctx.params.userId, ctx.body.personEntityId);
+      return presence.people(membership.householdId);
+    }, { body: t.Object({ personEntityId: t.Nullable(t.String()) }), detail: { summary: "Link a member to a Home Assistant person (or null to unlink)" } })
     // ---- invitations ----
     .get("/invitations", (ctx) => ({ invitations: households.listInvitations(requirePermission(ctx, "members.manage").membership.householdId) }))
     .post("/invitations", (ctx) => {

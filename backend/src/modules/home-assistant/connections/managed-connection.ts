@@ -4,7 +4,7 @@ import type { EventBus, Unsubscribe } from "@/core/events/event-bus";
 import { HaAuthError } from "../clients/ha-ws-gateway";
 import { discover } from "../discovery/discovery";
 import type { Inventory } from "../discovery/inventory";
-import { normalizeRegistryEvent, normalizeStateChanged, REGISTRY_EVENT_TYPES } from "../events/normalizer";
+import { normalizeAliceNotification, normalizeAutomationTriggered, normalizeRegistryEvent, normalizeStateChanged, REGISTRY_EVENT_TYPES } from "../events/normalizer";
 import type { HaConnectionConfig, HomeAssistantGateway } from "../gateway";
 import { StateCache } from "../state/state-cache";
 import type { ConnectionStatus } from "../types";
@@ -70,6 +70,7 @@ export class ManagedConnection {
     this.backoff.reset();
     this.lastError = null;
     await this.subscribe();
+    await this.subscribeAliceEvents();
     await this.sync();
     this.ready = true;
     this.bus.publish({ type: "connection.connected", ...this.scope(), status: "connected" });
@@ -99,6 +100,15 @@ export class ManagedConnection {
           this.scheduleResync();
         }),
       );
+    }
+  }
+
+  private async subscribeAliceEvents() {
+    for (const [type, normalize] of [["alice_notification", normalizeAliceNotification], ["automation_triggered", normalizeAutomationTriggered]] as const) {
+      this.unsubs.push(await this.gateway.subscribeEvents(type, (raw) => {
+        const e = normalize({ householdId: this.config.householdId, connectionId: this.config.id }, raw);
+        if (e) this.bus.publish(e);
+      }));
     }
   }
 

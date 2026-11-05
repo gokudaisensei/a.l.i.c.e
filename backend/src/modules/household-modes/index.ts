@@ -1,2 +1,2 @@
-export { householdModesController } from "./controller";
-export { householdModesService } from "./service";
+export { householdModesController } from "./modes.controller";
+export { ModesService, type ModeState } from "./modes.service";

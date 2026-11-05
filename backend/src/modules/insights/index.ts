@@ -1,2 +1,2 @@
-export { insightsController } from "./controller";
-export { insightsService } from "./service";
+export { insightsController } from "./insights.controller";
+export { InsightsService, timeOfDay, type Insight } from "./insights.service";

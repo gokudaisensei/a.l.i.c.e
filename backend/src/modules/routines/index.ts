@@ -1,2 +1,2 @@
-export { routinesController } from "./controller";
-export { routinesService } from "./service";
+export { routinesController } from "./routines.controller";
+export { RoutinesService, type RoutineRun } from "./routines.service";
