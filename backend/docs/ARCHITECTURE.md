@@ -13,6 +13,7 @@ Status: draft v1. Companion docs: [DATABASE.md](./DATABASE.md), [API.md](./API.m
 | Realtime to clients | Elysia WebSocket `/ws`, per-resource subscriptions, permission-filtered |
 | Database | SQLite (WAL) via Drizzle |
 | Auth | Passkeys (WebAuthn), DB-backed revocable sessions |
+| Device model | Users see **Things** (one card per physical device), not raw HA entities. Roles, names and grouping are deterministic defaults that user overrides beat; any LLM assist is suggestion-only and off by default |
 | Out of scope for now | OpenTelemetry, Docker deployment, AI implementation, multi-instance behaviour |
 
 ## 2. Ownership boundaries
@@ -66,6 +67,7 @@ backend/src/
   modules/     one folder per domain (routes, service, schemas, types)
     home-assistant/
       clients/ connections/ discovery/ state/ commands/ capabilities/ events/
+      things/    (role classifier, name cleaner, grouping, Thing builder, alias index)
   realtime/    ws gateway, subscriptions, broadcaster
   workers/     job-runner (in-process jobs)
 backend/config-worker/   separate entry point, its own admin credential
@@ -86,6 +88,26 @@ Dependency rule: `core` depends on nothing; modules depend on `core` and on othe
 **State cache.** In-memory map of the latest `EntityProjection` per entity; optionally persisted for fast startup. Never authoritative.
 
 **Capability registry.** Capabilities are derived from entity domain, attributes and `supported_features` (not hardcoded per domain). They drive UI controls, command validation, permissions and AI tools.
+
+**Things (device model).** Home Assistant names and entities are not user-friendly (`friendly_name` often includes the device, area, integration artifacts and numeric suffixes), and one physical device exposes many entities. Example: a custom-flashed Echo Show running as an ESPHome device exposes a speaker, media player, camera, mic-mute switch and camera-shutter state as separate entities. The shutter state is not a device at all; it is a property of the camera. The UI works with **Things**, built by a pure `buildThings(inventory, overrides)` step on top of `buildInventory` (deterministic, fixture-tested, no I/O). Commands still target entities; only presentation, naming and permissions work at the Thing level.
+
+1. **Structural grouping.** Group by HA `device_id`. Use `via_device_id` for hub/child links (bridge and bulbs). Merge devices that share a hardware identifier in the device registry `connections`/`identifiers` (for example the same MAC through two integrations). Entities with no device (helpers, templates, YAML) are their own Thing unless a rule or the user says otherwise.
+2. **Entity roles.** Every entity gets one role from registry flags (`entity_category`, `hidden_by`, `disabled_by`), `device_class`, domain and, as a last resort, name tokens:
+
+   | Role | Examples | Shown as |
+   |---|---|---|
+   | `primary` | media_player, camera, light, climate, lock, fan, cover | The Thing's card and main controls |
+   | `control` | mic-mute switch, volume number, mode select | Controls on the card |
+   | `facet` | camera shutter state, "mic muted", privacy state | A property of the primary (`camera.privacy_shutter = closed`), never its own tile |
+   | `sensor` | temperature, power, humidity | Readings on the card |
+   | `diagnostic` / `config` | Wi-Fi signal, uptime, IP address | Hidden under "Details" |
+
+   A facet that cannot be attached to a primary falls into Details rather than the main list. Sensitive facets (camera shutter, mic mute) are flagged for permissions.
+3. **Names.** Three fields: source name (HA), computed `display_name`, user override; precedence override, computed, source. Cleaning is deterministic: strip the device-name prefix when `has_entity_name` is set, strip the area-name prefix ("Living room Floor lamp" in the Living room becomes "Floor lamp"), remove `_2`/`None` artifacts, fix casing, de-duplicate. The cleaner also emits search aliases (including synonym groups such as light/lamp/bulb) into an alias index used by search, voice and AI to resolve phrases like "kitchen lamp".
+4. **Suggestions (smart layer).** Local heuristics (tokenizing, fuzzy matching, synonyms) are always on. An optional background job may use an LLM or embeddings for the ambiguous leftovers (orphan entities, helpers, odd names). It writes proposals to a `suggestions` table that an admin accepts or rejects; accepted ones become overrides. It never regroups silently, never runs on the control path, sends only entity ids, names and attributes, can use a local model, and is off by default.
+5. **Overrides.** Users can rename, hide, re-role, merge and split. They are stored in app tables keyed by `(connection_id, entity_id)` or HA device id, so they survive resync. Every automatic decision is a default that an override beats, because heuristics will sometimes be wrong.
+
+Capabilities are aggregated per Thing for the UI and for permissions. Guest visibility and device policies apply at Thing level and facets inherit them.
 
 **Command executor.** The only path for device control (UI, automations, AI, background jobs):
 
@@ -158,13 +180,14 @@ Features the current mock UI needs from the backend:
 
 ## 14. Build order
 
-1. HA Gateway, connections, discovery, state cache, capabilities (against the mock HA)
-2. Event bus and normalizer; command executor (stub authorizer)
-3. Identity: users, passkeys, sessions, households, memberships, permissions; replace the stub authorizer
-4. `/ws` realtime, devices/areas/groups/favorites APIs
-5. Scenes, routines, modes, config-worker, automations
-6. Activity, notifications, energy, history, insights
-7. Backups, updates, admin; then AI (tool layer over the command pipeline with risk classes)
+1. HA Gateway, connections, discovery, state cache, capabilities, event normalizer (done, against the mock HA)
+2. **Things:** extend registry fetch (`entity_category`, `device_class`, `has_entity_name`, `translation_key`, device `connections`/`identifiers`/`via_device_id`), role classifier, name cleaner, grouping, `buildThings`; fixtures including an ESPHome Echo-style device and the demo HA
+3. Command executor (stub authorizer), using Thing-level targeting and facets
+4. Identity: users, passkeys, sessions, households, memberships, permissions; replace the stub authorizer
+5. Overrides (rename/hide/re-role/merge/split), Things API, `/ws` realtime, areas/groups/favorites APIs; alias index and fuzzy resolver
+6. Scenes, routines, modes, config-worker, automations
+7. Activity, notifications, energy, history, insights
+8. Backups, updates, admin; then AI (tool layer over the command pipeline with risk classes) and the LLM suggestion job
 
 ## 15. Resolved questions
 

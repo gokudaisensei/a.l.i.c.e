@@ -63,20 +63,46 @@ Status: draft v1. Base path `/api/v1`. JSON everywhere. OpenAPI is generated at 
 
 There is no endpoint that proxies arbitrary HA calls.
 
-## Devices, capabilities, commands
+## Things, capabilities, commands
+
+The API exposes **Things** (one per physical device), not raw HA entities. In URLs and payloads `:id` is a Thing id. Commands still target entities inside a Thing, so a command may name any control entity in the Thing (for example the mic-mute switch).
 
 | Method & path | Perm | Purpose |
 |---|---|---|
-| `GET /devices?area=&type=&q=&favorite=` | A,M,G (filtered) | Inventory with current state and capabilities |
-| `GET /devices/:id` | A,M,G | Detail, current projection |
-| `GET /devices/:id/capabilities` | A,M,G | Capabilities and allowed operations |
-| `PATCH /devices/:id/settings` | A | Display name, power limit, voice exposure, guest visibility, hidden |
-| `POST /devices/:id/commands` | A,M,G (per policy); `†` for lock/unlock-type operations | `{ action, parameters }` → `202 Command` |
-| `GET /devices/:id/activity` | A,M | Recent events for the device |
+| `GET /devices?area=&type=&q=&favorite=` | A,M,G (filtered) | Things with display name, area, primary capability, current values, facets and controls. `q` searches names and aliases |
+| `GET /devices/:id` | A,M,G | Thing detail: primary, `controls`, `facets`, `sensors`, hidden `diagnostics` (`?include=diagnostics`), underlying entities |
+| `GET /devices/:id/capabilities` | A,M,G | Aggregated capabilities and allowed operations, per entity |
+| `PATCH /devices/:id/settings` | A | Power limit, voice exposure, guest visibility |
+| `PATCH /devices/:id/name` | A,M | User display-name override (`null` clears it) |
+| `POST /devices/:id/hide`, `POST /devices/:id/unhide` | A | Hide a Thing from lists |
+| `POST /devices/merge` | A† | `{ ids: [thingId, …] }` merge into one Thing |
+| `POST /devices/:id/split` | A† | `{ entityIds: […] }` move entities out into their own Thing |
+| `PUT /entities/:entityId/role` | A | `{ role, attachTo? }` force a role, or attach a facet to a primary |
+| `GET /suggestions?status=pending` | A | Proposed names, roles, merges and attachments |
+| `POST /suggestions/:id/accept`, `POST /suggestions/:id/reject` | A | Accept writes the override; reject is remembered |
+| `POST /suggestions/run` | A | Queue the (optional, off by default) LLM suggestion job |
+| `POST /devices/:id/commands` | A,M,G (per policy); `†` for lock/unlock-type operations | `{ entityId?, action, parameters }`; `entityId` defaults to the primary and must belong to the Thing. Returns `202 Command` |
+| `GET /devices/:id/activity` | A,M | Recent events for the Thing (all its entities) |
 | `GET /commands/:id` | owner or A | Command with lifecycle state |
 | `POST /commands/:id/cancel` | owner or A | Cancel while `pending`/`authorized` |
 | `POST /commands/:id/undo` | owner or A | Compensating command from `actual_state` |
 | `GET /commands?state=&limit=` | A | Command log |
+
+**Thing object (abridged)** for an Echo-style ESPHome device:
+
+```json
+{
+  "id": "thing_01J…", "name": "Kitchen display", "area": "kitchen",
+  "nameSource": "computed", "sourceName": "echolocal kitchen Media Player",
+  "primary": { "entityId": "media_player.kitchen_display", "values": { "power": true } },
+  "controls": [ { "entityId": "switch.kitchen_display_mic_mute", "name": "Microphone mute", "values": { "power": true }, "sensitive": true } ],
+  "facets": [ { "key": "privacy_shutter", "entityId": "binary_sensor.kitchen_display_camera_shutter", "value": "closed", "sensitive": true } ],
+  "sensors": [],
+  "diagnostics": { "count": 3 }
+}
+```
+
+Facets are properties, not devices: they appear on their primary and never as their own item in `GET /devices`.
 
 **Command object**
 

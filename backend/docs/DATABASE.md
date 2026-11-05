@@ -21,6 +21,7 @@ users ─< sessions
 households ─< household_members >─ users
 households ─< invitations
 households ─< ha_connections ─< ha_areas / ha_devices / ha_entities ─< ha_entity_capabilities
+households ─< thing_overrides, thing_links, entity_overrides, suggestions, alias_index
 households ─< groups ─< group_members
 households ─< scenes, routines ─< routine_actions, automations
 households ─< commands ─< command_attempts
@@ -55,10 +56,26 @@ households ─< activity_events, notifications, audit_log, jobs, config_jobs
 |---|---|---|
 | `ha_connections` | id, household_id, name, base_url, operational_token_enc, admin_token_enc?, status, last_connected_at, last_error, ha_version, created_at | Admin token is only decrypted by the config-worker |
 | `ha_areas` | id, connection_id, ha_area_id, name, floor?, UNIQUE(connection_id, ha_area_id) | Rooms |
-| `ha_devices` | id, connection_id, ha_device_id, area_id?, name, manufacturer, model, hw_label, UNIQUE(connection_id, ha_device_id) | `hw_label` is the "Hue Bridge" style text |
-| `ha_entities` | id, connection_id, entity_id, device_id?, area_id?, domain, name, state, attributes json, availability, last_changed, last_updated, last_synced_at, UNIQUE(connection_id, entity_id) | Latest-state projection; indexes on (connection_id, domain) and area_id |
+| `ha_devices` | id, connection_id, ha_device_id, area_id?, name, manufacturer, model, hw_label, via_device_id?, identifiers json, connections json, UNIQUE(connection_id, ha_device_id) | `hw_label` is the "Hue Bridge" style text; `via_device_id`, `identifiers`, `connections` drive hub/child links and cross-integration merging |
+| `ha_entities` | id, connection_id, entity_id, device_id?, area_id?, domain, name, entity_category?, device_class?, has_entity_name, translation_key?, platform?, role, name_clean, aliases json, state, attributes json, availability, last_changed, last_updated, last_synced_at, UNIQUE(connection_id, entity_id) | Latest-state projection plus derived classification: `role` (`primary`/`control`/`facet`/`sensor`/`diagnostic`/`config`), `name_clean`, `aliases`. Derived columns are recomputed on every sync; overrides live in `entity_overrides` |
 | `ha_entity_capabilities` | entity_id (FK), capability, operations json, metadata json, PK(entity_id, capability) | Derived, rebuilt on discovery |
 | `entity_settings` | connection_id, entity_id (HA id string, no FK), display_name?, power_limit_w?, voice_exposed, guest_visible, hidden | PK(connection_id, entity_id). Application overrides that survive resync |
+
+## Things: overrides and suggestions
+
+A **Thing** is one card per physical device, computed from the projection plus these overrides (see ARCHITECTURE.md, "Things"). Nothing here is authoritative about HA; all keys are HA id strings so a projection rebuild never orphans them.
+
+| Table | Columns | Notes |
+|---|---|---|
+| `thing_overrides` | id, household_id, connection_id, ha_device_id? , root_entity_id?, display_name?, hidden, area_override?, updated_by, updated_at | One row per Thing the user customised. A Thing is identified by an HA device id, or by `root_entity_id` for entities with no device |
+| `thing_links` | id, household_id, connection_id, kind (`merge`/`split`), from_ref, into_ref, created_by, created_at | Manual merge of two devices (or loose entities) into one Thing, or split an entity out of its device's Thing. Beats automatic grouping |
+| `entity_overrides` | connection_id, entity_id, role?, display_name?, attach_to_entity_id?, hidden?, PK(connection_id, entity_id) | Manual role, name and facet attachment (e.g. force "Camera shutter" to attach to the camera) |
+| `suggestions` | id, household_id, kind (`name`/`role`/`merge`/`attach`), subject json, proposal json, confidence, source (`heuristic`/`llm`), status (`pending`/`accepted`/`rejected`), created_at, decided_by?, decided_at? | Smart-layer output. Accepting a suggestion writes the matching override; rejected ones are remembered so they are not re-proposed |
+| `alias_index` | household_id, connection_id, entity_id, alias, weight, source (`derived`/`user`) | Search terms and synonyms for resolving "kitchen lamp" to a Thing; rebuilt from names, areas and user aliases |
+
+**Thing ids** are not stored as rows of their own. They are stable, derived ids: a hash of `(connection_id, ha_device_id)` for device-backed Things, or of `(connection_id, entity_id)` for loose entities, and a merge keeps the id of its first member. That keeps them stable across resyncs.
+
+Precedence everywhere: **user override, then computed value, then HA source value.**
 
 ## Application features
 
@@ -110,4 +127,4 @@ households ─< activity_events, notifications, audit_log, jobs, config_jobs
 
 - Drizzle Kit generates SQL migrations in `drizzle/`, applied at startup by `src/core/database/migrate.ts` (and by `bun run db:migrate`).
 - Backups use `VACUUM INTO` / SQLite online backup, not file copy of a live WAL database.
-- `ha_*` tables can be truncated safely; discovery repopulates them on next connect. Application data that must survive (`entity_settings`, `favorites`, `group_members`, `device_policies`) references entities by `(connection_id, entity_id)` strings, not by `ha_entities` row ids, so a rebuild never orphans it.
+- `ha_*` tables can be truncated safely; discovery repopulates them on next connect. Application data that must survive (`entity_settings`, `thing_overrides`, `thing_links`, `entity_overrides`, `favorites`, `group_members`, `device_policies`) references entities by `(connection_id, entity_id)` strings, not by `ha_entities` row ids, so a rebuild never orphans it.
