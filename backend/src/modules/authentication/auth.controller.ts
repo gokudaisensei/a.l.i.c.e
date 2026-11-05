@@ -1,5 +1,6 @@
 import { Elysia, t } from "elysia";
 import { env } from "@/core/config/env";
+import { clientIp, enforce } from "@/core/http/rate-limit";
 import { COOKIE, requireMember, requireSession, requireStepUp } from "@/core/http/guards";
 import { sessionPlugin } from "@/core/http/session-plugin";
 import type { Services } from "@/services";
@@ -8,20 +9,31 @@ import type { SignedIn } from "./auth.service";
 const anyJson = t.Any();
 
 /** Authentication routes. `/auth/*` is the only public surface besides /health. */
-export const authController = ({ auth, households }: Services) => {
+export const authController = ({ auth, households, limits }: Services) => {
   const setCookie = (cookie: Record<string, { set: (o: object) => unknown }>, s: SignedIn["session"]) =>
     cookie[COOKIE]!.set({ value: s.token, httpOnly: true, sameSite: "lax", secure: env.nodeEnv === "production", path: "/", expires: new Date(s.expiresAt) });
+
+  /** Per-IP limit on every public auth call; `secret` adds the strict limits for code-guessing endpoints. */
+  const throttle = (ctx: { request: Request; server?: unknown }, opts: { secret?: boolean } = {}) => {
+    const ip = clientIp(ctx.request, ctx.server as never, env.trustProxy);
+    enforce(limits.auth, ip);
+    if (opts.secret) {
+      enforce(limits.secrets, ip);
+      enforce(limits.secretsGlobal, "all");
+    }
+  };
 
   const publicSignedIn = (r: SignedIn) => ({ user: r.user, household: r.household, expiresAt: r.session.expiresAt });
 
   return new Elysia({ name: "module.auth", prefix: "/auth", tags: ["auth"] })
     .use(sessionPlugin(auth, households))
     // ---- registration ----
-    .post("/register/options", ({ body }) => auth.registrationOptions(body), {
+    .post("/register/options", (ctx) => { throttle(ctx, { secret: !!ctx.body.inviteCode }); return auth.registrationOptions(ctx.body); }, {
       body: t.Object({ displayName: t.String(), inviteCode: t.Optional(t.String()) }),
       detail: { summary: "Start passkey registration (first user, or with an invitation code)" },
     })
-    .post("/register/verify", async ({ body, cookie, headers }) => {
+    .post("/register/verify", async ({ body, cookie, headers, ...ctx }) => {
+      throttle(ctx as never);
       const r = await auth.verifyRegistration({ ...body, userAgent: headers["user-agent"] });
       setCookie(cookie, r.session);
       return { ...publicSignedIn(r), recoveryCodes: r.recoveryCodes };
@@ -30,8 +42,9 @@ export const authController = ({ auth, households }: Services) => {
       detail: { summary: "Finish registration. Returns the recovery codes once" },
     })
     // ---- login ----
-    .post("/login/options", () => auth.loginOptions(), { detail: { summary: "Start passkey sign-in (no username needed)" } })
-    .post("/login/verify", async ({ body, cookie, headers }) => {
+    .post("/login/options", (ctx) => { throttle(ctx); return auth.loginOptions(); }, { detail: { summary: "Start passkey sign-in (no username needed)" } })
+    .post("/login/verify", async ({ body, cookie, headers, ...ctx }) => {
+      throttle(ctx as never);
       const r = await auth.verifyLogin({ ...body, userAgent: headers["user-agent"] });
       setCookie(cookie, r.session);
       return publicSignedIn(r);
@@ -69,7 +82,8 @@ export const authController = ({ auth, households }: Services) => {
       return { ok: true };
     })
     // ---- recovery ----
-    .post("/recovery/verify", ({ body, cookie, headers }) => {
+    .post("/recovery/verify", ({ body, cookie, headers, ...ctx }) => {
+      throttle(ctx as never, { secret: true });
       const r = auth.recoveryLogin(body.code, headers["user-agent"]);
       setCookie(cookie, r.session);
       return { ...publicSignedIn(r), restricted: true };

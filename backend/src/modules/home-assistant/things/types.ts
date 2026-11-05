@@ -19,6 +19,8 @@ export interface ThingEntity {
 /** One card per physical device (or helper/service). Structural only: live values come from the state cache. */
 export interface Thing {
   id: string;
+  /** Stable reference used in overrides and merges: `device:<haDeviceId>` or `entity:<entityId>`. */
+  ref: string;
   kind: ThingKind;
   name: string;
   nameSource: "override" | "computed" | "source";

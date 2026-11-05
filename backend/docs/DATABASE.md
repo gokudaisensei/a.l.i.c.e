@@ -55,7 +55,7 @@ households ─< activity_events, notifications, audit_log, jobs, config_jobs
 
 | Table | Columns | Notes |
 |---|---|---|
-| `ha_connections` | id, household_id, name, base_url, operational_token_enc, admin_token_enc?, status, last_connected_at, last_error, ha_version, created_at | Admin token is only decrypted by the config-worker |
+| `ha_connections` (implemented) | id, household_id, name, base_url, operational_token_enc, admin_token_enc?, status, last_connected_at, last_error, ha_version, created_at, updated_at | Admin token is only decrypted by the config-worker |
 | `ha_areas` | id, connection_id, ha_area_id, name, floor?, UNIQUE(connection_id, ha_area_id) | Rooms |
 | `ha_devices` | id, connection_id, ha_device_id, area_id?, name, manufacturer, model, hw_label, via_device_id?, identifiers json, connections json, UNIQUE(connection_id, ha_device_id) | `hw_label` is the "Hue Bridge" style text; `via_device_id`, `identifiers`, `connections` drive hub/child links and cross-integration merging |
 | `ha_entities` | id, connection_id, entity_id, device_id?, area_id?, domain, name, entity_category?, device_class?, has_entity_name, translation_key?, platform?, role, name_clean, aliases json, state, attributes json, availability, last_changed, last_updated, last_synced_at, UNIQUE(connection_id, entity_id) | Latest-state projection plus derived classification: `role` (`primary`/`control`/`facet`/`sensor`/`diagnostic`/`config`), `name_clean`, `aliases`. Derived columns are recomputed on every sync; overrides live in `entity_overrides` |
@@ -132,4 +132,4 @@ Precedence everywhere: **user override, then computed value, then HA source valu
 
 ## Implementation status
 
-Implemented (migration `0000`, Run 7): `users`, `user_preferences`, `passkeys`, `sessions`, `recovery_codes`, `webauthn_challenges`, `households`, `household_members`, `invitations`, `household_settings`, `device_policies`, `sensitive_operation_rules`, `commands`, `audit_log`. Everything else in this document (HA projection, Things overrides, features, notifications, jobs, backups, updates) is still design only; see LIMITATIONS.md L04.
+Implemented (migration `0000`, Run 7; migration `0001`, Run 8 adds `ha_connections`, `thing_overrides`, `entity_overrides`, `thing_links`): `users`, `user_preferences`, `passkeys`, `sessions`, `recovery_codes`, `webauthn_challenges`, `households`, `household_members`, `invitations`, `household_settings`, `device_policies`, `sensitive_operation_rules`, `commands`, `audit_log`, `ha_connections`, `thing_overrides`, `entity_overrides`, `thing_links`. Everything else in this document (HA projection, Things overrides, features, notifications, jobs, backups, updates) is still design only; see LIMITATIONS.md L04.

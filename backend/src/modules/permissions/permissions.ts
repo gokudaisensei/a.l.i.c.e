@@ -2,7 +2,7 @@ import type { Role } from "@/core/database/schema";
 
 /** Application permissions. Roles map to a fixed set; device-level policies refine device access. */
 export const PERMISSIONS = [
-  "device.view", "device.control", "device.manage",
+  "device.view", "device.control", "device.rename", "device.manage",
   "scene.run", "scene.write", "routine.write", "automation.write",
   "mode.change",
   "activity.view", "energy.view", "history.view", "notification.receive",
@@ -12,7 +12,7 @@ export const PERMISSIONS = [
 export type Permission = (typeof PERMISSIONS)[number];
 
 const MEMBER: Permission[] = [
-  "device.view", "device.control", "scene.run", "scene.write", "routine.write", "automation.write", "mode.change",
+  "device.view", "device.control", "device.rename", "scene.run", "scene.write", "routine.write", "automation.write", "mode.change",
   "activity.view", "energy.view", "history.view", "notification.receive", "members.view",
 ];
 

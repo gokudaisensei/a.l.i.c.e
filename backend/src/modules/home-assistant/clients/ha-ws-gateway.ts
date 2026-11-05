@@ -96,6 +96,10 @@ export class HaWebSocketGateway implements HomeAssistantGateway {
     return this.c.sendMessagePromise<HaServices>({ type: "get_services" });
   }
 
+  getConfig() {
+    return this.c.sendMessagePromise<{ version: string; location_name?: string }>({ type: "get_config" });
+  }
+
   async callService(input: HaServiceCallInput): Promise<HaServiceCallResult> {
     const res = await this.c.sendMessagePromise<{ context: { id: string }; response?: unknown }>({
       type: "call_service",

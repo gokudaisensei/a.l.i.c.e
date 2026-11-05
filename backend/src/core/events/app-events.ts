@@ -45,8 +45,13 @@ export interface InventorySyncedEvent extends Scope {
   counts: { areas: number; devices: number; entities: number };
 }
 
-export interface ConnectionStatusEvent extends Scope {
-  type: "connection.connected" | "connection.disconnected";
+export interface ConnectionConnectedEvent extends Scope {
+  type: "connection.connected";
+  status: ConnectionStatus;
+}
+
+export interface ConnectionDisconnectedEvent extends Scope {
+  type: "connection.disconnected";
   status: ConnectionStatus;
   error?: string;
 }
@@ -65,4 +70,5 @@ export type AppEvent =
   | EntityRemovedEvent
   | RegistryUpdatedEvent
   | InventorySyncedEvent
-  | ConnectionStatusEvent;
+  | ConnectionConnectedEvent
+  | ConnectionDisconnectedEvent;

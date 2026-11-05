@@ -31,7 +31,8 @@ export type FailureCode =
   | "device_unavailable"
   | "ha_rejected"
   | "ha_unreachable"
-  | "not_confirmed";
+  | "not_confirmed"
+  | "interrupted";
 
 export interface DeviceCommand {
   id: string;

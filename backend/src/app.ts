@@ -14,6 +14,7 @@ export const buildApp = (services: Services) =>
     .onError(({ error, code, set }) => {
       if (error instanceof AppError) {
         set.status = error.status;
+        if (error.headers) Object.assign(set.headers, error.headers);
         return { error: { code: error.code, message: error.message } };
       }
       if (code === "NOT_FOUND") return { error: { code: "not_found", message: "Route not found" } };

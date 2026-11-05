@@ -10,6 +10,11 @@ function int(name: string, fallback: number): number {
   return n;
 }
 
+function bool(name: string, fallback: boolean): boolean {
+  const v = process.env[name];
+  return v === undefined ? fallback : ["1", "true", "yes"].includes(v.toLowerCase());
+}
+
 export const env = {
   nodeEnv: str("NODE_ENV", "development"),
   port: int("PORT", 3001),
@@ -22,4 +27,8 @@ export const env = {
     origin: str("WEBAUTHN_ORIGIN", "http://localhost:3000"),
   },
   sessionTtlHours: int("SESSION_TTL_HOURS", 720),
+  /** Trust X-Forwarded-For for client IPs. Only behind a reverse proxy you control. */
+  trustProxy: bool("TRUST_PROXY", false),
+  /** 32-byte base64 key that encrypts stored Home Assistant tokens. Generate: openssl rand -base64 32 */
+  secretsKey: process.env.SECRETS_KEY ?? null,
 } as const;

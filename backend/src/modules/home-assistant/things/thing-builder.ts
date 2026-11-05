@@ -132,6 +132,7 @@ export function buildThings(inv: Inventory, connectionId: string, ov: ThingOverr
 
     things.push({
       id: thingId(connectionId, ref),
+      ref,
       kind,
       name,
       nameSource: nameOverride ? "override" : computedName === sourceName ? "source" : "computed",

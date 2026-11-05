@@ -1,5 +1,4 @@
 export { homeAssistantController } from "./controller";
-export { homeAssistantService } from "./service";
 export type { HomeAssistantGateway, HaConnectionConfig } from "./gateway";
 export { HaWebSocketGateway, HaAuthError } from "./clients/ha-ws-gateway";
 export { ConnectionManager } from "./connections/connection-manager";
@@ -10,3 +9,4 @@ export type { DeviceCapability } from "./capabilities/types";
 export type { Inventory, InventoryEntity } from "./discovery/inventory";
 export { normalizeState, type NormalizedState } from "./capabilities/state-normalizer";
 export * from "./things";
+export { HaConnectionService, normalizeBaseUrl } from "./connection.service";

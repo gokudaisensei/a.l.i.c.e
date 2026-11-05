@@ -27,6 +27,7 @@ export interface HomeAssistantGateway {
   getDevices(): Promise<HaDeviceRegistryEntry[]>;
   getEntityRegistry(): Promise<HaEntityRegistryEntry[]>;
   getServices(): Promise<HaServices>;
+  getConfig(): Promise<{ version: string; location_name?: string }>;
 
   callService(input: HaServiceCallInput): Promise<HaServiceCallResult>;
 

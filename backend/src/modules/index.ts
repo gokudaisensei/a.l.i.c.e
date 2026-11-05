@@ -5,8 +5,7 @@ import { usersController } from "./users";
 import { householdsController } from "./households";
 import { adminSecurityController, permissionsController } from "./permissions";
 import { homeAssistantController } from "./home-assistant";
-import { devicesController } from "./devices";
-import { areasController } from "./areas";
+import { areasController, commandsController, devicesController, entitiesController } from "./devices";
 import { groupsController } from "./groups";
 import { favoritesController } from "./favorites";
 import { scenesController } from "./scenes";
@@ -32,8 +31,10 @@ export const buildModules = (s: Services) =>
     .use(permissionsController(s))
     .use(adminSecurityController(s))
     .use(homeAssistantController(s))
-    .use(devicesController)
-    .use(areasController)
+    .use(devicesController(s))
+    .use(entitiesController(s))
+    .use(commandsController(s))
+    .use(areasController(s))
     .use(groupsController)
     .use(favoritesController)
     .use(scenesController)

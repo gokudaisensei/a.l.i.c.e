@@ -20,6 +20,7 @@ export class ManagedConnection {
   readonly cache = new StateCache();
   inventory: Inventory | null = null;
   lastError: string | null = null;
+  haVersion: string | null = null;
 
   private stopped = false;
   private ready = false;
@@ -111,6 +112,7 @@ export class ManagedConnection {
     const { inventory, states } = await discover(this.gateway);
     this.inventory = inventory;
     this.cache.replaceAll(states);
+    this.haVersion = await this.gateway.getConfig().then((c) => c.version, () => this.haVersion);
     this.bus.publish({
       type: "inventory.synced",
       ...this.scope(),

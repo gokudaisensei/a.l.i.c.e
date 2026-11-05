@@ -3,3 +3,4 @@ export * from "./identity";
 export * from "./households";
 export * from "./access";
 export * from "./operations";
+export * from "./home-assistant";

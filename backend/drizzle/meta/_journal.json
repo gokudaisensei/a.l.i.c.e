@@ -8,6 +8,13 @@
       "when": 1793869989748,
       "tag": "0000_milky_black_panther",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1793870794370,
+      "tag": "0001_small_midnight",
+      "breakpoints": true
     }
   ]
 }

@@ -3,6 +3,8 @@ export class AppError extends Error {
     public readonly status: number,
     public readonly code: string,
     message: string,
+    /** Extra response headers, e.g. Retry-After. */
+    public readonly headers?: Record<string, string>,
   ) {
     super(message);
   }

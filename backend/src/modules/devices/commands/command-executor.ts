@@ -79,6 +79,18 @@ export class CommandExecutor {
     return this.store.list(filter);
   }
 
+  /** After a restart, commands that were mid-flight can never finish. Marks them failed so history is truthful. */
+  recoverInterrupted(): number {
+    let n = 0;
+    for (const state of ["pending", "authorized", "dispatched", "accepted"] as const) {
+      for (const c of this.store.list({ state, limit: 1000 })) {
+        this.store.update(c.id, { state: "failed", failure: { code: "interrupted", message: "The server restarted before this command finished" }, finishedAt: this.now() });
+        n++;
+      }
+    }
+    return n;
+  }
+
   /** Cancels a command that has not been dispatched yet. */
   cancel(id: string): DeviceCommand {
     const cur = this.store.get(id);

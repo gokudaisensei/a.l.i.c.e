@@ -1,6 +1,6 @@
 # Alice Backend — API
 
-Status: draft v1. Base path `/api/v1` (auth, users, household, permissions and `/admin/security` are implemented; other areas are stubs). JSON everywhere. OpenAPI is generated at `/docs`. Realtime on `/ws`. See [ARCHITECTURE.md](./ARCHITECTURE.md).
+Status: draft v1. Base path `/api/v1` (implemented: auth, users, household, permissions, `/admin/security`, `/ha/connection*`, `/devices*`, `/entities/*/role`, `/areas`, `/commands*`; other areas are stubs. Not yet: `/ws`, activity, settings, undo, favorites). JSON everywhere. OpenAPI is generated at `/docs`. Realtime on `/ws`. See [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 ## Conventions
 

@@ -1,4 +1,4 @@
-import { buildInventory } from "../../discovery/inventory";
+import { buildInventory, type RawDiscovery } from "../../discovery/inventory";
 import type { HaDeviceRegistryEntry, HaEntityRegistryEntry } from "../../types";
 import { state } from "../../testing";
 
@@ -10,8 +10,7 @@ const reg = (r: Reg): HaEntityRegistryEntry => ({ device_id: null, area_id: null
 const MAC = ["mac", "aa:bb:cc:dd:ee:01"] as [string, string];
 
 /** A custom-flashed Echo Show running as an ESPHome device, plus a few other household shapes. */
-export const homeInventory = () =>
-  buildInventory({
+export const homeRaw = (): RawDiscovery => ({
     areas: [
       { area_id: "kitchen", name: "Kitchen" },
       { area_id: "living", name: "Living room" },
@@ -74,4 +73,6 @@ export const homeInventory = () =>
       state("sensor.outdoor_temp_2", "21.5", { friendly_name: "outdoor_temp_2", device_class: "temperature", unit_of_measurement: "°C" }),
     ],
     services: {},
-  });
+});
+
+export const homeInventory = () => buildInventory(homeRaw());

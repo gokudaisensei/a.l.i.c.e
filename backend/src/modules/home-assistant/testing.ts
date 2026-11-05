@@ -49,6 +49,7 @@ export class FakeGateway implements HomeAssistantGateway {
   async getDevices() { return this.devices; }
   async getEntityRegistry() { return this.entityRegistry; }
   async getServices() { return {}; }
+  async getConfig() { return { version: "2026.10.4", location_name: "Fake Home" }; }
   async callService(input: HaServiceCallInput) { this.calls.push(input); await this.onCallService?.(input); return { contextId: `ctx-${this.calls.length}` }; }
   async subscribeStateChanges(cb: (e: HaStateChangedEvent) => void) { this.stateCbs.add(cb); return () => this.stateCbs.delete(cb); }
   async subscribeEvents(type: string, cb: (e: HaRawEvent) => void) {

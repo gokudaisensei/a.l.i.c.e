@@ -1,52 +1,19 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import { buildApp } from "./app";
 import { createTestDb } from "./core/database/client";
-import { VirtualAuthenticator } from "./modules/authentication/testing/virtual-authenticator";
 import { assertTransition, canTransition } from "./modules/devices/command-lifecycle";
 import { createServices } from "./services";
+import { Browser as BaseBrowser, ORIGIN, RP } from "./testing/http";
 
-const RP = "localhost";
-const ORIGIN = "http://localhost:3000";
 const MIN = 60_000;
 let now: number;
 let app: ReturnType<typeof buildApp>;
+class Browser extends BaseBrowser { constructor() { super(app); } }
 
 beforeEach(() => {
   now = 1_700_000_000_000;
   app = buildApp(createServices(createTestDb(), { now: () => now, auth: { rpId: RP, rpName: "Alice", origin: ORIGIN, sessionTtlHours: 24 } }));
 });
-
-/** A tiny browser: keeps the session cookie and a virtual passkey. */
-class Browser {
-  cookie = "";
-  device = new VirtualAuthenticator(RP, ORIGIN);
-
-  async call(method: string, path: string, body?: unknown) {
-    const res = await app.handle(new Request(`http://localhost/api/v1${path}`, {
-      method,
-      headers: { "content-type": "application/json", ...(this.cookie ? { cookie: this.cookie } : {}) },
-      body: body === undefined ? undefined : JSON.stringify(body),
-    }));
-    const set = res.headers.get("set-cookie");
-    if (set) this.cookie = set.split(";")[0]!.startsWith("alice_session=") && set.split(";")[0] !== "alice_session=" ? set.split(";")[0]! : "";
-    const json = (await res.json().catch(() => null)) as any;
-    return { status: res.status, json, setCookie: set };
-  }
-
-  async register(name: string, inviteCode?: string) {
-    const o = await this.call("POST", "/auth/register/options", { displayName: name, inviteCode });
-    if (o.status !== 200) return o;
-    return this.call("POST", "/auth/register/verify", { challengeId: o.json.challengeId, response: this.device.create(o.json.options), deviceLabel: "phone" });
-  }
-  async login() {
-    const o = await this.call("POST", "/auth/login/options");
-    return this.call("POST", "/auth/login/verify", { challengeId: o.json.challengeId, response: this.device.get(o.json.options) });
-  }
-  async stepUp() {
-    const o = await this.call("POST", "/auth/step-up/options");
-    return this.call("POST", "/auth/step-up/verify", { challengeId: o.json.challengeId, response: this.device.get(o.json.options) });
-  }
-}
 
 describe("app basics", () => {
   test("GET /health", async () => {
@@ -56,8 +23,8 @@ describe("app basics", () => {
   });
 
   test("modules that are still stubs are mounted under /api/v1", async () => {
-    const res = await app.handle(new Request("http://localhost/api/v1/devices"));
-    expect(await res.json()).toEqual({ module: "devices", status: "not_implemented" });
+    const res = await app.handle(new Request("http://localhost/api/v1/groups"));
+    expect(await res.json()).toEqual({ module: "groups", status: "not_implemented" });
   });
 
   test("everything private says 401 without a session", async () => {
@@ -203,6 +170,36 @@ describe("recovery over HTTP", () => {
     expect(ok.status).toBe(200);
     expect((await lost.call("GET", "/users/me")).status).toBe(200);
     expect((await lost.call("POST", "/auth/recovery/verify", { code: reg.json.recoveryCodes[0] })).status).toBe(401); // used up
+  });
+});
+
+describe("rate limiting", () => {
+  test("public auth endpoints are limited per client, with Retry-After, and recover after the window", async () => {
+    const b = new Browser();
+    for (let i = 0; i < 30; i++) expect((await b.call("POST", "/auth/login/options")).status).toBe(200);
+    const res = await app.handle(new Request("http://localhost/api/v1/auth/login/options", { method: "POST" }));
+    expect(res.status).toBe(429);
+    expect(res.headers.get("retry-after")).toBe("60");
+    expect(((await res.json()) as any).error.code).toBe("rate_limited");
+    now += 61_000;
+    expect((await b.call("POST", "/auth/login/options")).status).toBe(200);
+  });
+
+  test("recovery-code guessing is capped much lower, and a wrong guess never reveals anything", async () => {
+    const b = new Browser();
+    const statuses: number[] = [];
+    for (let i = 0; i < 12; i++) statuses.push((await b.call("POST", "/auth/recovery/verify", { code: `AAAAA-AAAA${i}` })).status);
+    expect(statuses.slice(0, 10)).toEqual(Array(10).fill(401));
+    expect(statuses.slice(10)).toEqual([429, 429]);
+  });
+
+  test("invitation-code guessing during registration is capped the same way", async () => {
+    await new Browser().register("Gokul"); // after the first user, a code is required
+    const b = new Browser();
+    const out: number[] = [];
+    for (let i = 0; i < 11; i++) out.push((await b.call("POST", "/auth/register/options", { displayName: "X", inviteCode: `NOPE-00000${i}-NOPE-ABCD` })).status);
+    expect(out.slice(0, 10)).toEqual(Array(10).fill(400)); // invalid_invitation
+    expect(out[10]).toBe(429);
   });
 });
 
