@@ -190,7 +190,7 @@ Features the current mock UI needs from the backend:
 5. (mostly done, Run 8) HA connection setup, Things API, commands endpoints and overrides (rename/hide/re-role/merge/split). `/ws` realtime is done too (Run 9). Remaining in this step: `/ws` realtime, areas/groups/favorites APIs; alias index and fuzzy resolver
 6. (done, Runs 10 and 11) Scenes, routines and modes, the config-worker, automations compiled to Home Assistant, the mode mirror and suggestions. Scenes and routines still run in Alice as the person who starts them, and are also mirrored to Home Assistant as scripts.
 7. (partly done, Run 11: in-app notifications, power-limit alerts, mode suggestions) Activity, push delivery, energy, history, more insights
-8. Backups, updates, admin; then AI (tool layer over the command pipeline with risk classes) and the LLM suggestion job
+8. Backups (done, Run 14), updates, admin; then AI (tool layer over the command pipeline with risk classes) and the LLM suggestion job
 
 ## 15. Resolved questions
 

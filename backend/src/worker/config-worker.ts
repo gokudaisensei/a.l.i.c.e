@@ -41,6 +41,13 @@ async function perform(api: HaConfigApi, o: ConfigOperation): Promise<Record<str
     case "voice.expose":
       await api.exposeEntities(o.entityIds, o.expose);
       return {};
+    case "backup.generate": {
+      const r = await api.generateBackup(o.name);
+      return { backupId: r.backupId, sizeBytes: r.sizeBytes };
+    }
+    case "backup.info": return { ...(await api.backupInfo(o.backupId)) };
+    case "backup.delete": await api.deleteBackup(o.backupId); return {};
+    case "backup.restore": await api.restoreBackup(o.backupId); return {};
     case "config.verify": {
       const drifted: DriftItem[] = [];
       for (const x of o.scripts) {

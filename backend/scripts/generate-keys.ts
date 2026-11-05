@@ -11,6 +11,7 @@ const { publicKey, privateKey } = generateSealKeyPair();
 console.log(`# Main server`);
 console.log(`ADMIN_SEAL_PUBLIC_KEY=${pemToEnv(publicKey)}`);
 console.log(`SECRETS_KEY=${randomBytes(32).toString("base64")}`);
+console.log(`BACKUP_ENCRYPTION_KEY=${randomBytes(32).toString("base64")}`);
 const vapid = webpush.generateVAPIDKeys();
 console.log(`VAPID_PUBLIC_KEY=${vapid.publicKey}`);
 console.log(`VAPID_PRIVATE_KEY=${vapid.privateKey}`);

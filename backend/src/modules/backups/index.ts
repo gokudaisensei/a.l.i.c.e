@@ -1,2 +1,2 @@
 export { backupsController } from "./controller";
-export { backupsService } from "./service";
+export { BackupService } from "./backup.service";

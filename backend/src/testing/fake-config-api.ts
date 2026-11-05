@@ -1,4 +1,4 @@
-import type { HaConfigApi } from "@/modules/home-assistant/config-api";
+import type { BackupInfo, HaConfigApi } from "@/modules/home-assistant/config-api";
 import { HaConfigHttpError } from "@/modules/home-assistant/config-api";
 import type { AutomationConfig, ScriptConfig } from "@/modules/home-assistant/config-ops";
 import { MODE_HELPER_ENTITY } from "@/modules/home-assistant/config-ops";
@@ -34,6 +34,13 @@ export class FakeConfigApi implements HaConfigApi {
   async getScript(id: string) { this.calls.push(`getScript:${id}`); const c = this.scripts.get(id); return c ? asHaStores({ ...c, mode: c.mode === "single" ? undefined : c.mode }) : null; }
   async getAutomation(id: string) { this.calls.push(`getAutomation:${id}`); const c = this.automations.get(id); return c ? asHaStores({ id, ...c, condition: c.condition.length ? c.condition : undefined }) : null; }
   async automationEnabled(id: string) { return this.automations.has(id) ? (this.enabled.get(`automation.${id}`) ?? true) : null; }
+  backups = new Map<string, { sizeBytes: number; name: string; complete: boolean }>();
+  restored: string[] = [];
+  private backupSeq = 0;
+  async generateBackup(name: string) { this.fail(); const id = `bk${String(++this.backupSeq).padStart(4, "0")}`; this.calls.push(`generateBackup:${name}`); this.backups.set(id, { sizeBytes: 500_000 + this.backupSeq, name, complete: true }); return { backupId: id, sizeBytes: this.backups.get(id)!.sizeBytes }; }
+  async backupInfo(id: string): Promise<BackupInfo> { this.fail(); const b = this.backups.get(id); return b ? { exists: true, sizeBytes: b.sizeBytes, homeassistantIncluded: b.complete, databaseIncluded: true, failedAgents: b.complete ? [] : ["backup.local"], date: "2026-11-05T02:30:00Z" } : { exists: false, sizeBytes: null, homeassistantIncluded: false, databaseIncluded: false, failedAgents: [], date: null }; }
+  async deleteBackup(id: string) { this.fail(); this.calls.push(`deleteBackup:${id}`); this.backups.delete(id); }
+  async restoreBackup(id: string) { this.fail(); this.restored.push(id); }
   async putScript(id: string, c: ScriptConfig) { this.fail(); this.calls.push(`putScript:${id}`); this.scripts.set(id, c); }
   async deleteScript(id: string) { this.fail(); this.calls.push(`deleteScript:${id}`); this.scripts.delete(id); }
   async putAutomation(id: string, c: AutomationConfig) { this.fail(); this.calls.push(`putAutomation:${id}`); this.automations.set(id, c); }

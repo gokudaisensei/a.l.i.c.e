@@ -24,6 +24,10 @@ Notifications always appear in the app. To also reach phones and browsers, set u
 
 People control it themselves with their notification preferences (`pushEnabled`, quiet hours); urgent notifications ignore quiet hours but not an explicit "off".
 
+## Backups
+
+Alice backs up its own database nightly (default 02:30 in the household's time zone, keeping 14) into `backups/` next to the database, or `BACKUP_DIR`, and asks Home Assistant to make its own backup on the Home Assistant host. Set `BACKUP_ENCRYPTION_KEY` (from `bun run keys:generate`) to encrypt Alice's backups, and keep that key somewhere safe. Admins change the schedule, a NAS folder and retention under `/backups/settings`, run a test restore with `POST /backups/:id/verify`, and see backup status in `/admin/health`. To restore Alice's own database, `POST /backups/:id/restore`, then restart the server; the old database stays next to the new one as `.before-restore-<time>`.
+
 ## Keeping Home Assistant in step
 
 Alice checks every 15 minutes that the scripts and automations it created in Home Assistant still match what it wrote, and `POST /admin/config-sync/verify` does it on demand. Anything edited or removed there shows as `drifted` (and admins are notified); `POST /admin/config-sync/resync` restores it.

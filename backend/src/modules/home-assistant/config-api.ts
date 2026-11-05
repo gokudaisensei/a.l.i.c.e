@@ -18,6 +18,12 @@ export interface HaConfigApi {
   /** Creates the helper that mirrors the household mode if it is missing. */
   ensureModeSelect(options: string[]): Promise<{ entityId: string }>;
   exposeEntities(entityIds: string[], expose: boolean): Promise<void>;
+  /** Starts a Home Assistant backup and waits until it exists. */
+  generateBackup(name: string): Promise<{ backupId: string; sizeBytes: number }>;
+  backupInfo(backupId: string): Promise<BackupInfo>;
+  deleteBackup(backupId: string): Promise<void>;
+  /** Asks Home Assistant to restore itself from a backup. It restarts. */
+  restoreBackup(backupId: string): Promise<void>;
   close(): Promise<void>;
 }
 
@@ -27,4 +33,14 @@ export class HaConfigHttpError extends Error {
   constructor(readonly status: number, message: string) {
     super(message);
   }
+}
+
+export interface BackupInfo {
+  exists: boolean;
+  sizeBytes: number | null;
+  homeassistantIncluded: boolean;
+  databaseIncluded: boolean;
+  /** Places where it was supposed to be stored but could not be. */
+  failedAgents: string[];
+  date: string | null;
 }

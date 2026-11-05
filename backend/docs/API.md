@@ -229,15 +229,19 @@ Energy, history and mode suggestions are implemented.
 
 | Method & path | Perm | Purpose |
 |---|---|---|
-| `GET /backups` | A | List with verification status |
-| `POST /backups` | A | Queue a backup job; `{ destination: "ha"|"nas"|"upload" }` (default `ha`) |
-| `POST /backups/:id/verify` | A | Queue restore test |
-| `POST /backups/:id/restore` | A† | Restore (guarded) |
+| `GET /backups` | A | `{ items, settings, encryption }`: Alice's and Home Assistant's backups, newest first, each with `verify: { status: none\|running\|passed\|failed, at, note }`; `encryption` says whether a backup key is set |
+| `POST /backups` | A | `{ what?: "app"\|"ha"\|"both" }` (default both). Alice's backup is made at once; Home Assistant's is made by Home Assistant through the config-worker and finishes in the background (`status: running`). `both` skips the Home Assistant one when it is not connected; `ha` alone returns `ha_not_connected` |
+| `GET /backups/:id` | A | One backup |
+| `POST /backups/:id/verify` | A | Test restore without touching live data. Alice's: checksum, decrypt, gunzip, open read-only, `integrity_check`, expected tables, users and household present. Home Assistant's: asks Home Assistant that it still lists it, with content and no failed save. A failure notifies admins |
+| `POST /backups/:id/restore` | A† | `{ confirm: "RESTORE" }`. Alice's is staged and swapped in at the next start (the old database is kept as `.before-restore-<time>`; a staged file that fails its check is set aside and ignored). Home Assistant's is restored by Home Assistant, which restarts |
+| `DELETE /backups/:id` | A† | Delete (Home Assistant's from Home Assistant too: `{ removed: false, pending: true }` until the worker finishes) |
+| `GET /backups/:id/download` | A† | Alice's own backups only; encrypted when a backup key is set |
+| `GET/PUT /backups/settings` | A / A† | `{ enabled, time "HH:MM" (household time zone), keep (1-90), includeHa, destination: local\|nas\|upload, nasPath }`. `upload` is reserved and answers 501; a NAS folder must be absolute and writable. Defaults: on, 02:30, keep 14, include Home Assistant, local |
 | `GET /updates` | A | Current version, available version, state, settings |
 | `PUT /updates/settings` | A† | `{ autoUpdate: boolean, windowStart, windowEnd }` |
 | `POST /updates/schedule`, `POST /updates/install` | A† | Schedule into the next window / install now |
 | `POST /updates/emergency` | A† | `{ reason (min 8 chars), confirmation: "DEPLOY" }`; skips the window, audited |
-| `GET /admin/health` | A | `{ status: ok\|warn\|down, version, uptimeSeconds, checks: [{ name, status, detail }] }` for the database, Home Assistant, the config-worker, failed changes and push |
+| `GET /admin/health` | A | `{ status: ok\|warn\|down, version, uptimeSeconds, checks: [{ name, status, detail }] }` for the database, Home Assistant, the config-worker, failed changes, push and backups (warns when none yet, the last good one is over 36 hours old, or the latest failed its restore test) |
 | `GET /admin/diagnostics` | A | Versions, what is configured (push channels, token protection, proxy trust), Home Assistant host, counts, database size. Never secrets |
 | `GET/POST /admin/support-sessions`, `DELETE /admin/support-sessions/:id` | A† | Grant, list, end scoped support access |
 | `GET /admin/audit?limit=&before=&action=` | A | The security audit log, newest first, with who did it; `action` matches the start of the action name; `nextCursor` for the next page |

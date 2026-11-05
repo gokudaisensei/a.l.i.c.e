@@ -2,8 +2,14 @@ import { buildApp } from "./app";
 import { env } from "./core/config/env";
 import { createDb, runMigrations } from "./core/database/client";
 import { logger } from "./core/logging/logger";
+import { applyPendingRestore } from "./modules/backups/restore-apply";
 import { createServices } from "./services";
 
+if (env.databaseUrl !== ":memory:") {
+  const r = applyPendingRestore(env.databaseUrl);
+  if (r.applied) logger.warn({ detail: r.detail }, "applied a staged backup restore");
+  else if (r.detail !== "nothing staged") logger.error({ detail: r.detail }, "staged backup restore was not applied");
+}
 const db = createDb(env.databaseUrl);
 runMigrations(db);
 

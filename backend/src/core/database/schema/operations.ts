@@ -46,3 +46,32 @@ export const auditLog = sqliteTable(
   },
   (t) => [index("audit_household_idx").on(t.householdId, t.createdAt)],
 );
+
+/** A backup of Alice's own database or of Home Assistant, and whether a restore test has proved it readable. */
+export const backupRecords = sqliteTable(
+  "backup_records",
+  {
+    id: text("id").primaryKey(),
+    householdId: text("household_id").notNull().references(() => households.id, { onDelete: "cascade" }),
+    kind: text("kind", { enum: ["app", "ha"] }).notNull(),
+    destination: text("destination", { enum: ["ha", "local", "nas", "upload"] }).notNull(),
+    /** App backups: the file name inside the destination. Home Assistant backups: Home Assistant's backup id. */
+    destinationRef: text("destination_ref"),
+    name: text("name").notNull(),
+    sizeBytes: integer("size_bytes"),
+    sha256: text("sha256"),
+    encrypted: integer("encrypted", { mode: "boolean" }).notNull().default(false),
+    /** How many migrations the database had, so a restore can tell a newer backup from an older one. */
+    schemaVersion: integer("schema_version"),
+    status: text("status", { enum: ["running", "ok", "failed"] }).notNull(),
+    error: text("error"),
+    trigger: text("trigger", { enum: ["manual", "scheduled"] }).notNull(),
+    createdBy: text("created_by"),
+    createdAt: integer("created_at").notNull(),
+    finishedAt: integer("finished_at"),
+    verifyStatus: text("verify_status", { enum: ["none", "running", "passed", "failed"] }).notNull().default("none"),
+    verifiedAt: integer("verified_at"),
+    verifyNote: text("verify_note"),
+  },
+  (t) => [index("backup_records_idx").on(t.householdId, t.createdAt)],
+);

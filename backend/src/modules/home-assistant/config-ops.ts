@@ -38,6 +38,10 @@ export type ConfigOperation =
   | { op: "automation.set_enabled"; id: string; enabled: boolean }
   | { op: "helper.ensure_mode_select"; options: string[] }
   | { op: "voice.expose"; entityIds: string[]; expose: boolean }
+  | { op: "backup.generate"; recordId: string; name: string }
+  | { op: "backup.info"; recordId: string; backupId: string }
+  | { op: "backup.delete"; recordId: string; backupId: string }
+  | { op: "backup.restore"; recordId: string; backupId: string }
   /** Read-only: compare what Alice meant to write with what Home Assistant has now. */
   | { op: "config.verify"; scripts: { objectId: string; config: ScriptConfig }[]; automations: { id: string; config: AutomationConfig; enabled: boolean }[] };
 
@@ -137,6 +141,12 @@ export function validateOperation(o: ConfigOperation): void {
       if (!Array.isArray(o.entityIds) || o.entityIds.length < 1 || o.entityIds.length > 200) return bad("Invalid entity list");
       for (const e of o.entityIds) entity(e, "entity");
       if (typeof o.expose !== "boolean") bad("expose must be true or false");
+      return;
+    case "backup.generate":
+      if (!/^rec_[A-Z0-9]{10,40}$|^bkp_[A-Z0-9]{10,40}$/.test(o.recordId) || !/^Alice [A-Za-z0-9 :_.-]{1,60}$/.test(o.name)) return bad("Invalid backup request");
+      return;
+    case "backup.info": case "backup.delete": case "backup.restore":
+      if (!/^bkp_[A-Z0-9]{10,40}$/.test(o.recordId) || !/^[a-z0-9]{4,40}$/.test(o.backupId)) return bad("Invalid backup request");
       return;
     case "config.verify":
       if (!Array.isArray(o.scripts) || !Array.isArray(o.automations) || o.scripts.length + o.automations.length > 500) return bad("Invalid verification request");

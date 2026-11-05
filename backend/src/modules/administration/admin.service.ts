@@ -4,6 +4,7 @@ import type { Db } from "@/core/database/client";
 import { env } from "@/core/config/env";
 import { auditLog, automations, notifications, routines, scenes, users } from "@/core/database/schema";
 import type { ConfigJobService } from "../home-assistant/config-jobs.service";
+import type { BackupService } from "../backups/backup.service";
 import type { HaConnectionService } from "../home-assistant/connection.service";
 import type { HouseholdService } from "../households/household.service";
 import type { PushService } from "../notifications/push/push.service";
@@ -39,6 +40,7 @@ export class AdminService {
     private readonly things: ThingsService,
     private readonly households: HouseholdService,
     private readonly now: () => number = Date.now,
+    private readonly backups?: BackupService,
   ) {}
 
   health(householdId: string) {
@@ -59,6 +61,15 @@ export class AdminService {
 
     const platforms = this.push.platforms();
     checks.push({ name: "push", status: platforms.length ? "ok" : "warn", detail: platforms.length ? `Push is set up for ${platforms.join(" and ")}` : "Push notifications are not set up; notifications only appear in the app" });
+
+    if (this.backups) {
+      const b = this.backups.summary(householdId);
+      const age = b.lastOkAt === null ? null : this.now() - b.lastOkAt;
+      if (b.failedVerify) checks.push({ name: "backups", status: "warn", detail: "The latest backup did not pass its restore test" });
+      else if (age === null) checks.push({ name: "backups", status: b.enabled ? "warn" : "warn", detail: b.enabled ? "No backup has been made yet" : "No backup has been made and scheduled backups are off" });
+      else if (age > 36 * 3_600_000) checks.push({ name: "backups", status: "warn", detail: `The last good backup is ${Math.floor(age / 3_600_000)} hours old` });
+      else checks.push({ name: "backups", status: "ok", detail: b.lastVerifyStatus === "passed" ? "Recent and restore-tested" : "Recent backup available" });
+    }
 
     const status: CheckStatus = checks.some((c) => c.status === "down") ? "down" : checks.some((c) => c.status === "warn") ? "warn" : "ok";
     return { status, version: pkg.version, uptimeSeconds: Math.round(process.uptime()), checks };

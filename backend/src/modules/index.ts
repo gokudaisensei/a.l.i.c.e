@@ -48,6 +48,6 @@ export const buildModules = (s: Services) =>
     .use(insightsController(s))
     .use(historyController(s))
     .use(aiController)
-    .use(backupsController)
+    .use(backupsController(s))
     .use(updatesController)
     .use(administrationController(s));

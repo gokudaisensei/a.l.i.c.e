@@ -11,6 +11,11 @@ export class Browser {
 
   constructor(private readonly app: ReturnType<typeof buildApp>) {}
 
+  /** Like `call` but returns the untouched Response (for file downloads). */
+  raw(method: string, path: string) {
+    return this.app.handle(new Request(`http://localhost/api/v1${path}`, { method, headers: this.cookie ? { cookie: this.cookie } : {} }));
+  }
+
   async call(method: string, path: string, body?: unknown) {
     const res = await this.app.handle(new Request(`http://localhost/api/v1${path}`, {
       method,

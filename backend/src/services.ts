@@ -1,3 +1,5 @@
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
 import { env } from "@/core/config/env";
 import type { Db } from "@/core/database/client";
 import type { AppEvent } from "@/core/events/app-events";
@@ -11,6 +13,8 @@ import { AuthService, type AuthConfig } from "@/modules/authentication/auth.serv
 import { CommandExecutor } from "@/modules/devices/commands/command-executor";
 import { DrizzleCommandStore } from "@/modules/devices/commands/drizzle-command-store";
 import { ActivityService } from "@/modules/activity/activity.service";
+import { BackupService } from "@/modules/backups/backup.service";
+import { parseBackupKey } from "@/modules/backups/crypto";
 import { AdminService } from "@/modules/administration/admin.service";
 import { ActionService } from "@/modules/devices/actions";
 import { VoiceExposureService } from "@/modules/devices/voice";
@@ -69,6 +73,7 @@ export interface Services {
   notifications: NotificationsService;
   push: PushService;
   admin: AdminService;
+  backups: BackupService;
   activity: ActivityService;
   history: HistoryService;
   energy: EnergyService;
@@ -108,6 +113,11 @@ export interface ServiceOptions {
   background?: boolean;
   /** Base64 32-byte key for stored HA tokens. Defaults to SECRETS_KEY. */
   secretsKey?: string | null;
+  /** Where local backups go and the live database path (null = in memory). */
+  backupDir?: string;
+  dbPath?: string | null;
+  /** Base64 32-byte key for Alice's own backups. Defaults to BACKUP_ENCRYPTION_KEY. */
+  backupKey?: string | null;
 }
 
 /** Wires everything that shares one database. Tests pass an in-memory db and their own clock, bus and gateway. */
@@ -166,11 +176,17 @@ export function createServices(db: Db, opts: ServiceOptions = {}): Services {
   );
   const history = new HistoryService(things, devices, opts.now);
   const energy = new EnergyService(db, things, devices, opts.now);
-  const admin = new AdminService(db, ha, configJobs, push, things, households, opts.now);
+  const dbPath = opts.dbPath !== undefined ? opts.dbPath : env.databaseUrl === ":memory:" ? null : env.databaseUrl;
+  const backups = new BackupService(db, configJobs, notifications, {
+    now: opts.now, dbPath, dir: opts.backupDir ?? env.backupDir ?? join(dbPath ? dirname(dbPath) : tmpdir(), "backups"),
+    key: parseBackupKey(opts.backupKey === undefined ? env.backupEncryptionKey : opts.backupKey),
+  });
+  if (opts.background) backups.start();
+  const admin = new AdminService(db, ha, configJobs, push, things, households, opts.now, backups);
   ha.afterAdminToken((householdId, userId) => sync.reconcile(householdId, userId));
 
   return {
-    db, bus, households, permissions, manager, things, commands, auth, devices, favorites, actions, groups, modes, modeMirror, insights, presence, scenes, routines, automations, notifications, push, admin, activity, history, energy, alerts, realtime,
+    db, bus, households, permissions, manager, things, commands, auth, devices, favorites, actions, groups, modes, modeMirror, insights, presence, scenes, routines, automations, notifications, push, admin, backups, activity, history, energy, alerts, realtime,
     users: new UserService(db),
     limits: createLimits(opts.now),
     ha,
