@@ -2,7 +2,7 @@ import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { Database } from "bun:sqlite";
 import { drizzle } from "drizzle-orm/bun-sqlite";
-import { env } from "@/config/env";
+import { env } from "@/core/config/env";
 import * as schema from "./schema";
 
 if (env.databaseUrl !== ":memory:") mkdirSync(dirname(env.databaseUrl), { recursive: true });

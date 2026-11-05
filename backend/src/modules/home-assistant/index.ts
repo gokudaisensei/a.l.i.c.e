@@ -1,2 +1,11 @@
 export { homeAssistantController } from "./controller";
 export { homeAssistantService } from "./service";
+export type { HomeAssistantGateway, HaConnectionConfig } from "./gateway";
+export { HaWebSocketGateway, HaAuthError } from "./clients/ha-ws-gateway";
+export { ConnectionManager } from "./connections/connection-manager";
+export { ManagedConnection } from "./connections/managed-connection";
+export { StateCache, type EntityProjection } from "./state/state-cache";
+export { detectCapabilities, resolveOperation, supportsOperation } from "./capabilities/capability-detector";
+export type { DeviceCapability } from "./capabilities/types";
+export type { Inventory, InventoryEntity } from "./discovery/inventory";
+export { normalizeState, type NormalizedState } from "./capabilities/state-normalizer";

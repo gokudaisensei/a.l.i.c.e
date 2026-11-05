@@ -1,9 +1,9 @@
 import { cors } from "@elysiajs/cors";
 import { openapi } from "@elysiajs/openapi";
 import { Elysia } from "elysia";
-import { env } from "@/config/env";
-import { AppError } from "@/lib/errors";
-import { logger } from "@/lib/logger";
+import { env } from "@/core/config/env";
+import { AppError } from "@/core/errors/errors";
+import { logger } from "@/core/logging/logger";
 import { modules } from "@/modules";
 
 export const app = new Elysia({ name: "alice" })
