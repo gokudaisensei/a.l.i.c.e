@@ -135,6 +135,7 @@ The server authorizes every subscription and filters each event by the member's 
 
 - **Authentication:** passkeys through a vetted library (`@simplewebauthn/server`); sessions in the DB (hash of token stored, expiry, revocation, device label).
 - **Step-up:** sensitive actions (unlock, disarm, invite, change roles, support access, backups restore) require a passkey assertion newer than N minutes (the UI already shows "Unlocking always needs your passkey").
+- **Configurable sensitive device operations:** which *device* operations need step-up is an admin setting, not hard-coded. Defaults are lock `unlock` and lock `open`. An admin can add or remove rules by domain and action, optionally narrowed by `device_class` (for example `cover.open` on `garage` covers, `alarm_control_panel.disarm`, or `lock.lock`). The command executor asks a `SensitivityPolicy` instead of a fixed list; the policy merges the code defaults with the household's saved rules. Changing the policy needs step-up itself, is written to `audit_log`, and the UI warns when a default is switched off. The set of non-device sensitive actions listed above (invites, role changes, support access, backup restore) is fixed and not configurable. Built together with the permissions module (step 4 of the build order).
 - **Authorization:** household RBAC (admin / member / guest) plus per-device policy. Guests can be time-limited and see only allow-listed devices. All checks run in the backend.
 - **HA credentials:** stored encrypted at rest (key from env). The operational token goes in the main process. The admin token is read only by the config-worker.
 - **No passthrough:** there is no "call any HA service" endpoint. Clients reach only defined application operations.
@@ -183,7 +184,7 @@ Features the current mock UI needs from the backend:
 1. HA Gateway, connections, discovery, state cache, capabilities, event normalizer (done, against the mock HA)
 2. **Things:** extend registry fetch (`entity_category`, `device_class`, `has_entity_name`, `translation_key`, device `connections`/`identifiers`/`via_device_id`), role classifier, name cleaner, grouping, `buildThings`; fixtures including an ESPHome Echo-style device and the demo HA
 3. Command executor (stub authorizer), using Thing-level targeting and facets
-4. Identity: users, passkeys, sessions, households, memberships, permissions; replace the stub authorizer
+4. Identity: users, passkeys, sessions, households, memberships, permissions; replace the stub authorizer; **sensitive-operations policy** (admin setting, defaults unlock/open) replacing the fixed list in the executor
 5. Overrides (rename/hide/re-role/merge/split), Things API, `/ws` realtime, areas/groups/favorites APIs; alias index and fuzzy resolver
 6. Scenes, routines, modes, config-worker, automations
 7. Activity, notifications, energy, history, insights

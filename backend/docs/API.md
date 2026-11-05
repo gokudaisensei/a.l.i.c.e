@@ -121,6 +121,8 @@ Facets are properties, not devices: they appear on their primary and never as th
 
 States: `pending, authorized, dispatched, accepted, confirmed, failed, timed_out, cancelled`.
 
+`failure.code` is one of `unknown_entity`, `unsupported_operation`, `invalid_parameters`, `device_unavailable`, `forbidden`, `step_up_required`, `ha_unreachable`, `ha_rejected`, `not_confirmed` (HA accepted but the expected state was not seen in time). `confirmedBy` is `state` (desired state observed), `already` (it was already true) or `unobservable` (scene/script/stop: nothing to observe, confirmed on HA's acceptance).
+
 ## Areas, groups, favorites
 
 | Method & path | Perm | Purpose |
@@ -208,6 +210,9 @@ Triggers (from the UI): `arrive, leave, time, sunset, door_opens, motion, power_
 | `GET /admin/diagnostics` | A | Versions, config summary (no secrets) |
 | `GET/POST /admin/support-sessions`, `DELETE /admin/support-sessions/:id` | A† | Grant, list, end scoped support access |
 | `GET /admin/audit?cursor=` | A | Audit log |
+| `GET /admin/security/sensitive-operations` | A | Effective rules: defaults plus household changes, each with `source: "default" \| "custom"` |
+| `PUT /admin/security/sensitive-operations` | A† | `{ rules: [{ domain, action, deviceClass?, sensitive }] }` replace the household's rules; audited, and the response flags any default that was switched off |
+| `DELETE /admin/security/sensitive-operations/:ruleId` | A† | Remove a custom rule (falls back to the default) |
 | `GET /health` | public | Liveness (already implemented) |
 
 ## WebSocket `/ws`

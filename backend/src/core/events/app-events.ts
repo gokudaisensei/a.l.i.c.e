@@ -1,4 +1,5 @@
 import type { NormalizedState } from "@/modules/home-assistant/capabilities/state-normalizer";
+import type { DeviceCommand } from "@/modules/devices/commands/command-types";
 import type { ConnectionStatus } from "@/modules/home-assistant/types";
 
 export type Availability = "available" | "unavailable" | "unknown";
@@ -50,7 +51,15 @@ export interface ConnectionStatusEvent extends Scope {
   error?: string;
 }
 
+export interface CommandEvent {
+  type: "command.created" | "command.authorized" | "command.dispatched" | "command.accepted" | "command.confirmed" | "command.failed" | "command.timed_out" | "command.cancelled";
+  householdId: string;
+  timestamp: string;
+  command: DeviceCommand;
+}
+
 export type AppEvent =
+  | CommandEvent
   | EntityStateChangedEvent
   | EntityAvailabilityChangedEvent
   | EntityRemovedEvent

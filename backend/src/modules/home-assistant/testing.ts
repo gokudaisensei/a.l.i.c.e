@@ -27,6 +27,8 @@ export class FakeGateway implements HomeAssistantGateway {
   calls: HaServiceCallInput[] = [];
   connectFailures: Error[] = [];
   connectAttempts = 0;
+  /** Simulates HA reacting to a service call (emit state changes, throw to simulate a rejection). */
+  onCallService?: (input: HaServiceCallInput) => void | Promise<void>;
   private statusCbs = new Set<(s: ConnectionStatus) => void>();
   private stateCbs = new Set<(e: HaStateChangedEvent) => void>();
   private eventCbs = new Map<string, Set<(e: HaRawEvent) => void>>();
@@ -47,7 +49,7 @@ export class FakeGateway implements HomeAssistantGateway {
   async getDevices() { return this.devices; }
   async getEntityRegistry() { return this.entityRegistry; }
   async getServices() { return {}; }
-  async callService(input: HaServiceCallInput) { this.calls.push(input); return { contextId: "ctx-1" }; }
+  async callService(input: HaServiceCallInput) { this.calls.push(input); await this.onCallService?.(input); return { contextId: `ctx-${this.calls.length}` }; }
   async subscribeStateChanges(cb: (e: HaStateChangedEvent) => void) { this.stateCbs.add(cb); return () => this.stateCbs.delete(cb); }
   async subscribeEvents(type: string, cb: (e: HaRawEvent) => void) {
     const set = this.eventCbs.get(type) ?? new Set(); set.add(cb); this.eventCbs.set(type, set);

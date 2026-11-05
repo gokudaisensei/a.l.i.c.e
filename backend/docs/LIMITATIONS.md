@@ -15,7 +15,7 @@ Status values: `open`, `partial`, `mitigated`, `resolved`, `accepted` (known and
 | L05 | Persistence | Only `device_commands` exists in the DB schema; docs name it `commands` and plan `command_attempts`. | Table needs renaming before real use | Rename in the schema pass | open | Run 1 |
 | L06 | Security | `GET /api/home-assistant/connections` is unauthenticated and temporary. | Leaks connection status/ids if exposed | Move behind admin auth when identity lands | open | Run 1 |
 | L07 | Security | HA tokens are read from env/config in plain text; encryption at rest and the two-token model (operational vs admin) are designed but not built. The config-worker process does not exist. | No separation of HA privileges yet | Encrypted token storage; config-worker process | open | Run 1 |
-| L08 | Commands | Command lifecycle states and `resolveOperation` exist, but there is no executor, authorizer, timeout handling or verification yet. | No device control through the app | Build the command executor (next after Things) | open | Run 1 |
+| L08 | Commands | Executor, lifecycle, timeouts and desired-state verification now exist (Run 5), but nothing exposes them yet: no HTTP route, no `/ws` stream, no Thing-level endpoint. | No device control through the app's API | Devices API with the identity work | partial | Run 1 |
 | L09 | Events | Attribute-only updates are published as `entity.state_changed` (same type as real state changes). Chatty entities (power sensors) can produce many events. | Possible noise for activity/notifications/WS | Per-consumer throttling or an `entity.attributes_changed` type | open | Run 1 |
 | L10 | Events | The in-process bus drops events if the process dies mid-handling; there is no replay. | Missed events after a crash or restart | Resync from HA on start (already done); durable log only if a consumer needs it | accepted | Run 1 |
 | L11 | Events | `context.userId` is the HA user of the token, not an Alice user. | Cannot attribute changes by Alice user from the event alone | Correlate `context.id` with `commands.ha_context_id` (test exists) | partial | Run 1 |
@@ -34,6 +34,16 @@ Status values: `open`, `partial`, `mitigated`, `resolved`, `accepted` (known and
 | L24 | Testing | The mock HA uses the `demo` integration: simple devices, few real-world quirks (no ESPHome, no shared MAC, no facets). Those cases are covered only by hand-written fixtures. | Heuristics untested on real hardware | Run against the user's real HA (read-only) and capture anonymised fixtures | open | Run 3 |
 | L25 | Operations | HA is assumed reachable by URL + token (HAOS, Container, Core). Supervisor-only features (HA backups via Supervisor, add-ons) are not used. | Backups to the HA host rely on HA's backup WebSocket commands, not yet built | Build `BackupDestination` (`ha`, `nas`, `upload`) | open | Run 1 |
 | L26 | Operations | Auto-update setting, nightly window and emergency deploy (`DEPLOY` + reason + step-up) are specified in docs only. | Not implemented | Updates module | open | Run 1 |
+| L27 | Commands | `InMemoryCommandStore` only: commands are lost on restart, and a command in flight at restart is neither resumed nor timed out. | No command history across restarts; stuck in-flight state is impossible but unrecorded | Drizzle-backed store (also resolves L05); on startup mark leftover non-terminal commands as `failed` | open | Run 5 |
+| L28 | Commands | One attempt per command; `command_attempts` and retries are not implemented. | A transient HA error fails the command | Retry policy for idempotent operations | open | Run 5 |
+| L29 | Commands | Authorizer is an allow-all stub. Step-up is a boolean the caller sets, not checked against a real passkey assertion. Sensitive operations are a fixed list (lock `unlock` and `open`); alarm disarm, garage-door covers and similar are not flagged and admins cannot change the list yet. | No real access control or step-up enforcement | Permissions module and passkey step-up; admin-configurable `SensitivityPolicy` (defaults unlock/open; `sensitive_operation_rules` table and `/admin/security/sensitive-operations`, designed in the docs) | open | Run 5 |
+| L30 | Commands | Confirmation tolerances absorb HA rounding (brightness ±1%, colour ±4, colour temperature ±60 K, target temperature ±0.5, cover position ±2, fan speed ±34). Fan speed in particular is coarse. Transitional states (`opening`, `locking`) do not confirm. | A near-miss can confirm; slow covers over 60 s time out | Per-device tolerances from `percentage_step` etc.; tune timeouts with real hardware | open | Run 5 |
+| L31 | Commands | No per-entity queueing. Concurrent commands on one entity race, and one state change can satisfy both (confirmation is by desired state, by design). | Ambiguous attribution under contention | Serialize per entity if it matters in practice | accepted | Run 5 |
+| L32 | Commands | `timed_out` does not cancel anything in HA; the device may still change later. `actualState` is only a snapshot at timeout. | A "timed out" command can succeed afterwards | Late-confirmation note on the command, or keep watching briefly | open | Run 5 |
+| L33 | Commands | Scenes, scripts and `stop` have no observable state, so they confirm when HA accepts; the effect is not verified. Undo (compensating command) and group fan-out are not built. | "Confirmed" means "accepted" for those | Verify scene targets individually; build undo and group commands | open | Run 5 |
+| L34 | Commands | `device_unavailable` fails fast from the cached availability, so a stale cache can reject a device that just came back. | Rare spurious failure | Resync-check before failing | accepted | Run 5 |
+| L35 | Commands | `failure.message` can carry HA's raw error text. Command events carry the full command, including parameters. | Internal details could reach clients | Sanitize at the API; filter `/ws` command events by permission | open | Run 5 |
+| L36 | IDs | ULIDs are time-ordered only to the millisecond; two ids created in the same ms are not ordered. The command store breaks ties by insertion order; a DB-backed store must do the same (e.g. a sequence column). | Wrong "newest first" order for same-ms commands | Monotonic ULIDs or a sequence column in the Drizzle store | open | Run 5 |
 
 ## Run log
 
@@ -47,14 +57,24 @@ Status values: `open`, `partial`, `mitigated`, `resolved`, `accepted` (known and
 - Verified: unit tests including brightness round-trip (1–100%), live test (30% set, observed 30%).
 - Caveats recorded: L12, L13.
 
-### Run 3 — Things model (not yet committed when this entry was written)
+### Run 3 — Things model (committed `637406d`)
 - Built: registry field extension, role classifier, name cleaner, grouping (`buildThings`) with overrides, fixtures incl. an Echo-style ESPHome device.
 - Verified: 64 tests passing; live run over the mock HA's 128 entities produced 115 Things (97 visible).
 - Found and fixed: integration test depended on the light's starting brightness (L23).
 - Caveats recorded: L15–L24.
 
-### Run 4 — Facet values
+### Run 4 — Facet values (committed `637406d`)
 - Built: `facet-values.ts` (`describeFacet`, `describeThingFacets`): polarity from `device_class` (fixed HA semantics), then name tokens, then user override `onMeans`; unknown/unavailable never guessed; `deviceClass` added to `ThingEntity`.
 - Verified: 49 tests in `things/` (device-class table, name-token cases, "unmuted" is not "muted", ambiguity reporting, override and derived opposite, enum sensors, unavailable states, Echo example end to end).
 - Result for the Echo example: with no polarity information the shutter facet is `ambiguous` (On/Off) rather than wrongly labelled; once `onMeans: "closed"` is set it reads Closed/Open. A fully automatic answer is not possible from HA data alone (L01).
 - Caveats recorded: L01–L03.
+
+### Run 5 — Command executor (uncommitted when written)
+- Built: `CommandExecutor` (validate, authorize, step-up for sensitive operations, dispatch, accept, desired-state confirmation, timeout, cancel), expectations with tolerances and parameter validation, in-memory store, allow-all authorizer, `command.*` events on the bus, `resolveThingTarget`, ULID ids.
+- Verified: 29 new unit tests (fake gateway: happy paths, already-true, unobservable, physical-press confirmation, unrelated change times out, late confirmation, HA rejection, pre-dispatch failures, household scoping, denied/step-up, cancel) plus 6 live tests against the mock HA (switch on/off, toggle, brightness in percent, step-up unlock/lock of a real demo lock, HA-rejected value, event order). Live tests passed twice in a row.
+- Fixed in passing: finished runs were kept in memory forever; now dropped once settled. A flaky ordering test exposed that same-millisecond commands could list in the wrong order; the store now breaks ties by insertion order (L36).
+- Caveats recorded: L08 (now partial), L27–L36.
+
+### Run 6 — Plan update: configurable sensitive operations (docs only)
+- Decision (from the user): admins can choose which device operations need step-up, with lock `unlock` and `open` as defaults. Recorded in ARCHITECTURE.md (security model, build order step 4), DATABASE.md (`sensitive_operation_rules`) and API.md (`/admin/security/sensitive-operations`). To be built with the permissions module; the executor will take a `SensitivityPolicy` in place of the fixed `isSensitiveOperation`.
+- Caveats: L29 updated. Not built or tested yet.

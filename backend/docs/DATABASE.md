@@ -49,6 +49,7 @@ households ─< activity_events, notifications, audit_log, jobs, config_jobs
 | `household_settings` | household_id PK, mode (`home`/`away`/`night`/`vacation`), mode_changed_at, mode_changed_by, settings json | Current household mode |
 | `role_permissions` | role, permission | Seeded static RBAC matrix (`device.control`, `automation.write`, `admin.manage`, …) |
 | `device_policies` | id, household_id, connection_id, entity_id, subject_type (`role`/`member`), subject_id, effect (`allow`/`deny`), operations json? | Device-level overrides, e.g. guest can see/control a device; deny beats allow |
+| `sensitive_operation_rules` | id, household_id, domain, action, device_class (`''` = any), sensitive (bool), updated_by, updated_at, UNIQUE(household_id, domain, action, device_class) | Admin changes to which device operations need step-up. Code defaults (`lock.unlock`, `lock.open`) apply when no row matches; a row with `sensitive = false` switches a default off. The most specific match wins (device_class beats any) |
 
 ## Home Assistant projection
 
