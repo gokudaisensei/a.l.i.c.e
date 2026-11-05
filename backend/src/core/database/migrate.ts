@@ -1,5 +1,5 @@
-import { migrate } from "drizzle-orm/bun-sqlite/migrator";
-import { db } from "./client";
+import { env } from "@/core/config/env";
+import { createDb, runMigrations } from "./client";
 
-migrate(db, { migrationsFolder: "./drizzle" });
+runMigrations(createDb(env.databaseUrl));
 console.log("Migrations applied");

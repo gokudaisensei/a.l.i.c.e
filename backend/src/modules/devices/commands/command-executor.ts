@@ -7,7 +7,8 @@ import { assertTransition, type CommandState, isTerminal } from "../command-life
 import { type Authorizer, allowAll } from "./authorizer";
 import { type CommandStore, InMemoryCommandStore } from "./command-store";
 import type { CommandInput, DeviceCommand, FailureCode } from "./command-types";
-import { type Expectation, expectationFor, isSensitiveOperation, validateParameters } from "./expectations";
+import { type Expectation, expectationFor, validateParameters } from "./expectations";
+import { defaultSensitivity, type SensitivityPolicy } from "./sensitivity";
 
 /** How long to wait for the desired state after HA accepts a command. Movers and thermostats are slower. */
 const DEFAULT_TIMEOUT_MS: Record<string, number> = { cover: 60_000, lock: 15_000, climate: 15_000, fan: 10_000, valve: 60_000 };
@@ -19,6 +20,8 @@ export interface CommandExecutorDeps {
   log: Logger;
   store?: CommandStore;
   authorizer?: Authorizer;
+  /** Which operations need step-up. Defaults to the built-in rules (unlock/open on locks). */
+  sensitivity?: SensitivityPolicy;
   now?: () => number;
 }
 
@@ -30,12 +33,14 @@ export interface CommandExecutorDeps {
 export class CommandExecutor {
   private readonly store: CommandStore;
   private readonly authorizer: Authorizer;
+  private readonly sensitivity: SensitivityPolicy;
   private readonly now: () => number;
   private readonly runs = new Map<string, Promise<DeviceCommand>>();
 
   constructor(private readonly deps: CommandExecutorDeps) {
     this.store = deps.store ?? new InMemoryCommandStore();
     this.authorizer = deps.authorizer ?? allowAll;
+    this.sensitivity = deps.sensitivity ?? defaultSensitivity;
     this.now = deps.now ?? Date.now;
   }
 
@@ -93,7 +98,7 @@ export class CommandExecutor {
     // 1. Find the entity and check the operation is supported and well-formed.
     const found = this.find(input.householdId, entityId);
     if (!found) return this.fail(id, "unknown_entity", `No such device entity: ${entityId}`);
-    const { conn, caps, projection } = found;
+    const { conn, caps, projection, deviceClass } = found;
     this.store.update(id, { connectionId: conn.config.id });
     if (!supportsOperation(caps, action)) return this.fail(id, "unsupported_operation", `${entityId} does not support "${action}"`);
     const bad = validateParameters(action, params);
@@ -103,10 +108,10 @@ export class CommandExecutor {
     if (projection?.availability === "unavailable") return this.fail(id, "device_unavailable", `${entityId} is unavailable`);
 
     // 2. Authorize (permissions, then step-up for sensitive operations).
-    const authz = await this.authorizer.authorize({ actor: input.actor, householdId: input.householdId, entityId, domain, action });
+    const authz = await this.authorizer.authorize({ actor: input.actor, householdId: input.householdId, connectionId: conn.config.id, entityId, domain, action });
     if (stopped()) return this.store.get(id)!; // cancelled while authorizing
     if (!authz.allowed) return this.fail(id, "forbidden", authz.reason ?? "Not allowed");
-    if (isSensitiveOperation(domain, action) && !input.actor.steppedUp) {
+    if (!input.actor.steppedUp && (await this.sensitivity.isSensitive({ householdId: input.householdId, domain, action, deviceClass }))) {
       return this.fail(id, "step_up_required", `"${action}" on ${entityId} needs a fresh passkey confirmation`);
     }
     this.move(id, "authorized");
@@ -169,7 +174,7 @@ export class CommandExecutor {
   private find(householdId: string, entityId: string) {
     for (const conn of this.deps.manager.forHousehold(householdId)) {
       const ent = conn.inventory?.entities.find((e) => e.entityId === entityId);
-      if (ent) return { conn, caps: ent.capabilities, projection: conn.cache.get(entityId) };
+      if (ent) return { conn, caps: ent.capabilities, projection: conn.cache.get(entityId), deviceClass: ent.deviceClass };
     }
     return null;
   }

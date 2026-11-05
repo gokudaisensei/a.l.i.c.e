@@ -184,8 +184,8 @@ Features the current mock UI needs from the backend:
 1. HA Gateway, connections, discovery, state cache, capabilities, event normalizer (done, against the mock HA)
 2. **Things:** extend registry fetch (`entity_category`, `device_class`, `has_entity_name`, `translation_key`, device `connections`/`identifiers`/`via_device_id`), role classifier, name cleaner, grouping, `buildThings`; fixtures including an ESPHome Echo-style device and the demo HA
 3. Command executor (stub authorizer), using Thing-level targeting and facets
-4. Identity: users, passkeys, sessions, households, memberships, permissions; replace the stub authorizer; **sensitive-operations policy** (admin setting, defaults unlock/open) replacing the fixed list in the executor
-5. Overrides (rename/hide/re-role/merge/split), Things API, `/ws` realtime, areas/groups/favorites APIs; alias index and fuzzy resolver
+4. Identity (done, Run 7): users, passkeys, sessions, households, memberships, permissions, DB authorizer, and the admin-configurable sensitive-operations policy replacing the fixed list in the executor. Memberships are part of the households module
+5. HA connection setup and `ha_*`/override tables, Things API, commands endpoints, overrides (rename/hide/re-role/merge/split), `/ws` realtime, areas/groups/favorites APIs; alias index and fuzzy resolver
 6. Scenes, routines, modes, config-worker, automations
 7. Activity, notifications, energy, history, insights
 8. Backups, updates, admin; then AI (tool layer over the command pipeline with risk classes) and the LLM suggestion job

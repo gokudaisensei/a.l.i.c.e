@@ -1,2 +1,5 @@
-// Schema barrel. Add one file per module's tables and re-export here.
-export * from "./device-commands";
+// Schema barrel. One file per area; re-export everything here (drizzle.config.ts reads this file).
+export * from "./identity";
+export * from "./households";
+export * from "./access";
+export * from "./operations";

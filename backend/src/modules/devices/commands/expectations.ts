@@ -96,6 +96,3 @@ export function expectationFor(domain: string, action: string, p: Params = {}, b
     default: return null; // activate, run, stop
   }
 }
-
-/** Operations that need a fresh passkey step-up. */
-export const isSensitiveOperation = (domain: string, action: string) => domain === "lock" && (action === "unlock" || action === "open");

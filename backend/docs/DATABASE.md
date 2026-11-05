@@ -35,7 +35,7 @@ households ─< activity_events, notifications, audit_log, jobs, config_jobs
 | `users` | id, display_name, avatar_color, locale, created_at | Profile; preferences in `user_preferences` |
 | `user_preferences` | user_id PK, quiet_hours json, push_enabled, extra json | Quiet hours / push toggles from the UI |
 | `passkeys` | id (credential id), user_id, public_key, counter, transports json, device_label, created_at, last_used_at | WebAuthn credentials; ≥1 per user |
-| `sessions` | id, user_id, token_hash UNIQUE, created_at, expires_at, last_seen_at, revoked_at, user_agent, last_step_up_at | Revocable; `last_step_up_at` backs step-up checks |
+| `sessions` | id, user_id, token_hash UNIQUE, created_at, expires_at, last_seen_at, revoked_at, user_agent, last_step_up_at, restricted | Revocable; `last_step_up_at` backs step-up checks; `restricted` marks recovery sessions that may only add a passkey |
 | `recovery_codes` | id, user_id, code_hash, used_at | One-time codes, shown once |
 | `webauthn_challenges` | id, user_id?, challenge, purpose, expires_at | Short-lived, swept by job |
 
@@ -45,9 +45,9 @@ households ─< activity_events, notifications, audit_log, jobs, config_jobs
 |---|---|---|
 | `households` | id, name, timezone, created_at | One row at first sign-up |
 | `household_members` | id, household_id, user_id, role (`admin`/`member`/`guest`), status, expires_at?, joined_at, UNIQUE(household_id, user_id) | `expires_at` for time-limited guests |
-| `invitations` | id, household_id, code_hash, role, created_by, expires_at, used_by?, used_at?, revoked_at? | Code shown once (e.g. `MAPLE-4829-KITE`) |
+| `invitations` | id, household_id, code_hash, role, guest_access_ms?, created_by, created_at, expires_at, used_by?, used_at?, revoked_at? | Code shown once, format `MAPLE-482913-KITE-7Q4X` (~50 bits); guests get `guest_access_ms` of access after joining |
 | `household_settings` | household_id PK, mode (`home`/`away`/`night`/`vacation`), mode_changed_at, mode_changed_by, settings json | Current household mode |
-| `role_permissions` | role, permission | Seeded static RBAC matrix (`device.control`, `automation.write`, `admin.manage`, …) |
+| ~~`role_permissions`~~ | | Not a table: the RBAC matrix is the code constant `ROLE_PERMISSIONS` (`modules/permissions/permissions.ts`). Revisit if admins ever need custom roles |
 | `device_policies` | id, household_id, connection_id, entity_id, subject_type (`role`/`member`), subject_id, effect (`allow`/`deny`), operations json? | Device-level overrides, e.g. guest can see/control a device; deny beats allow |
 | `sensitive_operation_rules` | id, household_id, domain, action, device_class (`''` = any), sensitive (bool), updated_by, updated_at, UNIQUE(household_id, domain, action, device_class) | Admin changes to which device operations need step-up. Code defaults (`lock.unlock`, `lock.open`) apply when no row matches; a row with `sensitive = false` switches a default off. The most specific match wins (device_class beats any) |
 
@@ -94,7 +94,7 @@ Precedence everywhere: **user override, then computed value, then HA source valu
 
 | Table | Columns | Notes |
 |---|---|---|
-| `commands` | id, household_id, connection_id, entity_id, domain, action, parameters json, requested_state json, actual_state json?, state, requested_by, source (`user`/`automation`/`ai`/`job`), ha_context_id?, failure_reason?, created_at, dispatched_at?, accepted_at?, finished_at?, timeout_at | Already scaffolded as `device_commands`; will be renamed `commands` |
+| `commands` (implemented) | id, household_id, connection_id, entity_id, domain, action, parameters json, requested_state json, actual_state json?, state, requested_by, source (`user`/`automation`/`ai`/`job`), ha_context_id?, failure_reason?, created_at, dispatched_at?, accepted_at?, finished_at?, timeout_at | Implemented in Run 7; `failure` is json `{code, message}`, `confirmed_by` is `state`/`already`/`unobservable`, `requested_by` is not a foreign key so history outlives users |
 | `command_attempts` | id, command_id, attempt, state, result json?, started_at, finished_at | Retries |
 | `activity_events` | id, household_id, actor_type, actor_id?, entity_id?, kind, summary, payload json, created_at | Timeline feed; index (household_id, created_at DESC) |
 | `activity_reads` | user_id, household_id, last_seen_at | "New since last visit" |
@@ -129,3 +129,7 @@ Precedence everywhere: **user override, then computed value, then HA source valu
 - Drizzle Kit generates SQL migrations in `drizzle/`, applied at startup by `src/core/database/migrate.ts` (and by `bun run db:migrate`).
 - Backups use `VACUUM INTO` / SQLite online backup, not file copy of a live WAL database.
 - `ha_*` tables can be truncated safely; discovery repopulates them on next connect. Application data that must survive (`entity_settings`, `thing_overrides`, `thing_links`, `entity_overrides`, `favorites`, `group_members`, `device_policies`) references entities by `(connection_id, entity_id)` strings, not by `ha_entities` row ids, so a rebuild never orphans it.
+
+## Implementation status
+
+Implemented (migration `0000`, Run 7): `users`, `user_preferences`, `passkeys`, `sessions`, `recovery_codes`, `webauthn_challenges`, `households`, `household_members`, `invitations`, `household_settings`, `device_policies`, `sensitive_operation_rules`, `commands`, `audit_log`. Everything else in this document (HA projection, Things overrides, features, notifications, jobs, backups, updates) is still design only; see LIMITATIONS.md L04.

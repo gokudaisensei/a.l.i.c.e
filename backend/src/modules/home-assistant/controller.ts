@@ -1,8 +1,13 @@
 import { Elysia } from "elysia";
+import { requirePermission } from "@/core/http/guards";
+import { sessionPlugin } from "@/core/http/session-plugin";
+import type { Services } from "@/services";
 import { homeAssistantService } from "./service";
 
-export const homeAssistantController = new Elysia({ name: "module.home-assistant", prefix: "/home-assistant", tags: ["home-assistant"] }).get(
-  "/connections",
-  () => ({ connections: homeAssistantService.statuses() }),
-  { detail: { summary: "Connection status for each Home Assistant instance (temporary; will move behind admin auth)" } },
-);
+export const homeAssistantController = ({ auth, households }: Services) =>
+  new Elysia({ name: "module.home-assistant", prefix: "/ha", tags: ["home-assistant"] })
+    .use(sessionPlugin(auth, households))
+    .get("/connection", (ctx) => {
+      const { membership } = requirePermission(ctx, "ha.manage");
+      return { connections: homeAssistantService.statuses().filter((c) => c.householdId === membership.householdId) };
+    }, { detail: { summary: "Home Assistant connection status for this household" } });

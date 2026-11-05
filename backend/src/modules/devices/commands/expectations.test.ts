@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { expectationFor, isSensitiveOperation, validateParameters } from "./expectations";
+import { expectationFor, validateParameters } from "./expectations";
 
 describe("validateParameters", () => {
   test("requires and type-checks parameters", () => {
@@ -36,10 +36,5 @@ describe("expectationFor", () => {
     expect(expectationFor("switch", "toggle", {}, {})).toBeNull();
     expect(expectationFor("scene", "activate")).toBeNull();
     expect(expectationFor("cover", "stop")).toBeNull();
-  });
-  test("sensitive operations", () => {
-    expect(isSensitiveOperation("lock", "unlock")).toBe(true);
-    expect(isSensitiveOperation("lock", "lock")).toBe(false);
-    expect(isSensitiveOperation("light", "unlock")).toBe(false);
   });
 });

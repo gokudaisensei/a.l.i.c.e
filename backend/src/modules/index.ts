@@ -1,9 +1,9 @@
 import { Elysia } from "elysia";
-import { authenticationController } from "./authentication";
+import type { Services } from "@/services";
+import { authController } from "./authentication";
 import { usersController } from "./users";
 import { householdsController } from "./households";
-import { membershipsController } from "./memberships";
-import { permissionsController } from "./permissions";
+import { adminSecurityController, permissionsController } from "./permissions";
 import { homeAssistantController } from "./home-assistant";
 import { devicesController } from "./devices";
 import { areasController } from "./areas";
@@ -23,27 +23,29 @@ import { backupsController } from "./backups";
 import { updatesController } from "./updates";
 import { administrationController } from "./administration";
 
-export const modules = new Elysia({ name: "modules", prefix: "/api" })
-  .use(authenticationController)
-  .use(usersController)
-  .use(householdsController)
-  .use(membershipsController)
-  .use(permissionsController)
-  .use(homeAssistantController)
-  .use(devicesController)
-  .use(areasController)
-  .use(groupsController)
-  .use(favoritesController)
-  .use(scenesController)
-  .use(routinesController)
-  .use(automationsController)
-  .use(householdModesController)
-  .use(activityController)
-  .use(notificationsController)
-  .use(energyController)
-  .use(insightsController)
-  .use(historyController)
-  .use(aiController)
-  .use(backupsController)
-  .use(updatesController)
-  .use(administrationController);
+/** Everything under /api/v1. Modules that are still stubs answer GET / with "not_implemented". */
+export const buildModules = (s: Services) =>
+  new Elysia({ name: "modules", prefix: "/api/v1" })
+    .use(authController(s))
+    .use(usersController(s))
+    .use(householdsController(s))
+    .use(permissionsController(s))
+    .use(adminSecurityController(s))
+    .use(homeAssistantController(s))
+    .use(devicesController)
+    .use(areasController)
+    .use(groupsController)
+    .use(favoritesController)
+    .use(scenesController)
+    .use(routinesController)
+    .use(automationsController)
+    .use(householdModesController)
+    .use(activityController)
+    .use(notificationsController)
+    .use(energyController)
+    .use(insightsController)
+    .use(historyController)
+    .use(aiController)
+    .use(backupsController)
+    .use(updatesController)
+    .use(administrationController);

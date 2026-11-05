@@ -3,6 +3,7 @@ import type { Actor } from "./command-types";
 export interface AuthorizationRequest {
   actor: Actor;
   householdId: string;
+  connectionId: string;
   entityId: string;
   domain: string;
   action: string;
