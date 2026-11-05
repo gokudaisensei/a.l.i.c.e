@@ -12,6 +12,8 @@ import type { HouseholdService } from "../households/household.service";
 import { can } from "../permissions/permissions";
 import { type HaScriptView, type HaSyncService, scriptView } from "../home-assistant/sync.service";
 import type { ScenesService } from "../scenes/scenes.service";
+import type { AppEvent } from "@/core/events/app-events";
+import type { EventBus } from "@/core/events/event-bus";
 
 export const MAX_STEPS = 50;
 export const MAX_DELAY_S = 3600;
@@ -77,6 +79,7 @@ export class RoutinesService {
     private readonly sleep: (ms: number, wake: (fn: () => void) => void) => Promise<void> = (ms, wake) =>
       new Promise((resolve) => { const t = setTimeout(resolve, ms); wake(() => { clearTimeout(t); resolve(); }); }),
     private readonly sync?: HaSyncService,
+    private readonly bus?: EventBus<AppEvent>,
   ) {}
 
   private row(c: Caller, id: string) {
@@ -248,6 +251,7 @@ export class RoutinesService {
     run.state = live.cancelled ? "cancelled" : stopped ? "stopped" : anyFailed ? "failed" : "completed";
     run.finishedAt = this.now();
     this.save(run, { resumeAt: null });
+    this.bus?.publish({ type: "routine.finished", householdId: run.householdId, userId: run.userId, routineId: run.routineId, routineName: run.routineName, state: run.state as "completed" | "failed" | "stopped" | "cancelled", timestamp: new Date(this.now()).toISOString() });
   }
 
   /**

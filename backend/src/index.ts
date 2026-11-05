@@ -15,6 +15,9 @@ services.sync.reconcileAll(); // anything that was waiting for the worker or an 
 const resumed = services.routines.resumeInterrupted();
 if (resumed) logger.warn({ resumed }, "picked up routine runs that were in flight at the last shutdown"); // stored Home Assistant connections reconnect in the background
 
+services.activity.prune();
+setInterval(() => services.activity.prune(), 24 * 3_600_000).unref(); // the timeline keeps 90 days
+
 const app = buildApp(services);
 setInterval(() => services.realtime.sweep(), 15_000).unref(); // end sockets whose session expired or was revoked
 app.listen(env.port);

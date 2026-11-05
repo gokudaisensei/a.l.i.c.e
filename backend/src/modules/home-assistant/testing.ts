@@ -6,6 +6,9 @@ import type {
   HaDeviceRegistryEntry,
   HaEntityRegistryEntry,
   HaEntityState,
+  HaHistoryPoint,
+  HaStatisticsPeriod,
+  HaStatisticsPoint,
   HaRawEvent,
   HaServiceCallInput,
   HaStateChangedEvent,
@@ -25,6 +28,12 @@ export class FakeGateway implements HomeAssistantGateway {
   devices: HaDeviceRegistryEntry[] = [];
   entityRegistry: HaEntityRegistryEntry[] = [];
   calls: HaServiceCallInput[] = [];
+  /** Recorded states per entity, for history tests. */
+  history: Record<string, HaHistoryPoint[]> = {};
+  /** Long-term statistics per entity and period, for energy tests. */
+  statistics: Record<string, Partial<Record<HaStatisticsPeriod, HaStatisticsPoint[]>>> = {};
+  historyCalls: { ids: string[]; from: number; to: number }[] = [];
+  statisticsCalls: { ids: string[]; from: number; to: number; period: string }[] = [];
   connectFailures: Error[] = [];
   connectAttempts = 0;
   /** Simulates HA reacting to a service call (emit state changes, throw to simulate a rejection). */
@@ -49,6 +58,14 @@ export class FakeGateway implements HomeAssistantGateway {
   async getDevices() { return this.devices; }
   async getEntityRegistry() { return this.entityRegistry; }
   async getServices() { return {}; }
+  async getHistory(ids: string[], from: number, to: number) {
+    this.historyCalls.push({ ids, from, to });
+    return Object.fromEntries(ids.map((id) => [id, (this.history[id] ?? []).filter((p) => p.at >= from && p.at <= to)]));
+  }
+  async getStatistics(ids: string[], from: number, to: number, period: HaStatisticsPeriod) {
+    this.statisticsCalls.push({ ids, from, to, period });
+    return Object.fromEntries(ids.map((id) => [id, (this.statistics[id]?.[period] ?? []).filter((p) => p.start >= from && p.start < to)]));
+  }
   async getConfig() { return { version: "2026.10.4", location_name: "Fake Home" }; }
   async callService(input: HaServiceCallInput) { this.calls.push(input); await this.onCallService?.(input); return { contextId: `ctx-${this.calls.length}` }; }
   async subscribeStateChanges(cb: (e: HaStateChangedEvent) => void) { this.stateCbs.add(cb); return () => this.stateCbs.delete(cb); }

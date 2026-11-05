@@ -13,6 +13,9 @@ import type {
   HaDeviceRegistryEntry,
   HaEntityRegistryEntry,
   HaEntityState,
+  HaHistoryPoint,
+  HaStatisticsPeriod,
+  HaStatisticsPoint,
   HaRawEvent,
   HaServiceCallInput,
   HaServiceCallResult,
@@ -98,6 +101,29 @@ export class HaWebSocketGateway implements HomeAssistantGateway {
 
   getConfig() {
     return this.c.sendMessagePromise<{ version: string; location_name?: string }>({ type: "get_config" });
+  }
+
+  async getHistory(entityIds: string[], from: number, to: number): Promise<Record<string, HaHistoryPoint[]>> {
+    const raw = await this.c.sendMessagePromise<Record<string, { s: string; a?: Record<string, unknown>; lu?: number; lc?: number }[]>>({
+      type: "history/history_during_period", start_time: new Date(from).toISOString(), end_time: new Date(to).toISOString(), entity_ids: entityIds,
+      include_start_time_state: true, significant_changes_only: false, minimal_response: false, no_attributes: false,
+    });
+    const out: Record<string, HaHistoryPoint[]> = {};
+    for (const [id, rows] of Object.entries(raw)) {
+      let last: Record<string, unknown> = {};
+      out[id] = rows.map((r) => {
+        if (r.a) last = r.a; // attributes are only sent when they change
+        return { at: Math.round((r.lu ?? r.lc ?? from / 1000) * 1000), state: r.s, attributes: last };
+      });
+    }
+    return out;
+  }
+
+  async getStatistics(entityIds: string[], from: number, to: number, period: HaStatisticsPeriod): Promise<Record<string, HaStatisticsPoint[]>> {
+    return this.c.sendMessagePromise<Record<string, HaStatisticsPoint[]>>({
+      type: "recorder/statistics_during_period", start_time: new Date(from).toISOString(), end_time: new Date(to).toISOString(),
+      statistic_ids: entityIds, period, types: ["change", "mean", "min", "max", "sum"],
+    });
   }
 
   async callService(input: HaServiceCallInput): Promise<HaServiceCallResult> {

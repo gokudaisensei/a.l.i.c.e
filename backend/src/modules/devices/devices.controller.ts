@@ -14,7 +14,7 @@ const caller = (a: RequestAuth, perm: Parameters<typeof requirePermission>[1]): 
 
 const stateUnion = t.Union(COMMAND_STATES.map((s) => t.Literal(s)));
 
-export const devicesController = ({ auth, households, devices, things }: Services) =>
+export const devicesController = ({ auth, households, devices, things, activity }: Services) =>
   new Elysia({ name: "module.devices", prefix: "/devices", tags: ["devices"] })
     .use(sessionPlugin(auth, households))
     .get("/", (ctx) => ({ devices: devices.list(caller(ctx, "device.view"), { ...ctx.query, includeHidden: ctx.query.includeHidden === "true", favorite: ctx.query.favorite === "true" }) }), {
@@ -31,6 +31,11 @@ export const devicesController = ({ auth, households, devices, things }: Service
     .get("/:id", (ctx) => devices.get(caller(ctx, "device.view"), ctx.params.id, ctx.query.include === "diagnostics"), {
       query: t.Object({ include: t.Optional(t.String()) }),
     })
+    .get("/:id/activity", (ctx) => {
+      const c = caller(ctx, "device.view");
+      devices.get(c, ctx.params.id); // 404 if the caller cannot see the device
+      return activity.list(c, { ...ctx.query, thingId: ctx.params.id });
+    }, { query: t.Object({ limit: t.Optional(t.Numeric({ minimum: 1, maximum: 100 })), before: t.Optional(t.String()) }), detail: { summary: "What has happened to this device, newest first" } })
     .get("/:id/capabilities", (ctx) => devices.capabilities(caller(ctx, "device.view"), ctx.params.id))
     .patch("/:id/name", (ctx) => {
       const c = caller(ctx, "device.rename");

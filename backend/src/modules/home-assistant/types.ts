@@ -82,3 +82,25 @@ export interface HaServiceCallResult {
 }
 
 export type ConnectionStatus = "disconnected" | "connecting" | "connected" | "reconnecting" | "auth_failed";
+
+/** One recorded state of an entity. */
+export interface HaHistoryPoint {
+  /** Milliseconds since the epoch. */
+  at: number;
+  state: string;
+  attributes: Record<string, unknown>;
+}
+
+/** Long-term statistics for one period (hour, day...). Which fields are present depends on the sensor. */
+export interface HaStatisticsPoint {
+  start: number;
+  end: number;
+  mean?: number | null;
+  min?: number | null;
+  max?: number | null;
+  /** How much a cumulative sensor (energy) went up during the period. */
+  change?: number | null;
+  sum?: number | null;
+}
+
+export type HaStatisticsPeriod = "5minute" | "hour" | "day" | "week" | "month";

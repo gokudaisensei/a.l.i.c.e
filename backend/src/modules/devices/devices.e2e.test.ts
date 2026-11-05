@@ -184,9 +184,9 @@ describe("devices (Things) over HTTP", () => {
     expect(merged.id).toBe(kettle.id); // keeps the first one's id
     expect(await list()).toHaveLength((await list()).length);
     expect(byName(await list(), "Front door sensor")).toBeUndefined();
-    expect(merged.sensors.map((s: any) => s.entityId).sort()).toEqual(["sensor.front_door_sensor_battery", "sensor.kettle_plug_power"]);
+    expect(merged.sensors.map((s: any) => s.entityId).sort()).toEqual(["sensor.front_door_sensor_battery", "sensor.kettle_plug_energy", "sensor.kettle_plug_power"]);
     expect((await admin.call("POST", `/devices/${merged.id}/split`, { entityIds: ["binary_sensor.front_door_sensor_door"] })).status).toBe(200);
-    expect(byName(await list(), "Kettle plug").sensors).toHaveLength(2);
+    expect(byName(await list(), "Kettle plug").sensors).toHaveLength(3);
     now += 6 * MIN;
     expect((await admin.call("POST", "/devices/merge", { ids: [kettle.id, door.id] })).json.error.code).toBe("step_up_required");
   });

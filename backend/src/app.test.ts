@@ -23,8 +23,8 @@ describe("app basics", () => {
   });
 
   test("modules that are still stubs are mounted under /api/v1", async () => {
-    const res = await app.handle(new Request("http://localhost/api/v1/energy"));
-    expect(await res.json()).toEqual({ module: "energy", status: "not_implemented" });
+    const res = await app.handle(new Request("http://localhost/api/v1/backups"));
+    expect(await res.json()).toEqual({ module: "backups", status: "not_implemented" });
   });
 
   test("everything private says 401 without a session", async () => {

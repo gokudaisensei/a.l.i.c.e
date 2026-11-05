@@ -10,6 +10,8 @@ import { pemFromEnv } from "@/core/security/sealed";
 import { AuthService, type AuthConfig } from "@/modules/authentication/auth.service";
 import { CommandExecutor } from "@/modules/devices/commands/command-executor";
 import { DrizzleCommandStore } from "@/modules/devices/commands/drizzle-command-store";
+import { ActivityService } from "@/modules/activity/activity.service";
+import { AdminService } from "@/modules/administration/admin.service";
 import { ActionService } from "@/modules/devices/actions";
 import { VoiceExposureService } from "@/modules/devices/voice";
 import { DevicesService } from "@/modules/devices/devices.service";
@@ -33,6 +35,8 @@ import { HaConnectionService } from "@/modules/home-assistant/connection.service
 import { ConfigJobService } from "@/modules/home-assistant/config-jobs.service";
 import { HaSyncService } from "@/modules/home-assistant/sync.service";
 import { ThingsService } from "@/modules/home-assistant/things/things.service";
+import { EnergyService } from "@/modules/energy/energy.service";
+import { HistoryService } from "@/modules/history/history.service";
 import { HouseholdService } from "@/modules/households/household.service";
 import { PresenceService } from "@/modules/households/presence.service";
 import { PermissionService } from "@/modules/permissions/permission.service";
@@ -64,6 +68,10 @@ export interface Services {
   scenes: ScenesService;
   notifications: NotificationsService;
   push: PushService;
+  admin: AdminService;
+  activity: ActivityService;
+  history: HistoryService;
+  energy: EnergyService;
   alerts: AlertsService;
   routines: RoutinesService;
   automations: AutomationsService;
@@ -134,14 +142,16 @@ export function createServices(db: Db, opts: ServiceOptions = {}): Services {
   const modes = new ModesService(db, bus, opts.now);
   const presence = new PresenceService(db, bus, things, households, opts.now);
   presence.start();
+  const activity = new ActivityService(db, bus, things, households, permissions, opts.now);
+  activity.start();
   const modeMirror = new ModeMirror(bus, manager, modes, configJobs, logger.child({ module: "mode-mirror" }));
   modeMirror.start();
   sync.onReconcile((householdId) => modeMirror.reconcile(householdId));
   const insights = new InsightsService(db, bus, things, modes, presence, opts.now);
   insights.start(opts.background ? 5 * 60_000 : null);
-  const scenes = new ScenesService(db, actions, opts.now, sync);
-  const routines = new RoutinesService(db, actions, scenes, modes, households, opts.now, opts.sleep, sync);
-  const realtime = new RealtimeHub({ bus, things, permissions, households, auth, devices, alerts, notifications, log: logger.child({ module: "realtime" }), now: opts.now });
+  const scenes = new ScenesService(db, actions, opts.now, sync, bus);
+  const routines = new RoutinesService(db, actions, scenes, modes, households, opts.now, opts.sleep, sync, bus);
+  const realtime = new RealtimeHub({ bus, things, permissions, households, auth, devices, alerts, notifications, activity, log: logger.child({ module: "realtime" }), now: opts.now });
   realtime.start();
 
   const automations = new AutomationsService(db, bus, configJobs, sync, things, actions, modeMirror, households, scenes, routines, presence, notifications, opts.now);
@@ -154,10 +164,13 @@ export function createServices(db: Db, opts: ServiceOptions = {}): Services {
     db, manager, bus, gatewayFactory, () => parseKey(opts.secretsKey === undefined ? env.secretsKey : opts.secretsKey),
     () => (opts.adminSealPublicKey !== undefined ? opts.adminSealPublicKey : env.adminSealPublicKey ? pemFromEnv(env.adminSealPublicKey) : null), log, opts.now,
   );
+  const history = new HistoryService(things, devices, opts.now);
+  const energy = new EnergyService(db, things, devices, opts.now);
+  const admin = new AdminService(db, ha, configJobs, push, things, households, opts.now);
   ha.afterAdminToken((householdId, userId) => sync.reconcile(householdId, userId));
 
   return {
-    db, bus, households, permissions, manager, things, commands, auth, devices, favorites, actions, groups, modes, modeMirror, insights, presence, scenes, routines, automations, notifications, push, alerts, realtime,
+    db, bus, households, permissions, manager, things, commands, auth, devices, favorites, actions, groups, modes, modeMirror, insights, presence, scenes, routines, automations, notifications, push, admin, activity, history, energy, alerts, realtime,
     users: new UserService(db),
     limits: createLimits(opts.now),
     ha,

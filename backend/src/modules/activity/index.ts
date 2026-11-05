@@ -1,2 +1,2 @@
-export { activityController } from "./controller";
-export { activityService } from "./service";
+export { activityController } from "./activity.controller";
+export { ActivityService, type ActivityItem, type ActivityKind } from "./activity.service";

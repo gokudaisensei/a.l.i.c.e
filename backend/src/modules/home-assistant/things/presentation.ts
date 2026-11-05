@@ -60,6 +60,9 @@ const entityView = (e: ThingEntity, lookup: PresentOptions["lookup"]): EntityVie
  */
 export function presentThing(thing: Thing, o: PresentOptions): ThingView | null {
   const allowed = (e: ThingEntity) => o.canSee(e.entityId);
+  // A device is there for you only if its main entity is. Blocking the main entity hides the whole device (its meters and
+  // sensors are not left behind); blocking a smaller part of it only removes that part.
+  if (thing.primary && !allowed(thing.primary)) return null;
   const primary = thing.primary && allowed(thing.primary) ? thing.primary : null;
   const others = thing.others.filter(allowed);
   const controls = thing.controls.filter(allowed);

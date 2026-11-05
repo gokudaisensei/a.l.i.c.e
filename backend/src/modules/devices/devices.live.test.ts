@@ -104,4 +104,30 @@ run("Alice over HTTP against the mock Home Assistant", () => {
     expect(run.state).toBe("completed");
     expect(byPrimary(await things(admin), "input_boolean.test_switch").primary.values.power).toBe(false);
   });
+
+  test("history and energy come from the real Home Assistant recorder", async () => {
+    const lamp = byPrimary(await things(admin), "light.bed_light");
+    const pct = lamp.primary.values.brightness === 55 ? 65 : 55;
+    const res = await admin.call("POST", `/devices/${lamp.id}/commands`, { action: "set_brightness", parameters: { brightness_pct: pct } });
+    await services.commands.done(res.json.id);
+    // The recorder writes in batches, so give it a moment. (Home Assistant does not record a light's brightness, only its state.)
+    let hist: any;
+    for (let i = 0; i < 40; i++) {
+      hist = (await admin.call("GET", `/history/devices/${lamp.id}?from=${Date.now() - 3_600_000}&to=${Date.now() + 5000}`)).json;
+      if (hist.points?.length > 1 && hist.points.at(-1).state === "on") break;
+      await Bun.sleep(250);
+    }
+    expect(hist.entityId).toBe("light.bed_light");
+    expect(hist.points.length).toBeGreaterThan(1);
+    expect(hist.points.at(-1)).toMatchObject({ state: "on", availability: "available", values: { power: true } });
+    expect(hist.points.every((p: any) => p.at >= hist.from && p.at <= hist.to + 5000)).toBe(true);
+
+    const names = ((await admin.call("GET", "/energy/devices")).json.devices as any[]).map((d) => d.name);
+    expect(names.some((n) => /energy/i.test(n))).toBe(true); // the demo's energy meters
+    const summary = (await admin.call("GET", "/energy/summary")).json;
+    expect(summary).toMatchObject({ statisticsAvailable: true });
+    expect(summary.monitoredDevices).toBeGreaterThanOrEqual(2);
+    expect((await admin.call("GET", "/energy/history?resolution=day")).status).toBe(200);
+  }, 30_000);
 });
+

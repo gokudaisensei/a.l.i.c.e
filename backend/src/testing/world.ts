@@ -32,7 +32,14 @@ export function fakeHa() {
     state("person.gokul", "home", { friendly_name: "Gokul" }),
     state("person.meera", "home", { friendly_name: "Meera" }),
   ];
-  g.areas = raw.areas; g.devices = raw.devices; g.entityRegistry = raw.entityRegistry;
+  g.areas = raw.areas; g.devices = raw.devices;
+  // Two devices get an energy meter (kWh), for energy tests.
+  const meter = (entity_id: string, device_id: string, name: string) => ({ entity_id, device_id, area_id: null, platform: "test", has_entity_name: true, original_name: name });
+  g.entityRegistry = [...raw.entityRegistry, meter("sensor.kettle_plug_energy", "kettle", "Energy"), meter("sensor.floor_lamp_energy", "floor", "Energy")];
+  g.states.push(
+    state("sensor.kettle_plug_energy", "12.5", { friendly_name: "Kettle plug Energy", device_class: "energy", unit_of_measurement: "kWh", state_class: "total_increasing" }),
+    state("sensor.floor_lamp_energy", "40000", { friendly_name: "Floor lamp Energy", device_class: "energy", unit_of_measurement: "Wh", state_class: "total_increasing" }),
+  );
   g.onCallService = (call) => {
     const id = (call.target?.entity_id as string) ?? "";
     const prev = g.states.find((s) => s.entity_id === id);

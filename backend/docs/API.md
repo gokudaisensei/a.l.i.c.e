@@ -1,6 +1,6 @@
 # Alice Backend — API
 
-Status: draft v1. Base path `/api/v1` (implemented: auth, users, household, permissions, `/admin/security`, `/ha/connection*`, `/devices*`, `/entities/*/role`, `/areas`, `/commands*`; other areas are stubs. `/ws` realtime, favorites, groups, scenes, routines, modes, device settings. automations, notifications, alerts, insights, `/admin/config-sync`. Not yet: activity, energy, history, backups, updates, AI, undo). JSON everywhere. OpenAPI is generated at `/docs`. Realtime on `/ws`. See [ARCHITECTURE.md](./ARCHITECTURE.md).
+Status: draft v1. Base path `/api/v1` (implemented: auth, users, household, permissions, `/admin/security`, `/ha/connection*`, `/devices*`, `/entities/*/role`, `/areas`, `/commands*`; other areas are stubs. `/ws` realtime, favorites, groups, scenes, routines, modes, device settings. automations, notifications, alerts, insights, `/admin/config-sync`. Not yet: backups, updates, AI, undo). JSON everywhere. OpenAPI is generated at `/docs`. Realtime on `/ws`. See [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 ## Conventions
 
@@ -185,7 +185,7 @@ Triggers (from the UI): `arrive, leave, time, sunset, door_opens, motion, power_
 
 ## Activity, notifications, alerts
 
-Notifications and alerts are implemented (in-app and over `/ws`; delivery to a phone's push service is not). Activity is not built yet.
+Notifications, alerts and the activity timeline are implemented, over REST and `/ws`, with push delivery for notifications.
 
 | Method & path | Perm | Purpose |
 |---|---|---|
@@ -193,20 +193,22 @@ Notifications and alerts are implemented (in-app and over `/ws`; delivery to a p
 | `POST /notifications/:id/read`, `POST /notifications/read-all` | A,M | Mark read (yours only) |
 | `GET /alerts?includeCleared=` | A,M | Active alerts for devices you can see. Today: `power_limit`, raised at 90% of a device's limit and cleared below 85% |
 | `POST /alerts/:id/ack` | A,M | "Seen". It stays until usage drops |
-| `GET /activity`, `POST /activity/seen` | A,M | Not built yet |
+| `GET /activity?limit=&before=&kind=` | A,M | The timeline, newest first (`kind`: device, lock, scene, routine, mode, automation, alert, presence), with `newCount` since you last looked and `nextCursor`. Entries about devices you cannot see are left out; guests have no timeline |
+| `POST /activity/seen` | A,M | "I have looked": clears your new count |
+| `GET /devices/:id/activity` | A,M | The same, for one device |
 
 Notifications come from power alerts and from automations' `notify` action (Home Assistant fires `alice_notification`, Alice stores one per recipient). Guests receive none.
 
 ## Energy, history, insights
 
-Insights are implemented for one thing so far: household mode suggestions. Energy and history are not built.
+Energy, history and mode suggestions are implemented.
 
 | Method & path | Perm | Purpose |
 |---|---|---|
-| `GET /energy/summary` | A,M | Current draw, today so far |
-| `GET /energy/history?from=&to=&resolution=hour|day` | A,M | Aggregated consumption |
-| `GET /energy/devices` | A,M | Per-device consumption and limits |
-| `GET /history/entities/:id?from=&to=` | A,M | State history proxied from HA's recorder (read-only) |
+| `GET /energy/summary` | A,M | `{ nowWatts, todayKwh, since, statisticsAvailable, monitoredDevices, topToday[] }` for the devices you can see. If Home Assistant cannot give statistics, the live draw is still returned and `todayKwh` is null |
+| `GET /energy/history?from=&to=&resolution=hour\|day` | A,M | `{ totalKwh, series: [{ start, kwh }], devices: [{ thingId, name, kwh, series }] }`. Hourly covers at most 7 days, daily at most 366. 503 if Home Assistant cannot be asked |
+| `GET /energy/devices` | A,M | Each device with a meter: `{ watts, todayKwh, limitW, percentOfLimit }` |
+| `GET /history/devices/:id?from=&to=&entityId=&maxPoints=` | A,M | How a device's state changed (default: its main entity, the last 24 hours, at most 31 days). `points: [{ at, state, values, availability }]`, thinned to `maxPoints` (10 to 1000, default 300) with `downsampled` and `totalPoints`. Home Assistant does not record some attributes, e.g. a light's brightness |
 | `GET /insights` | A,M | Deterministic suggestions, e.g. `{ id: "mode:away", title: "Switch to Away mode?", reason: "Everyone has left.", action: { type: "set_mode", mode: "away" } }`. Rules: everyone gone and mode Home suggests Away; night time and mode Home suggests Night; someone home and mode Away suggests Home; morning and mode Night suggests Home |
 | `POST /insights/:id/dismiss` | A,M | "Not now": hidden for 6 hours |
 
@@ -235,10 +237,10 @@ Insights are implemented for one thing so far: household mode suggestions. Energ
 | `PUT /updates/settings` | A† | `{ autoUpdate: boolean, windowStart, windowEnd }` |
 | `POST /updates/schedule`, `POST /updates/install` | A† | Schedule into the next window / install now |
 | `POST /updates/emergency` | A† | `{ reason (min 8 chars), confirmation: "DEPLOY" }`; skips the window, audited |
-| `GET /admin/health` | A | Service, HA connection, jobs, disk, DB |
-| `GET /admin/diagnostics` | A | Versions, config summary (no secrets) |
+| `GET /admin/health` | A | `{ status: ok\|warn\|down, version, uptimeSeconds, checks: [{ name, status, detail }] }` for the database, Home Assistant, the config-worker, failed changes and push |
+| `GET /admin/diagnostics` | A | Versions, what is configured (push channels, token protection, proxy trust), Home Assistant host, counts, database size. Never secrets |
 | `GET/POST /admin/support-sessions`, `DELETE /admin/support-sessions/:id` | A† | Grant, list, end scoped support access |
-| `GET /admin/audit?cursor=` | A | Audit log |
+| `GET /admin/audit?limit=&before=&action=` | A | The security audit log, newest first, with who did it; `action` matches the start of the action name; `nextCursor` for the next page |
 | `GET /admin/security/sensitive-operations` | A | Effective rules: defaults plus household changes, each with `source: "default" \| "custom"` |
 | `PUT /admin/security/sensitive-operations` | A† | `{ rules: [{ domain, action, deviceClass?, sensitive }] }` replace the household's rules; audited, and the response flags any default that was switched off |
 | `DELETE /admin/security/sensitive-operations/:ruleId` | A† | Remove a custom rule (falls back to the default) |
@@ -255,7 +257,7 @@ Implemented. `GET /ws` (WebSocket upgrade, at the root, not under `/api/v1`). It
 | `subscribe` / `unsubscribe` | `resource`, `id?` | Answered with `subscribed` / `unsubscribed` (or `error`) carrying your `requestId` |
 | `ping` | - | Answered with `pong` |
 
-Resources: `devices` (every device you may see), `device` + `id` (one Thing id), `area` + `id` (an HA area id), `commands` (your commands; admins: all), `household` (mode changes for everyone, `insights.changed` for members, connection health for admins), `alerts` (members and admins; only alerts about devices you can see), `notifications` (your own). `activity` is reserved and answers `unknown_resource`. Subscribing to a device you cannot see answers `not_found`, exactly like one that does not exist.
+Resources: `devices` (every device you may see), `device` + `id` (one Thing id), `area` + `id` (an HA area id), `commands` (your commands; admins: all), `household` (mode changes for everyone, `insights.changed` for members, connection health for admins), `alerts` (members and admins; only alerts about devices you can see), `notifications` (your own), `activity` (members and admins; only entries you may see). Subscribing to a device you cannot see answers `not_found`, exactly like one that does not exist.
 
 **Server to client**
 
@@ -274,6 +276,7 @@ Resources: `devices` (every device you may see), `device` + `id` (one Thing id),
 | `insights.changed` | `{}`; refetch `GET /insights` (members and admins subscribed to `household`) |
 | `alert.created`, `alert.cleared` | the alert (as `GET /alerts`), to members and admins subscribed to `alerts` who can see the device |
 | `notification.created` | the notification, to its recipient subscribed to `notifications` |
+| `activity.created` | a timeline entry (as in `GET /activity`), to members and admins subscribed to `activity` who may see it |
 
 Rules the server enforces on every event: you only receive updates for entities you may see (guests: allowed devices only; denied devices never), diagnostics and config entities and hidden devices are not pushed, and commands go only to the person who sent them (and admins). Roles are re-read every couple of seconds, and sockets whose session ended are closed by a 15 s sweep (`4401`).
 

@@ -1,11 +1,17 @@
-import { Elysia } from "elysia";
+import { Elysia, t } from "elysia";
 import { requirePermission } from "@/core/http/guards";
 import { sessionPlugin } from "@/core/http/session-plugin";
 import type { Services } from "@/services";
 
-export const administrationController = ({ auth, households, configJobs, sync }: Services) =>
+export const administrationController = ({ auth, households, configJobs, sync, admin }: Services) =>
   new Elysia({ name: "module.administration", prefix: "/admin", tags: ["administration"] })
     .use(sessionPlugin(auth, households))
+    .get("/health", (ctx) => admin.health(requirePermission(ctx, "admin.view").membership.householdId), { detail: { summary: "Is everything Alice depends on working? Database, Home Assistant, the config-worker, push" } })
+    .get("/diagnostics", (ctx) => admin.diagnostics(requirePermission(ctx, "admin.view").membership.householdId), { detail: { summary: "Versions, what is configured and basic counts. Never includes secrets" } })
+    .get("/audit", (ctx) => admin.audit(requirePermission(ctx, "admin.view").membership.householdId, ctx.query), {
+      query: t.Object({ limit: t.Optional(t.Numeric({ minimum: 1, maximum: 200 })), before: t.Optional(t.String()), action: t.Optional(t.String({ maxLength: 60 })) }),
+      detail: { summary: "The security audit log, newest first, with a cursor for the next page" },
+    })
     .get("/config-sync", (ctx) => {
       const { membership } = requirePermission(ctx, "admin.view");
       const s = configJobs.status(membership.householdId);

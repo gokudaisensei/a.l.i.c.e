@@ -8,6 +8,8 @@ import type { ActionService, SkippedAction } from "../devices/actions";
 import type { DeviceCommand } from "../devices/commands/command-types";
 import type { Caller } from "../devices/devices.service";
 import { type HaScriptView, type HaSyncService, scriptView } from "../home-assistant/sync.service";
+import type { AppEvent } from "@/core/events/app-events";
+import type { EventBus } from "@/core/events/event-bus";
 
 export const MAX_SCENE_ACTIONS = 50;
 
@@ -28,7 +30,7 @@ export interface SceneView {
  * they can only change what they could change by hand, and sensitive operations still need their passkey.
  */
 export class ScenesService {
-  constructor(private readonly db: Db, private readonly actions: ActionService, private readonly now: () => number = Date.now, private readonly sync?: HaSyncService) {}
+  constructor(private readonly db: Db, private readonly actions: ActionService, private readonly now: () => number = Date.now, private readonly sync?: HaSyncService, private readonly bus?: EventBus<AppEvent>) {}
 
   private row(c: Caller, id: string) {
     const s = this.db.select().from(scenes).where(eq(scenes.id, id)).get();
@@ -100,6 +102,7 @@ export class ScenesService {
     const r = this.actions.run(c, s.actions);
     this.db.update(scenes).set({ lastRunAt: this.now() }).where(eq(scenes.id, s.id)).run();
     writeAudit(this.db, { householdId: c.householdId, actorId: c.userId, action: "scenes.activated", resource: id, detail: { started: r.commands.length, skipped: r.skipped.length } }, this.now());
+    this.bus?.publish({ type: "scene.activated", householdId: c.householdId, userId: c.userId, sceneId: s.id, sceneName: s.name, timestamp: new Date(this.now()).toISOString() });
     return r;
   }
 }

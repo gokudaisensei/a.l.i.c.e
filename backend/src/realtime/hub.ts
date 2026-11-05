@@ -6,6 +6,7 @@ import { RateLimiter } from "@/core/http/rate-limit";
 import type { AuthService, SessionContext } from "@/modules/authentication/auth.service";
 import { toPublicCommand } from "@/modules/devices/commands/public-command";
 import type { Caller, DevicesService } from "@/modules/devices/devices.service";
+import type { ActivityService } from "@/modules/activity/activity.service";
 import type { AlertsService } from "@/modules/notifications/alerts.service";
 import type { NotificationsService } from "@/modules/notifications/notifications.service";
 import type { ManagedConnection } from "@/modules/home-assistant";
@@ -33,7 +34,7 @@ export interface ServerMessage {
   ts: number;
 }
 
-export const RESOURCES = ["devices", "device", "area", "commands", "household", "alerts", "notifications"] as const;
+export const RESOURCES = ["devices", "device", "area", "commands", "household", "alerts", "notifications", "activity"] as const;
 type Resource = (typeof RESOURCES)[number];
 
 export const WS_LIMITS = { subscriptions: 50, connectionsPerUser: 10, maxBuffered: 1_000_000, messages: { limit: 60, windowMs: 10_000 }, recheckMs: 2_000 };
@@ -76,6 +77,7 @@ export class RealtimeHub {
       devices: DevicesService;
       alerts: AlertsService;
       notifications: NotificationsService;
+      activity: ActivityService;
       log: Logger;
       now?: () => number;
     },
@@ -227,6 +229,7 @@ export class RealtimeHub {
         case "things.changed": return this.changed(e.householdId, e.reason);
         case "household.mode_changed": return this.onMode(e);
         case "insights.changed": return this.onInsights(e);
+        case "activity.recorded": return this.onActivity(e);
         case "presence.changed": return this.onPresence(e);
         case "alert.created":
         case "alert.cleared": return this.onAlert(e);
@@ -290,6 +293,14 @@ export class RealtimeHub {
   private onInsights(e: Extract<AppEvent, { type: "insights.changed" }>) {
     for (const c of this.forHousehold(e.householdId)) {
       if (c.subs.has("household") && can(c.role, "mode.change")) this.send(c.socket, { type: "insights.changed", data: {} });
+    }
+  }
+
+  private onActivity(e: Extract<AppEvent, { type: "activity.recorded" }>) {
+    for (const c of this.forHousehold(e.householdId)) {
+      if (!c.subs.has("activity")) continue;
+      const item = this.deps.activity.viewFor({ householdId: c.householdId, userId: c.userId, role: c.role, steppedUp: false }, e.eventId); // each person only hears what they may see
+      if (item) this.send(c.socket, { type: "activity.created", data: item });
     }
   }
 

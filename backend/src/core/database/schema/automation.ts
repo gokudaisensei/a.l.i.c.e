@@ -185,3 +185,34 @@ export const personLinks = sqliteTable(
   },
   (t) => [primaryKey({ columns: [t.householdId, t.userId] }), unique("person_links_person_unique").on(t.householdId, t.connectionId, t.personEntityId)],
 );
+
+/** What happened in the home, for the timeline. Written as things happen; shown to people who may see the device involved. */
+export const activityEvents = sqliteTable(
+  "activity_events",
+  {
+    id: text("id").primaryKey(),
+    householdId: text("household_id").notNull().references(() => households.id, { onDelete: "cascade" }),
+    kind: text("kind", { enum: ["device", "lock", "scene", "routine", "mode", "automation", "alert", "presence"] }).notNull(),
+    /** Who did it, when a person did. Names are looked up when shown, so a renamed person reads correctly. */
+    actorUserId: text("actor_user_id"),
+    /** The device involved, if any: used to decide who may see this entry. */
+    connectionId: text("connection_id"),
+    entityId: text("entity_id"),
+    summary: text("summary").notNull(),
+    tone: text("tone", { enum: ["info", "warn"] }).notNull().default("info"),
+    data: text("data", { mode: "json" }).$type<Record<string, unknown> | null>(),
+    createdAt: integer("created_at").notNull(),
+  },
+  (t) => [index("activity_events_idx").on(t.householdId, t.createdAt), index("activity_events_entity_idx").on(t.householdId, t.entityId)],
+);
+
+/** When each person last looked at the timeline, for "new since your last visit". */
+export const activityReads = sqliteTable(
+  "activity_reads",
+  {
+    userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    householdId: text("household_id").notNull().references(() => households.id, { onDelete: "cascade" }),
+    lastSeenAt: integer("last_seen_at").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.householdId] })],
+);

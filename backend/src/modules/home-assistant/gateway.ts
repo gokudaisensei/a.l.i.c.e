@@ -5,6 +5,9 @@ import type {
   HaDeviceRegistryEntry,
   HaEntityRegistryEntry,
   HaEntityState,
+  HaHistoryPoint,
+  HaStatisticsPeriod,
+  HaStatisticsPoint,
   HaRawEvent,
   HaServiceCallInput,
   HaServiceCallResult,
@@ -28,6 +31,11 @@ export interface HomeAssistantGateway {
   getEntityRegistry(): Promise<HaEntityRegistryEntry[]>;
   getServices(): Promise<HaServices>;
   getConfig(): Promise<{ version: string; location_name?: string }>;
+
+  /** Recorded states of these entities between two times (Home Assistant's recorder). */
+  getHistory(entityIds: string[], from: number, to: number): Promise<Record<string, HaHistoryPoint[]>>;
+  /** Long-term statistics (energy, temperature...) by period. */
+  getStatistics(entityIds: string[], from: number, to: number, period: HaStatisticsPeriod): Promise<Record<string, HaStatisticsPoint[]>>;
 
   callService(input: HaServiceCallInput): Promise<HaServiceCallResult>;
 

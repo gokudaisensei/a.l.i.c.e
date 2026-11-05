@@ -143,6 +143,33 @@ export interface PresenceLinksChangedEvent {
   timestamp: string;
 }
 
+export interface SceneActivatedEvent {
+  type: "scene.activated";
+  householdId: string;
+  userId: string;
+  sceneId: string;
+  sceneName: string;
+  timestamp: string;
+}
+
+export interface RoutineFinishedEvent {
+  type: "routine.finished";
+  householdId: string;
+  userId: string;
+  routineId: string;
+  routineName: string;
+  state: "completed" | "failed" | "stopped" | "cancelled";
+  timestamp: string;
+}
+
+/** A new entry in the household timeline. */
+export interface ActivityRecordedEvent {
+  type: "activity.recorded";
+  householdId: string;
+  eventId: string;
+  timestamp: string;
+}
+
 export interface CommandEvent {
   type: "command.created" | "command.authorized" | "command.dispatched" | "command.accepted" | "command.confirmed" | "command.failed" | "command.timed_out" | "command.cancelled";
   householdId: string;
@@ -157,6 +184,9 @@ export type AppEvent =
   | AlertEvent
   | InsightsChangedEvent
   | PresenceChangedEvent
+  | SceneActivatedEvent
+  | RoutineFinishedEvent
+  | ActivityRecordedEvent
   | PresenceLinksChangedEvent
   | NotificationCreatedEvent
   | SettingsChangedEvent
