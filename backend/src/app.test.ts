@@ -23,13 +23,13 @@ describe("app basics", () => {
   });
 
   test("modules that are still stubs are mounted under /api/v1", async () => {
-    const res = await app.handle(new Request("http://localhost/api/v1/updates"));
-    expect(await res.json()).toEqual({ module: "updates", status: "not_implemented" });
+    const res = await app.handle(new Request("http://localhost/api/v1/ai"));
+    expect(await res.json()).toEqual({ module: "ai", status: "not_implemented" });
   });
 
   test("everything private says 401 without a session", async () => {
     const b = new Browser();
-    for (const [m, p] of [["GET", "/users/me"], ["GET", "/household"], ["GET", "/household/members"], ["GET", "/permissions/me"], ["GET", "/admin/security/sensitive-operations"], ["GET", "/ha/connection"], ["GET", "/auth/session"], ["GET", "/backups"]] as const) {
+    for (const [m, p] of [["GET", "/users/me"], ["GET", "/household"], ["GET", "/household/members"], ["GET", "/permissions/me"], ["GET", "/admin/security/sensitive-operations"], ["GET", "/ha/connection"], ["GET", "/auth/session"], ["GET", "/backups"], ["GET", "/updates"]] as const) {
       expect((await b.call(m, p)).status).toBe(401);
     }
   });

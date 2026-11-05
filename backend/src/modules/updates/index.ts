@@ -1,2 +1,2 @@
 export { updatesController } from "./controller";
-export { updatesService } from "./service";
+export { UpdateService } from "./update.service";

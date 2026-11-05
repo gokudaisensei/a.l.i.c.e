@@ -4,6 +4,7 @@ import type { Db } from "@/core/database/client";
 import { env } from "@/core/config/env";
 import { auditLog, automations, notifications, routines, scenes, users } from "@/core/database/schema";
 import type { ConfigJobService } from "../home-assistant/config-jobs.service";
+import type { UpdateService } from "../updates/update.service";
 import type { BackupService } from "../backups/backup.service";
 import type { HaConnectionService } from "../home-assistant/connection.service";
 import type { HouseholdService } from "../households/household.service";
@@ -41,6 +42,7 @@ export class AdminService {
     private readonly households: HouseholdService,
     private readonly now: () => number = Date.now,
     private readonly backups?: BackupService,
+    private readonly updates?: UpdateService,
   ) {}
 
   health(householdId: string) {
@@ -69,6 +71,11 @@ export class AdminService {
       else if (age === null) checks.push({ name: "backups", status: b.enabled ? "warn" : "warn", detail: b.enabled ? "No backup has been made yet" : "No backup has been made and scheduled backups are off" });
       else if (age > 36 * 3_600_000) checks.push({ name: "backups", status: "warn", detail: `The last good backup is ${Math.floor(age / 3_600_000)} hours old` });
       else checks.push({ name: "backups", status: "ok", detail: b.lastVerifyStatus === "passed" ? "Recent and restore-tested" : "Recent backup available" });
+    }
+
+    if (this.updates) {
+      const f = this.updates.lastFailed(householdId);
+      if (f) checks.push({ name: "updates", status: "warn", detail: `The update to ${f.version} failed: ${f.error ?? "unknown error"}` });
     }
 
     const status: CheckStatus = checks.some((c) => c.status === "down") ? "down" : checks.some((c) => c.status === "warn") ? "warn" : "ok";

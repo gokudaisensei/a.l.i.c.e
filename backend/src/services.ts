@@ -15,6 +15,9 @@ import { DrizzleCommandStore } from "@/modules/devices/commands/drizzle-command-
 import { ActivityService } from "@/modules/activity/activity.service";
 import { BackupService } from "@/modules/backups/backup.service";
 import { parseBackupKey } from "@/modules/backups/crypto";
+import { UpdateService } from "@/modules/updates/update.service";
+import { ManifestUpdateSource, MarkerFileInstaller, NoUpdateSource, type UpdateInstaller, type UpdateSource } from "@/modules/updates/sources";
+import pkg from "../package.json" with { type: "json" };
 import { AdminService } from "@/modules/administration/admin.service";
 import { ActionService } from "@/modules/devices/actions";
 import { VoiceExposureService } from "@/modules/devices/voice";
@@ -74,6 +77,7 @@ export interface Services {
   push: PushService;
   admin: AdminService;
   backups: BackupService;
+  updates: UpdateService;
   activity: ActivityService;
   history: HistoryService;
   energy: EnergyService;
@@ -118,6 +122,11 @@ export interface ServiceOptions {
   dbPath?: string | null;
   /** Base64 32-byte key for Alice's own backups. Defaults to BACKUP_ENCRYPTION_KEY. */
   backupKey?: string | null;
+  /** Update source and installer. Default: the manifest in UPDATE_MANIFEST_URL and a marker file next to the database. */
+  updateSource?: UpdateSource;
+  updateInstaller?: UpdateInstaller;
+  currentVersion?: string;
+  allowUnsignedUpdates?: boolean;
 }
 
 /** Wires everything that shares one database. Tests pass an in-memory db and their own clock, bus and gateway. */
@@ -182,11 +191,17 @@ export function createServices(db: Db, opts: ServiceOptions = {}): Services {
     key: parseBackupKey(opts.backupKey === undefined ? env.backupEncryptionKey : opts.backupKey),
   });
   if (opts.background) backups.start();
-  const admin = new AdminService(db, ha, configJobs, push, things, households, opts.now, backups);
+  const updates = new UpdateService(db, backups, notifications, {
+    now: opts.now, currentVersion: opts.currentVersion ?? pkg.version, allowUnsigned: opts.allowUnsignedUpdates ?? env.updateAllowUnsigned,
+    source: opts.updateSource ?? (env.updateManifestUrl ? new ManifestUpdateSource(env.updateManifestUrl, env.updateSigningPublicKey ? pemFromEnv(env.updateSigningPublicKey) : null) : new NoUpdateSource()),
+    installer: opts.updateInstaller ?? new MarkerFileInstaller(join(dbPath ? dirname(dbPath) : tmpdir(), "update-requested.json"), opts.now),
+  });
+  if (opts.background) updates.startTimer();
+  const admin = new AdminService(db, ha, configJobs, push, things, households, opts.now, backups, updates);
   ha.afterAdminToken((householdId, userId) => sync.reconcile(householdId, userId));
 
   return {
-    db, bus, households, permissions, manager, things, commands, auth, devices, favorites, actions, groups, modes, modeMirror, insights, presence, scenes, routines, automations, notifications, push, admin, backups, activity, history, energy, alerts, realtime,
+    db, bus, households, permissions, manager, things, commands, auth, devices, favorites, actions, groups, modes, modeMirror, insights, presence, scenes, routines, automations, notifications, push, admin, backups, updates, activity, history, energy, alerts, realtime,
     users: new UserService(db),
     limits: createLimits(opts.now),
     ha,

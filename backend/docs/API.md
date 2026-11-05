@@ -237,10 +237,15 @@ Energy, history and mode suggestions are implemented.
 | `DELETE /backups/:id` | A† | Delete (Home Assistant's from Home Assistant too: `{ removed: false, pending: true }` until the worker finishes) |
 | `GET /backups/:id/download` | A† | Alice's own backups only; encrypted when a backup key is set |
 | `GET/PUT /backups/settings` | A / A† | `{ enabled, time "HH:MM" (household time zone), keep (1-90), includeHa, destination: local\|nas\|upload, nasPath }`. `upload` is reserved and answers 501; a NAS folder must be absolute and writable. Defaults: on, 02:30, keep 14, include Home Assistant, local |
-| `GET /updates` | A | Current version, available version, state, settings |
-| `PUT /updates/settings` | A† | `{ autoUpdate: boolean, windowStart, windowEnd }` |
-| `POST /updates/schedule`, `POST /updates/install` | A† | Schedule into the next window / install now |
-| `POST /updates/emergency` | A† | `{ reason (min 8 chars), confirmation: "DEPLOY" }`; skips the window, audited |
+| `GET /updates` | A | `{ currentVersion, state: up_to_date\|ready\|scheduled\|installing, available: { version, notes, publishedAt, artifactSha256, signed }, settings, inWindow, nextWindowAt, checkedAt, checkError, active }` |
+| `POST /updates/check` | A | Ask the update source now (also every 6 hours); admins get one notification per new version |
+| `GET /updates/history` | A | Past updates (scheduled, installing, done, failed, cancelled) with trigger `manual\|auto\|emergency` and reason |
+| `PUT /updates/settings` | A† | `{ autoUpdate?, windowStart?, windowEnd? }` ("HH:MM" in the household's time zone; the window may cross midnight). Defaults: auto-update off, 02:00 to 04:00 |
+| `POST /updates/schedule` | A† | Install the available update in the next window (or the open one) |
+| `POST /updates/install` | A† | Install now. Only inside the window (`outside_window` otherwise). Takes safety backups first (Alice's, and Home Assistant's when it can be asked; the install waits for it) |
+| `POST /updates/emergency` | A† | `{ reason (min 8 chars), confirmation: "DEPLOY" }`; skips the window, needs a recent passkey, audited, urgent notification to admins |
+| `POST /updates/:id/rollback` | A† | `{ restoreData? }`. Go back to the version before a started update; `restoreData` also stages the safety backup of Alice's database (data since is lost). Answer names Home Assistant's safety backup, restored separately from `/backups` |
+| `POST /updates/:id/cancel` | A | Cancel a scheduled update |
 | `GET /admin/health` | A | `{ status: ok\|warn\|down, version, uptimeSeconds, checks: [{ name, status, detail }] }` for the database, Home Assistant, the config-worker, failed changes, push and backups (warns when none yet, the last good one is over 36 hours old, or the latest failed its restore test) |
 | `GET /admin/diagnostics` | A | Versions, what is configured (push channels, token protection, proxy trust), Home Assistant host, counts, database size. Never secrets |
 | `GET/POST /admin/support-sessions`, `DELETE /admin/support-sessions/:id` | A† | Grant, list, end scoped support access |

@@ -82,6 +82,12 @@ export class BackupService {
     jobs.onResult("backup.", (job) => this.onJob(job));
   }
 
+  /** Can Home Assistant be asked for a backup right now? Needs a connection, its admin token and a running worker. */
+  haAvailable(householdId: string): boolean {
+    const st = this.jobs.status(householdId);
+    return st.connected && st.adminTokenSet && st.workerOnline;
+  }
+
   get encryptionEnabled() { return !!this.o.key; }
 
   // ---- settings ----

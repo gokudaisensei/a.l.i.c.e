@@ -49,5 +49,5 @@ export const buildModules = (s: Services) =>
     .use(historyController(s))
     .use(aiController)
     .use(backupsController(s))
-    .use(updatesController)
+    .use(updatesController(s))
     .use(administrationController(s));

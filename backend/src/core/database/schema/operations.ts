@@ -75,3 +75,28 @@ export const backupRecords = sqliteTable(
   },
   (t) => [index("backup_records_idx").on(t.householdId, t.createdAt)],
 );
+
+/** One update of Alice itself: offered, scheduled, installing and how it ended. */
+export const updateRecords = sqliteTable(
+  "update_records",
+  {
+    id: text("id").primaryKey(),
+    householdId: text("household_id").notNull().references(() => households.id, { onDelete: "cascade" }),
+    fromVersion: text("from_version").notNull(),
+    version: text("version").notNull(),
+    status: text("status", { enum: ["scheduled", "preparing", "installing", "done", "failed", "cancelled", "rolled_back"] }).notNull(),
+    trigger: text("trigger", { enum: ["manual", "auto", "emergency"] }).notNull(),
+    /** Required for an emergency deploy. */
+    reason: text("reason"),
+    requestedBy: text("requested_by"),
+    scheduledFor: integer("scheduled_for"),
+    backupId: text("backup_id"),
+    /** Home Assistant's safety backup, when one was taken. */
+    haBackupId: text("ha_backup_id"),
+    error: text("error"),
+    createdAt: integer("created_at").notNull(),
+    startedAt: integer("started_at"),
+    finishedAt: integer("finished_at"),
+  },
+  (t) => [index("update_records_idx").on(t.householdId, t.createdAt)],
+);

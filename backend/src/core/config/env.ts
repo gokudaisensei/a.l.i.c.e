@@ -39,6 +39,12 @@ export const env = {
   backupEncryptionKey: process.env.BACKUP_ENCRYPTION_KEY ?? null,
   /** Where local backups go. Defaults to a `backups` folder next to the database. */
   backupDir: process.env.BACKUP_DIR ?? null,
+  /** A JSON manifest saying which version is newest. Without it Alice never sees an update. */
+  updateManifestUrl: process.env.UPDATE_MANIFEST_URL ?? null,
+  /** Base64 PEM of the publisher's Ed25519 public key. With it, unsigned manifests are rejected. */
+  updateSigningPublicKey: process.env.UPDATE_SIGNING_PUBLIC_KEY ?? null,
+  /** Allow installing a manifest that is not signed (no key configured). Off by default. */
+  updateAllowUnsigned: process.env.UPDATE_ALLOW_UNSIGNED === "true",
   /** Web Push (VAPID). Generate with `bun run keys:generate`. */
   vapid: process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY ? { publicKey: process.env.VAPID_PUBLIC_KEY, privateKey: process.env.VAPID_PRIVATE_KEY, subject: process.env.VAPID_SUBJECT ?? "mailto:admin@localhost" } : null,
   /** Firebase Cloud Messaging service account, as base64 of the JSON key file. */

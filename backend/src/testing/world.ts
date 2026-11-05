@@ -2,6 +2,7 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomBytes } from "node:crypto";
+import type { AvailableUpdate } from "@/modules/updates/sources";
 import pino from "pino";
 import { generateSealKeyPair } from "@/core/security/sealed";
 import { ConfigWorker } from "@/worker/config-worker";
@@ -76,10 +77,13 @@ export function createWorld(opts: { sleep?: Parameters<typeof createServices>[1]
   const clock = { now: 1_700_000_000_000 };
   const db = createTestDb();
   const gw = fakeHa();
+  const updateFake = { latest: null as AvailableUpdate | null, requested: [] as string[], installError: null as Error | null, sourceError: null as Error | null };
   const backupDir = mkdtempSync(join(tmpdir(), "alice-test-backups-"));
   const services = createServices(db, {
     bus: new InMemoryEventBus<AppEvent>(), // each test world has its own bus, so worlds cannot hear each other
-    now: () => clock.now, secretsKey: SECRETS_KEY, sleep: opts.sleep, backupDir, backupKey: BACKUP_KEY, dbPath: null, adminSealPublicKey: SEAL_KEYS.publicKey,
+    now: () => clock.now, secretsKey: SECRETS_KEY, sleep: opts.sleep, backupDir, backupKey: BACKUP_KEY, currentVersion: "0.1.0",
+    updateSource: { latest: async () => { if (updateFake.sourceError) throw updateFake.sourceError; return updateFake.latest; } },
+    updateInstaller: { request: async (v) => { if (updateFake.installError) throw updateFake.installError; updateFake.requested.push(v); } }, dbPath: null, adminSealPublicKey: SEAL_KEYS.publicKey,
     auth: { rpId: "localhost", rpName: "Alice", origin: "http://localhost:3000", sessionTtlHours: 24 },
     gatewayFactory: (cfg) => {
       if (cfg.token.startsWith("bad-")) { const b = new FakeGateway(); b.connectFailures = [new HaAuthError()]; return b; }
@@ -99,7 +103,7 @@ export function createWorld(opts: { sleep?: Parameters<typeof createServices>[1]
   };
   const worker = new ConfigWorker({ db, privateKeyPem: SEAL_KEYS.privateKey, apiFactory: () => configApi, log: pino({ level: "silent" }), now: () => clock.now, retryDelayMs: 0 });
   const sync = async () => { await worker.drain(); services.configJobs.applyResults(); };
-  return { clock, db, gw, backupDir, services, app, browser, configApi, worker, sync };
+  return { clock, db, gw, backupDir, updateFake, services, app, browser, configApi, worker, sync };
 }
 export type World = ReturnType<typeof createWorld>;
 

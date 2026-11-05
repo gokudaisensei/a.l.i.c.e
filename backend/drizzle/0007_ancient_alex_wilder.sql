@@ -1,0 +1,1 @@
+ALTER TABLE `update_records` ADD `ha_backup_id` text;
