@@ -9,7 +9,11 @@
     "test": "bun test",
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "bun src/db/migrate.ts"
+    "db:migrate": "bun src/db/migrate.ts",
+    "ha:up": "docker compose -f dev/ha/docker-compose.yml up -d",
+    "ha:bootstrap": "bun dev/ha/bootstrap.ts",
+    "ha:down": "docker compose -f dev/ha/docker-compose.yml down -v",
+    "ha:logs": "docker compose -f dev/ha/docker-compose.yml logs -f"
   },
   "dependencies": {
     "@elysiajs/cors": "^1.4.2",

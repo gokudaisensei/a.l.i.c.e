@@ -1,0 +1,45 @@
+# Minimal HA config for tests: no cloud/discovery, with the demo integration for fake devices.
+homeassistant:
+  name: Alice Test Home
+  unit_system: metric
+  time_zone: UTC
+
+http:
+api:
+websocket_api:
+auth:
+onboarding:
+config:
+person:
+history:
+logbook:
+recorder:
+  commit_interval: 1
+  db_url: "sqlite:///:memory:"
+
+# Fake devices: lights, switches, climate, covers, sensors, etc.
+demo:
+
+# Controllable helpers whose state changes are easy to assert on.
+input_boolean:
+  test_switch:
+    name: Test Switch
+  test_switch_2:
+    name: Test Switch 2
+input_number:
+  test_level:
+    name: Test Level
+    min: 0
+    max: 100
+    step: 1
+scene:
+  - name: Test Scene
+    entities:
+      input_boolean.test_switch: "on"
+script:
+  test_script:
+    alias: Test Script
+    sequence:
+      - action: input_boolean.toggle
+        target:
+          entity_id: input_boolean.test_switch_2
