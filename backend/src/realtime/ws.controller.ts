@@ -1,6 +1,7 @@
 import { Elysia, t } from "elysia";
 import { requireMember } from "@/core/http/guards";
 import { sessionPlugin } from "@/core/http/session-plugin";
+import { checkSocketOrigin } from "@/core/http/csrf";
 import type { Services } from "@/services";
 import type { ClientSocket } from "./hub";
 
@@ -8,7 +9,7 @@ import type { ClientSocket } from "./hub";
  * Realtime endpoint: GET /ws (WebSocket upgrade). Authenticates with the same session cookie as the REST API,
  * then speaks the JSON protocol in docs/API.md. On reconnect a client resubscribes and refetches; there is no replay.
  */
-export const realtimeController = ({ auth, households, realtime }: Services) =>
+export const realtimeController = ({ auth, households, realtime, allowedOrigins }: Services) =>
   new Elysia({ name: "realtime", tags: ["realtime"] })
     .use(sessionPlugin(auth, households))
     .ws("/ws", {
@@ -16,7 +17,7 @@ export const realtimeController = ({ auth, households, realtime }: Services) =>
       maxPayloadLength: 16_384,
       idleTimeout: 120,
       // Runs on the upgrade request: refused here means no socket is ever opened.
-      beforeHandle: (ctx) => { requireMember(ctx); },
+      beforeHandle: (ctx) => { checkSocketOrigin(ctx.request, allowedOrigins); requireMember(ctx); },
       open(ws) {
         const { session, membership } = ws.data as unknown as { session: NonNullable<ReturnType<typeof requireMember>["session"]>; membership: NonNullable<ReturnType<typeof requireMember>["membership"]> };
         const socket: ClientSocket = {

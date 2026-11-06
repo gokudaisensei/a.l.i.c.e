@@ -57,9 +57,10 @@ export const devicesController = ({ auth, households, devices, things, activity 
     }, { body: t.Object({ entityIds: t.Array(t.String(), { minItems: 1 }) }) })
     .post("/:id/commands", (ctx) => {
       const c = caller(ctx, "device.control");
-      const cmd = devices.command(c, ctx.params.id, ctx.body);
+      const { cmd, replay } = devices.commandOnce(c, ctx.params.id, ctx.body, ctx.headers["idempotency-key"] ?? null);
       ctx.set.status = 202;
-      return toPublicCommand(cmd);
+      if (replay) ctx.set.headers["idempotent-replay"] = "true";
+      return devices.publicCommand(cmd);
     }, {
       body: t.Object({ entityId: t.Optional(t.String()), action: t.String({ minLength: 1 }), parameters: t.Optional(t.Record(t.String(), t.Unknown())) }),
       detail: { summary: "Run an operation on a device. Returns 202 with the command; follow it with GET /commands/:id" },
@@ -92,8 +93,13 @@ export const commandsController = ({ auth, households, devices }: Services) =>
       if (membership.role !== "admin") throw new AppError(403, "forbidden", "Admins only");
       return { commands: devices.listCommands({ householdId: membership.householdId, userId: session.userId, role: membership.role, steppedUp: session.steppedUp }, { state: ctx.query.state, limit: ctx.query.limit }).map(toPublicCommand) };
     }, { query: t.Object({ state: t.Optional(stateUnion), limit: t.Optional(t.Numeric({ minimum: 1, maximum: 500 })) }) })
-    .get("/:id", (ctx) => toPublicCommand(devices.getCommand(caller(ctx, "device.view"), ctx.params.id)))
-    .post("/:id/cancel", (ctx) => toPublicCommand(devices.cancelCommand(caller(ctx, "device.control"), ctx.params.id)));
+    .get("/:id", (ctx) => devices.publicCommand(devices.getCommand(caller(ctx, "device.view"), ctx.params.id)))
+    .post("/:id/cancel", (ctx) => devices.publicCommand(devices.cancelCommand(caller(ctx, "device.control"), ctx.params.id)))
+    .post("/:id/undo", (ctx) => {
+      const back = devices.undoCommand(caller(ctx, "device.control"), ctx.params.id);
+      ctx.set.status = 202;
+      return devices.publicCommand(back);
+    }, { detail: { summary: "Put back what a finished command changed (once, within ten minutes). Returns the new command" } });
 
 export const areasController = ({ auth, households, devices }: Services) =>
   new Elysia({ name: "module.areas", prefix: "/areas", tags: ["areas"] })

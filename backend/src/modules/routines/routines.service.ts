@@ -237,7 +237,7 @@ export class RoutinesService {
         this.save(run);
         const done = await this.actions.finish(started.commands);
         const bad = done.filter((x) => x.state !== "confirmed");
-        const problems = [...started.skipped.map((s) => s.reason), ...bad.map((x) => `${x.entityId}: ${toPublicCommand(x).failure?.message ?? x.state}`)];
+        const problems = [...started.skipped.map((s) => s.reason), ...bad.map((x) => `${x.entityId}: ${toPublicCommand(x, this.now()).failure?.message ?? x.state}`)];
         if (problems.length) { ok = false; res.detail = problems.join("; "); }
         if (!started.commands.length && !started.skipped.length) res.detail = "Nothing to do";
       }

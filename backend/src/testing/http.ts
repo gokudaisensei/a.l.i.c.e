@@ -13,13 +13,13 @@ export class Browser {
 
   /** Like `call` but returns the untouched Response (for file downloads). */
   raw(method: string, path: string) {
-    return this.app.handle(new Request(`http://localhost/api/v1${path}`, { method, headers: this.cookie ? { cookie: this.cookie } : {} }));
+    return this.app.handle(new Request(`http://localhost/api/v1${path}`, { method, headers: { origin: ORIGIN, ...(this.cookie ? { cookie: this.cookie } : {}) } }));
   }
 
   async call(method: string, path: string, body?: unknown) {
     const res = await this.app.handle(new Request(`http://localhost/api/v1${path}`, {
       method,
-      headers: { "content-type": "application/json", ...(this.cookie ? { cookie: this.cookie } : {}) },
+      headers: { "content-type": "application/json", origin: ORIGIN, ...(this.cookie ? { cookie: this.cookie } : {}) },
       body: body === undefined ? undefined : JSON.stringify(body),
     }));
     const set = res.headers.get("set-cookie");

@@ -1,7 +1,7 @@
 import { Elysia, t } from "elysia";
 import { env } from "@/core/config/env";
 import { clientIp, enforce } from "@/core/http/rate-limit";
-import { COOKIE, requireMember, requireSession, requireStepUp } from "@/core/http/guards";
+import { COOKIE, requireMember, requireSession, requireStepUp, sessionCookieOptions } from "@/core/http/guards";
 import { sessionPlugin } from "@/core/http/session-plugin";
 import type { Services } from "@/services";
 import type { SignedIn } from "./auth.service";
@@ -11,7 +11,7 @@ const anyJson = t.Any();
 /** Authentication routes. `/auth/*` is the only public surface besides /health. */
 export const authController = ({ auth, households, limits }: Services) => {
   const setCookie = (cookie: Record<string, { set: (o: object) => unknown }>, s: SignedIn["session"]) =>
-    cookie[COOKIE]!.set({ value: s.token, httpOnly: true, sameSite: "lax", secure: env.nodeEnv === "production", path: "/", expires: new Date(s.expiresAt) });
+    cookie[COOKIE]!.set({ value: s.token, ...sessionCookieOptions(s.expiresAt, env.nodeEnv === "production") });
 
   /** Per-IP limit on every public auth call; `secret` adds the strict limits for code-guessing endpoints. */
   const throttle = (ctx: { request: Request; server?: unknown }, opts: { secret?: boolean } = {}) => {

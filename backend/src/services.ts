@@ -92,6 +92,8 @@ export interface Services {
   routines: RoutinesService;
   automations: AutomationsService;
   realtime: RealtimeHub;
+  /** Origins a browser may use this app from. */
+  allowedOrigins: string[];
 }
 
 export const defaultAuthConfig = (): AuthConfig => ({
@@ -134,6 +136,8 @@ export interface ServiceOptions {
   updateInstaller?: UpdateInstaller;
   /** A model-backed reader for Ask Alice. Defaults to Claude when AI_API_KEY is set, otherwise none. */
   interpreter?: Interpreter | null;
+  /** Where browsers may call from (CSRF and WebSocket origin checks). Defaults to the passkey origin and CORS_ORIGINS. */
+  allowedOrigins?: string[];
   currentVersion?: string;
   allowUnsignedUpdates?: boolean;
 }
@@ -217,8 +221,9 @@ export function createServices(db: Db, opts: ServiceOptions = {}): Services {
 
   return {
     db, bus, households, permissions, manager, things, commands, auth, devices, favorites, actions, groups, modes, modeMirror, insights, presence, scenes, routines, automations, notifications, push, admin, backups, updates, assistant, support, operators, activity, history, energy, alerts, realtime,
+    allowedOrigins: opts.allowedOrigins ?? [...new Set([(opts.auth ?? defaultAuthConfig()).origin, ...env.corsOrigins])],
     users: new UserService(db),
-    limits: createLimits(opts.now),
+    limits: createLimits(opts.now, db),
     ha,
     configJobs,
     sync,

@@ -8,7 +8,7 @@ import { households, householdMembers, users } from "./schema";
 const cmd = (id: string, createdAt: number, over: Partial<DeviceCommand> = {}): DeviceCommand => ({
   id, householdId: "h1", connectionId: "c1", entityId: "light.a", domain: "light", action: "turn_on", parameters: { x: 1 },
   state: "pending", requestedState: { power: true }, actualState: null, requestedBy: "u1", source: "user", haContextId: null,
-  failure: null, confirmedBy: null, createdAt, dispatchedAt: null, acceptedAt: null, finishedAt: null, timeoutAt: null, ...over,
+  failure: null, confirmedBy: null, createdAt, dispatchedAt: null, acceptedAt: null, finishedAt: null, timeoutAt: null, previousState: null, undoOf: null, undoneBy: null, ...over,
 });
 
 describe("migrations", () => {

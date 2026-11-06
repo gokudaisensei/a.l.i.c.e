@@ -1,4 +1,4 @@
-import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { COMMAND_STATES } from "@/modules/devices/command-lifecycle";
 import type { FailureCode } from "@/modules/devices/commands/command-types";
 import { households } from "./households";
@@ -27,6 +27,11 @@ export const commands = sqliteTable(
     acceptedAt: integer("accepted_at"),
     finishedAt: integer("finished_at"),
     timeoutAt: integer("timeout_at"),
+    /** How the entity was just before the command, so it can be put back. */
+    previousState: text("previous_state", { mode: "json" }).$type<Record<string, unknown> | null>(),
+    /** Set on a command that undoes another, and on the one that was undone. */
+    undoOf: text("undo_of"),
+    undoneBy: text("undone_by"),
   },
   (t) => [index("commands_household_idx").on(t.householdId, t.createdAt), index("commands_state_idx").on(t.state)],
 );
@@ -130,4 +135,25 @@ export const operators = sqliteTable("operators", {
   lastSeenAt: integer("last_seen_at"),
   /** Tokens do not last forever: after this the operator needs a new one. */
   expiresAt: integer("expires_at"),
+});
+
+/** A client's own key for one request, so a double tap or a retry does not run a command twice. */
+export const idempotencyKeys = sqliteTable(
+  "idempotency_keys",
+  {
+    userId: text("user_id").notNull(),
+    key: text("key").notNull(),
+    /** What the key was first used for, so reusing it for something else is refused. */
+    fingerprint: text("fingerprint").notNull(),
+    commandId: text("command_id").notNull(),
+    createdAt: integer("created_at").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.key] }), index("idempotency_created_idx").on(t.createdAt)],
+);
+
+/** Counters behind the rate limits, kept in the database so a restart does not give everyone a fresh allowance. */
+export const rateLimits = sqliteTable("rate_limits", {
+  key: text("key").primaryKey(),
+  count: integer("count").notNull(),
+  resetAt: integer("reset_at").notNull(),
 });

@@ -18,6 +18,8 @@ export interface CommandInput {
   /** Application-level parameters, e.g. { brightness_pct: 30 }. */
   parameters?: Record<string, unknown>;
   actor: Actor;
+  /** Set when this command puts back another one. */
+  undoOf?: string;
   /** Override how long to wait for the desired state after HA accepts. */
   confirmTimeoutMs?: number;
 }
@@ -59,4 +61,8 @@ export interface DeviceCommand {
   acceptedAt: number | null;
   finishedAt: number | null;
   timeoutAt: number | null;
+  /** The entity's application-level values just before the command ran. */
+  previousState: Record<string, unknown> | null;
+  undoOf: string | null;
+  undoneBy: string | null;
 }

@@ -83,7 +83,8 @@ export function createWorld(opts: { sleep?: Parameters<typeof createServices>[1]
   const backupDir = mkdtempSync(join(tmpdir(), "alice-test-backups-"));
   const services = createServices(db, {
     bus: new InMemoryEventBus<AppEvent>(), // each test world has its own bus, so worlds cannot hear each other
-    now: () => clock.now, secretsKey: SECRETS_KEY, sleep: opts.sleep, backupDir, backupKey: BACKUP_KEY, currentVersion: "0.1.0",
+    now: () => clock.now, secretsKey: SECRETS_KEY, sleep: opts.sleep, backupDir, backupKey: BACKUP_KEY, pushProviders: [], // push channels come from tests, never from a developer's .env
+    currentVersion: "0.1.0",
     updateSource: { latest: async () => { if (updateFake.sourceError) throw updateFake.sourceError; return updateFake.latest; } },
     updateInstaller: { request: async (v) => { if (updateFake.installError) throw updateFake.installError; updateFake.requested.push(v); } }, dbPath: null, adminSealPublicKey: SEAL_KEYS.publicKey,
     auth: TEST_AUTH,

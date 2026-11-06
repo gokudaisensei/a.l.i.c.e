@@ -1,6 +1,6 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, lt } from "drizzle-orm";
 import type { Db } from "@/core/database/client";
-import { entitySettings, type Role } from "@/core/database/schema";
+import { entitySettings, idempotencyKeys, type Role } from "@/core/database/schema";
 import { AppError, notFound } from "@/core/errors/errors";
 import { writeAudit } from "@/core/security/audit";
 import type { AppEvent } from "@/core/events/app-events";
@@ -15,6 +15,8 @@ import type { Thing } from "../home-assistant/things/types";
 import { resolveThingTarget } from "../home-assistant/things/target";
 import type { CommandExecutor } from "./commands/command-executor";
 import type { DeviceCommand } from "./commands/command-types";
+import { UNDO_WINDOW_MS, undoPlan } from "./commands/undo";
+import { toPublicCommand } from "./commands/public-command";
 
 export interface Caller {
   householdId: string;
@@ -159,6 +161,48 @@ export class DevicesService {
       actor: { userId: c.userId, source: "user", steppedUp: c.steppedUp },
     });
   }
+
+  /**
+   * Sends a command, once per `key`. The same person using the same key again for the same request gets the command they
+   * already made (so a double tap or a retry does nothing twice); the same key for something different is refused.
+   */
+  commandOnce(c: Caller, thingId: string, body: { entityId?: string; action: string; parameters?: Record<string, unknown> }, key: string | null): { cmd: DeviceCommand; replay: boolean } {
+    if (!key) return { cmd: this.command(c, thingId, body), replay: false };
+    if (!/^[A-Za-z0-9_\-:.]{8,80}$/.test(key)) throw new AppError(400, "validation_error", "The idempotency key must be 8 to 80 letters, digits or - _ : .");
+    const fingerprint = JSON.stringify([thingId, body.entityId ?? null, body.action, body.parameters ?? {}]);
+    const hit = this.db.select().from(idempotencyKeys).where(and(eq(idempotencyKeys.userId, c.userId), eq(idempotencyKeys.key, key))).get();
+    if (hit) {
+      if (hit.fingerprint !== fingerprint) throw new AppError(422, "idempotency_key_reuse", "That key was already used for a different request");
+      const cmd = this.executor.get(hit.commandId);
+      if (cmd) return { cmd, replay: true };
+    }
+    const cmd = this.command(c, thingId, body);
+    const t = this.now();
+    this.db.delete(idempotencyKeys).where(lt(idempotencyKeys.createdAt, t - 24 * 3_600_000)).run();
+    this.db.insert(idempotencyKeys).values({ userId: c.userId, key, fingerprint, commandId: cmd.id, createdAt: t }).onConflictDoUpdate({ target: [idempotencyKeys.userId, idempotencyKeys.key], set: { fingerprint, commandId: cmd.id, createdAt: t } }).run();
+    return { cmd, replay: false };
+  }
+
+  /** Puts back what a finished command changed: once, within ten minutes, by whoever sent it (or an admin). */
+  undoCommand(c: Caller, id: string): DeviceCommand {
+    const cmd = this.getCommand(c, id);
+    if (cmd.undoneBy) throw new AppError(409, "already_undone", "That was already put back");
+    if (cmd.undoOf) throw new AppError(409, "not_undoable", "An undo cannot be undone; just do it again");
+    if (cmd.finishedAt === null || this.now() - cmd.finishedAt > UNDO_WINDOW_MS) throw new AppError(409, "undo_expired", "It is too late to undo that");
+    const plan = undoPlan(cmd);
+    if (!plan) throw new AppError(409, "not_undoable", "That can't be put back automatically");
+    const found = this.things.findEntity(c.householdId, cmd.entityId);
+    if (!found?.thing) throw new AppError(409, "not_undoable", "That device is not there any more");
+    const back = this.executor.submit({
+      householdId: c.householdId, entityId: cmd.entityId, action: plan.action, parameters: plan.parameters, undoOf: cmd.id,
+      actor: { userId: c.userId, source: "user", steppedUp: c.steppedUp },
+    });
+    this.executor.setUndoneBy(cmd.id, back.id);
+    return back;
+  }
+
+  /** A command as clients see it, judged by this server's clock. */
+  publicCommand(c: DeviceCommand) { return toPublicCommand(c, this.now()); }
 
   /** Commands are visible to whoever sent them, and to admins. */
   getCommand(c: Caller, id: string) {

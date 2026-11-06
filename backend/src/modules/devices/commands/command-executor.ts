@@ -51,7 +51,7 @@ export class CommandExecutor {
       id: newId("cmd"), householdId: input.householdId, connectionId: null, entityId: input.entityId, domain,
       action: input.action, parameters: input.parameters ?? {}, state: "pending", requestedState: null, actualState: null,
       requestedBy: input.actor.userId, source: input.actor.source, haContextId: null, failure: null, confirmedBy: null,
-      createdAt: this.now(), dispatchedAt: null, acceptedAt: null, finishedAt: null, timeoutAt: null,
+      createdAt: this.now(), dispatchedAt: null, acceptedAt: null, finishedAt: null, timeoutAt: null, previousState: null, undoOf: input.undoOf ?? null, undoneBy: null,
     };
     this.store.create(cmd);
     this.publish("command.created", cmd);
@@ -94,6 +94,11 @@ export class CommandExecutor {
     return n;
   }
 
+  /** Records that a command has been put back by another. */
+  setUndoneBy(id: string, byId: string) {
+    this.store.update(id, { undoneBy: byId });
+  }
+
   /** Cancels a command that has not been dispatched yet. */
   cancel(id: string): DeviceCommand {
     const cur = this.store.get(id);
@@ -133,6 +138,7 @@ export class CommandExecutor {
 
     // 3. Work out what we expect to see, and start watching before we dispatch so no event is missed.
     const before: NormalizedState = projection?.normalized ?? {};
+    this.store.update(id, { previousState: before });
     const expectation = expectationFor(domain, action, params, before);
     this.store.update(id, { requestedState: expectation?.requested ?? null });
     const alreadyTrue = !!expectation && action !== "toggle" && expectation.matches(before);

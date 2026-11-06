@@ -286,7 +286,7 @@ export class RealtimeHub {
     for (const c of this.forHousehold(e.householdId)) {
       if (!c.subs.has("commands")) continue;
       if (c.role !== "admin" && cmd.requestedBy !== c.userId) continue;
-      this.send(c.socket, { type: e.type, data: toPublicCommand(cmd) });
+      this.send(c.socket, { type: e.type, data: toPublicCommand(cmd, this.now()) });
     }
   }
 

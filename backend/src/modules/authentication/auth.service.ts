@@ -34,7 +34,12 @@ export interface SessionContext {
   steppedUp: boolean;
   /** Recovery sessions can only add a passkey. */
   restricted: boolean;
+  /** Set when this request renewed the session: the new expiry, so the cookie can be refreshed to match. */
+  renewedUntil?: number;
 }
+
+/** A session that keeps being used is renewed, but never lives longer than this in all. */
+export const MAX_SESSION_AGE_HOURS = 90 * 24;
 
 export interface SignedIn {
   user: { id: string; displayName: string };
@@ -290,8 +295,16 @@ export class AuthService {
     const t = this.now();
     if (!row || row.revokedAt !== null || row.expiresAt <= t) return null;
     if (t - row.lastSeenAt > 60_000) this.db.update(sessions).set({ lastSeenAt: t }).where(eq(sessions.id, row.id)).run();
+    // Sliding expiry: once more than half the time is used, a session that is still in use is pushed out again (up to the cap).
+    // A recovery session is never renewed: it exists only to add a passkey.
+    let expiresAt = row.expiresAt, renewedUntil: number | undefined;
+    const ttl = this.cfg.sessionTtlHours * HOUR;
+    if (!row.restricted && row.expiresAt - t < ttl / 2) {
+      const next = Math.min(t + ttl, row.createdAt + MAX_SESSION_AGE_HOURS * HOUR);
+      if (next > row.expiresAt + 60_000) { this.db.update(sessions).set({ expiresAt: next }).where(eq(sessions.id, row.id)).run(); expiresAt = renewedUntil = next; }
+    }
     return {
-      sessionId: row.id, userId: row.userId, expiresAt: row.expiresAt, restricted: row.restricted,
+      sessionId: row.id, userId: row.userId, expiresAt, restricted: row.restricted, ...(renewedUntil ? { renewedUntil } : {}),
       steppedUp: row.lastStepUpAt !== null && t - row.lastStepUpAt < this.stepUpTtl,
     };
   }

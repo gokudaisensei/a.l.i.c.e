@@ -10,6 +10,9 @@ export type RequestAuth = {
 
 export const COOKIE = "alice_session";
 
+/** The attributes of the session cookie, in one place. */
+export const sessionCookieOptions = (expiresAt: number, secure: boolean) => ({ httpOnly: true, sameSite: "lax" as const, secure, path: "/", expires: new Date(expiresAt) });
+
 /** A signed-in session. Recovery sessions are refused unless a route opts in. */
 export function requireSession(a: RequestAuth, opts: { allowRestricted?: boolean } = {}): SessionContext {
   if (!a.session) throw new AppError(401, "unauthenticated", "Please sign in");
