@@ -1,5 +1,6 @@
+import { AuthGate } from "@/components/auth";
 import { Shell } from "@/components/shell";
 
 export default function AppLayout({ children }: LayoutProps<"/">) {
-  return <Shell>{children}</Shell>;
+  return <AuthGate><Shell>{children}</Shell></AuthGate>;
 }

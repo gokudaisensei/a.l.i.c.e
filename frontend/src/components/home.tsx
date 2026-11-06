@@ -1,12 +1,13 @@
 "use client";
-import { Icon, Button, IconButton, StepButton, Pill, Chip, Switch, Bar, Avatar, Empty, Safe, Html, Tile, TileHeader, resetTileOrder, Sparkline } from "@/ui";
+import { Icon, Notice, Select, Button, IconButton, StepButton, Pill, Chip, Switch, Bar, Avatar, Empty, Safe, Html, Tile, TileHeader, resetTileOrder, Sparkline, DeviceTile, AddTile, ModeButton, SceneCard, LockTile } from "@/ui";
 import { LockButton, DevSlider } from "./device-controls";
-import { useRef, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import {
-  A, S, useS, usePhone, useMounted, tod, status, me, vis, dev, isOn, icn, rname, dateStr, clock, totalW, watts,
-  SCENES, suggestion, alerts, backupState, dstate, openSheet, buzz, go, bump, type StatusChip,
+  A, S, useS, usePhone, useMounted, tod, status, me, vis, mainClimate, isOn, icn, rname, dateStr, clock, totalW, watts,
+  SCENES, primaryScene, personal, suggestion, alerts, backupState, dstate, openSheet, buzz, go, bump, type StatusChip,
 } from "@/lib/store";
-import { MODES, PRIMARY, type Dev } from "@/lib/data";
+import { MODES, type Dev } from "@/lib/data";
+import { linkPerson } from "@/lib/admin";
 
 const GREET = { morning: "Good morning", day: "Good afternoon", evening: "Good evening", night: "Quiet night" };
 
@@ -39,16 +40,16 @@ export function DevRow({ d }: { d: Dev }) {
 
 /* ---------------- desktop tiles ---------------- */
 function THero() {
-  const t = tod(), st = status(), who = me().n, sc = SCENES.find((s) => s.id === PRIMARY[t])!;
+  const t = tod(), st = status(), who = me().n, sc = primaryScene(t);
   return (
     <Tile id="hero" cols={8} rows={3} colsTablet={6} className="hero">
       <div className="th"><span className="eyebrow">{dateStr()} · {clock()}</span></div>
-      <h1 className="hl"><span className="hl-a">{GREET[t]}, {who}.</span><span className="hl-b">{st.line}</span></h1>
+      <h1 className="hl"><span className="hl-a">{GREET[t]}, {who}.</span><span className="hl-b">{st.line}</span>{personal() ? <span className="hl-c">{personal()}</span> : null}</h1>
       <div className="chips"><Chips chips={st.chips} /></div>
       <div className="hero-actions">
-        <Button variant="primary" onClick={() => A.scene(sc.id)}><Icon n={sc.ic} />{sc.n}</Button>
-        <Button onClick={() => A.flash("scenes")}>All scenes</Button>
-        <small style={{ color: "var(--hero-ink)", opacity: 0.75 }}>{sc.d}</small>
+        {sc ? <Button variant="primary" onClick={() => A.scene(sc.id)}><Icon n={sc.ic} />{sc.n}</Button> : null}
+        {SCENES.length ? <Button onClick={() => A.flash("scenes")}>All scenes</Button> : null}
+        {sc ? <small style={{ color: "var(--hero-ink)", opacity: 0.75 }}>{sc.d}</small> : null}
       </div>
     </Tile>
   );
@@ -59,7 +60,7 @@ function TMode() {
     <Tile id="mode" cols={4} rows={3} colsTablet={6} className="t-sage">
       <TileHeader title="Household mode" eyebrow={`Now: ${S.mode}`} />
       <div className="modes">{MODES.map((m) => (
-        <button key={m.k} className="mode" aria-pressed={S.mode === m.k} onClick={() => A.mode(m.k)}><Icon n={m.ic} /><b>{m.k}</b><small>{m.d}</small></button>
+        <ModeButton key={m.k} icon={m.ic} label={m.k} description={m.d} pressed={S.mode === m.k} onClick={() => A.mode(m.k)} />
       ))}</div>
       {sg ? (
         <div className="sugg">
@@ -102,16 +103,17 @@ function TLocks() {
   );
 }
 function TClimate() {
-  const a = dev("ac"), others = S.devices.filter((d) => d.t === "climate" && d.id !== "ac" && (S.role !== "guest" || d.g));
+  const a = mainClimate(), others = S.devices.filter((d) => d.t === "climate" && d.id !== a?.id && (S.role !== "guest" || d.g));
+  if (!a) return null;
   return (
     <Tile id="climate" cols={4} rows={2} colsTablet={3} className="t-clay">
-      <TileHeader title="Climate" eyebrow="Living room" right={<Switch checked={!!a.on} label={a.n} onChange={() => A.tog(a.id)} />} />
+      <TileHeader title="Climate" eyebrow={a.n} right={<Switch checked={!!a.on} label={a.n} onChange={() => A.tog(a.id)} />} />
       <div className="temp">
         <div className="big">{a.cur!.toFixed(1)}°<small>now</small></div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <StepButton onClick={() => A.tgt("ac", -1)} aria-label="Lower target"><Icon n="minus" /></StepButton>
+          <StepButton onClick={() => A.tgt(a.id, -1)} aria-label="Lower target"><Icon n="minus" /></StepButton>
           <div style={{ textAlign: "center", minWidth: 48 }}><b className="num" style={{ fontSize: 20 }}>{a.tgt}°</b><div className="small">target</div></div>
-          <StepButton onClick={() => A.tgt("ac", 1)} aria-label="Raise target"><Icon n="plus" /></StepButton>
+          <StepButton onClick={() => A.tgt(a.id, 1)} aria-label="Raise target"><Icon n="plus" /></StepButton>
         </div>
       </div>
       {others.map((d) => (
@@ -125,14 +127,12 @@ function TClimate() {
   );
 }
 function TScenes() {
-  const rec = PRIMARY[tod()];
+  const rec = primaryScene(tod())?.id;
   return (
     <Tile id="scenes" cols={8} rows={2} colsTablet={6}>
       <TileHeader title="Scenes and routines" right={<span className="small">Both run inside Home Assistant</span>} />
       <div className="scenes">{SCENES.map((s) => (
-        <button key={s.id} className={`scene ${s.id === rec ? "rec" : ""}`} onClick={() => A.scene(s.id)}>
-          <Icon n={s.ic} /><b>{s.n}</b><small>{s.d}</small><span className="eyebrow">{s.id === rec ? "Suggested now" : s.tag}</span>
-        </button>
+        <SceneCard key={s.id} icon={s.ic} name={s.n} description={s.d} tag={s.id === rec ? "Suggested now" : s.tag} suggested={s.id === rec} onClick={() => A.scene(s.id)} />
       ))}</div>
     </Tile>
   );
@@ -153,29 +153,42 @@ function TActivity() {
     </Tile>
   );
 }
+/** Offers an admin the way to tie a member to a phone in Home Assistant, which is how Alice knows who is home. */
+function LinkPhone() {
+  const who = S.people.find((p) => p.role !== "guest" && !p.linked);
+  if (S.role !== "admin" || !S.persons.length || !who) return null;
+  return (
+    <Notice action={<Select label="Link to a phone in Home Assistant" value="" onChange={(v) => { if (v) void linkPerson(who.id, v); }} options={[["", "Link to a phone…"], ...S.persons.map((x): [string, string] => [x.entityId, x.name])]} />}>
+      {who.n} isn&rsquo;t linked to a phone in Home Assistant, so Alice can&rsquo;t tell when they are home.
+    </Notice>
+  );
+}
 function TPeople() {
   const home = S.people.filter((p) => p.home).length;
   return (
     <Tile id="people" cols={4} rows={2} colsTablet={3} colsMobile={6}>
       <TileHeader title="Who is home" right={<span className={`pill ${home ? "info" : ""}`}>{home} home</span>} />
       <div className="list">{S.people.map((p) => (
-        <button key={p.id} className="row" style={{ textAlign: "left" }} onClick={() => A.person(p.id)} aria-label={`${p.n} is ${p.home ? "home" : "away"}. Tap to change.`}>
+        <button key={p.id} className="row" style={{ textAlign: "left" }} onClick={() => A.person()} aria-label={`${p.n} is ${p.home ? "home" : "away"}. It follows their phone.`}>
           <Avatar initial={p.n[0]} tone={p.c} away={!p.home} />
           <div><b>{p.n}</b><small>{p.role === "guest" ? `Guest until ${p.until}` : p.role === "admin" ? "Admin" : "Member"}</small></div>
           <span className={`pill ${p.home ? "ok" : ""}`}>{p.home ? "Home" : "Away"}</span>
         </button>
       ))}</div>
+      <LinkPhone />
     </Tile>
   );
 }
+const todayText = () => (S.energyLive ? (S.energyLive.todayKwh != null ? `${S.energyLive.todayKwh.toFixed(1)} kWh` : "not available") : "11.4 kWh");
+const series = (kw: number) => { const h = S.energyLive ? S.energyLive.hourly : S.energy; return h.length > 1 ? [...h.slice(1), kw] : [0, kw]; };
 function TEnergy() {
-  const kw = totalW() / 1000, top = S.devices.map((d) => ({ n: d.n, w: watts(d) })).sort((a, b) => b.w - a.w).slice(0, 3), mx = top[0].w || 1;
+  const kw = totalW() / 1000, top = S.energyLive ? S.energyLive.top : S.devices.map((d) => ({ n: d.n, w: watts(d) })).sort((a, b) => b.w - a.w).slice(0, 3), mx = top[0]?.w || 1;
   return (
     <Tile id="energy" cols={S.role === "admin" ? 5 : 8} rows={2} colsTablet={6} colsMobile={6}>
-      <TileHeader title="Energy" eyebrow="Last 24 hours" right={<Pill>Today 11.4 kWh</Pill>} />
+      <TileHeader title="Energy" eyebrow="Last 24 hours" right={<Pill>Today {todayText()}</Pill>} />
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1.2fr)", gap: 18, alignItems: "end" }}>
         <div><div className="big num">{kw.toFixed(2)}<small>kW now</small></div></div>
-        <div><Sparkline values={[...S.energy.slice(1), kw]} /></div>
+        <div><Sparkline values={series(kw)} /></div>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>{top.map((x) => (
         <div key={x.n} style={{ display: "grid", gridTemplateColumns: "120px minmax(0,1fr) 62px", gap: 10, alignItems: "center", fontSize: 13 }}>
@@ -184,7 +197,7 @@ function TEnergy() {
           <span className="num" style={{ textAlign: "right", color: "var(--ink2)" }}>{x.w.toLocaleString()} W</span>
         </div>
       ))}</div>
-      <p className="small">Evenings run 18% above your last eight Thursdays. Plain statistics, no guessing.</p>
+      {S.energyLive ? (S.energyLive.pattern ? <p className="small">{S.energyLive.pattern}</p> : null) : <p className="small">Evenings run 18% above your last eight Thursdays. Plain statistics, no guessing.</p>}
     </Tile>
   );
 }
@@ -212,7 +225,7 @@ function TBackup() {
     <Tile id="backup" cols={4} rows={2} colsTablet={3} className="t-sage">
       <TileHeader title="Backups" eyebrow="Admin only" right={<span className={`pill ${b.ok ? "ok" : "warn"}`}><Icon n={b.ok ? "shieldcheck" : "alert"} c="sm" />{b.ok ? "Verified" : "Not verified"}</span>} />
       <p>{b.ok ? "The last backup was restored into a scratch space and checked. It counts as safe." : "The newest backup has not passed a restore test yet, so it does not count as safe."}</p>
-      <div className="small">Next backup tonight at 2:30 am, to the NAS.</div>
+      <div className="small">{S.adm?.backupNone ? "No backup has been made yet." : `Next backup ${S.adm?.nextBackup ?? "tonight at 2:30 am"}.`}</div>
       <Button size="sm" style={{ alignSelf: "flex-start", marginTop: "auto" }} onClick={() => go("admin", "backups")}>Open backups <Icon n="chev" c="sm" /></Button>
     </Tile>
   );
@@ -260,40 +273,27 @@ function TAccess() {
 
 /* ---------------- phone ---------------- */
 export function DTile({ d, hideRoom }: { d: Dev; hideRoom?: boolean }) {
-  const on = isOn(d), warn = d.t === "lock" && !d.locked;
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const fired = useRef(false);
-  const stop = () => { if (timer.current) clearTimeout(timer.current); };
   return (
-    <div className="dtw">
-      <button className={`dt ${on ? "is-on" : ""} ${warn ? "warn" : ""}`}
-        aria-label={`${d.n}, ${dstate(d)}. Tap to ${d.t === "lock" ? (d.locked ? "unlock" : "lock") : "toggle"}. Hold for more.`}
-        onPointerDown={() => { fired.current = false; stop(); timer.current = setTimeout(() => { fired.current = true; buzz(18); openSheet(d.id); }, 430); }}
-        onPointerUp={stop} onPointerCancel={stop} onPointerLeave={stop}
-        onContextMenu={(e) => e.preventDefault()}
-        onClick={(e) => { if (fired.current) { fired.current = false; e.preventDefault(); return; } A.dtap(d.id); }}>
-        {d.t === "dim" && d.on ? <i className="dfill" style={{ height: `${d.v}%` }} /> : null}
-        <span className="dico"><Icon n={icn(d)} /></span>
-        <span className="dn"><b>{d.n}</b><small><span>{dstate(d)}</span>{hideRoom ? "" : " · " + rname(d.r)}</small></span>
-      </button>
-      <button className="dmore" onClick={() => openSheet(d.id)} aria-label={`More controls for ${d.n}`}><Icon n="chev" /></button>
-    </div>
+    <DeviceTile icon={icn(d)} name={d.n} on={isOn(d)} warn={d.t === "lock" && !d.locked} fill={d.t === "dim" && d.on ? d.v : undefined}
+      label={`${d.n}, ${dstate(d)}. Tap to ${d.t === "lock" ? (d.locked ? "unlock" : "lock") : "toggle"}. Hold for more.`}
+      detail={<><span>{dstate(d)}</span>{hideRoom ? "" : " · " + rname(d.r)}</>}
+      onTap={() => A.dtap(d.id)} onHold={() => { buzz(18); openSheet(d.id); }} onMore={() => openSheet(d.id)} moreLabel={`More controls for ${d.n}`} />
   );
 }
 const plain = (h: string) => h.replace(/<[^>]+>/g, "");
 function HomePhone() {
   const t = tod(), st = status(), who = me().n, al = st.al;
-  const sc = SCENES.find((s) => s.id === PRIMARY[t])!, l = S.devices.filter((d) => d.t === "lock"), un = l.filter((d) => !d.locked);
-  const sg = suggestion(), favs = vis().filter((d) => d.fav), ac = dev("ac"), kw = totalW() / 1000, nw = S.activity.filter((a) => a.nw).length, bk = backupState();
+  const sc = primaryScene(t), l = S.devices.filter((d) => d.t === "lock"), un = l.filter((d) => !d.locked);
+  const sg = suggestion(), favs = vis().filter((d) => d.fav), ac = mainClimate(), kw = totalW() / 1000, nw = S.activity.filter((a) => a.nw).length, bk = backupState();
   const sd = new Date().toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
   const att = al.length || un.length;
   return (
     <div className="pg">
-      <div className="mini" id="mini"><span className={`dot ${att ? "w" : ""}`} /><span className="ms">{GREET[t]}. {st.line}</span><Button onClick={() => A.scene(sc.id)}><Icon n={sc.ic} c="sm" />{sc.n}</Button></div>
+      <div className="mini" id="mini"><span className={`dot ${att ? "w" : ""}`} /><span className="ms">{GREET[t]}. {st.line}</span>{sc ? <Button onClick={() => A.scene(sc.id)}><Icon n={sc.ic} c="sm" />{sc.n}</Button> : null}</div>
       <Tile id="hero" className="pt s2 phero" bare>
         <span className="eyebrow">{sd} · {clock()}</span>
-        <h1 className="hl"><span className="hl-a">{GREET[t]}, {who}.</span><span className="hl-b">{st.line}</span></h1>
-        <div className="hrow"><Button onClick={() => A.scene(sc.id)}><Icon n={sc.ic} />{sc.n}</Button><div className="chips"><Chips chips={st.chips} /></div></div>
+        <h1 className="hl"><span className="hl-a">{GREET[t]}, {who}.</span><span className="hl-b">{st.line}</span>{personal() ? <span className="hl-c">{personal()}</span> : null}</h1>
+        <div className="hrow">{sc ? <Button onClick={() => A.scene(sc.id)}><Icon n={sc.ic} />{sc.n}</Button> : null}<div className="chips"><Chips chips={st.chips} /></div></div>
       </Tile>
       {al.length ? (
         <Tile id="alerts" className="pt s2 t-glow abn" bare>
@@ -304,7 +304,7 @@ function HomePhone() {
       ) : null}
       <Tile id="mode" className="pt s2 t-sage mtile" bare>
         <div className="pmodes" role="group" aria-label="Household mode">{MODES.map((m) => (
-          <button key={m.k} className="mode" aria-pressed={S.mode === m.k} onClick={() => A.mode(m.k)}><Icon n={m.ic} /><b>{m.k}</b></button>
+          <ModeButton key={m.k} icon={m.ic} label={m.k} pressed={S.mode === m.k} onClick={() => A.mode(m.k)} />
         ))}</div>
         {sg ? (
           <div className="srow"><Icon n="sparkle" c="sm" /><span><b>Switch to {sg.to}?</b> <span className="small">{sg.why}</span></span>
@@ -315,32 +315,27 @@ function HomePhone() {
       <div className="sh2"><h2>Favourites</h2><small>Tap · hold for more</small></div>
       {favs.length ? (
         <div className="pg3">{favs.map((d) => <DTile key={d.id} d={d} />)}
-          {favs.length % 3 ? <div className="dtw"><button className="dt add" onClick={() => go("rooms")}><Icon n="plus" />Add favourite</button></div> : null}</div>
+          {favs.length % 3 ? <AddTile onClick={() => go("rooms")} hint="Pin your most-used device">Add favourite</AddTile> : null}</div>
       ) : <Empty style={{ gridColumn: "span 2" }}>Star a device in Rooms to pin it here.</Empty>}
       <Tile id="locks" className="pt s2 t-deep deep dstrip" bare>
         <div className="lkpair">{l.map((d) => (
-          <button key={d.id} className={`lkb ${d.locked ? "" : "open"}`} onClick={() => (d.locked ? A.unlock(d.id) : A.lock(d.id))}
-            aria-label={`${d.n} is ${d.locked ? "locked. Tap to unlock" : "unlocked. Tap to lock"}`}>
-            <span className="lk"><Icon n={icn(d)} /></span><span><b>{d.n}</b><small>{d.locked ? "Locked" : "Open · tap to lock"}</small></span>
-          </button>
+          <LockTile key={d.id} icon={icn(d)} name={d.n} status={d.locked ? "Locked" : "Open · tap to lock"} locked={d.locked!} label={`${d.n} is ${d.locked ? "locked. Tap to unlock" : "unlocked. Tap to lock"}`} onClick={() => (d.locked ? A.unlock(d.id) : A.lock(d.id))} />
         ))}</div>
       </Tile>
       <Tile id="scenes" className="pt s2" bare style={{ padding: "8px 10px" }}>
         <div className="hs">{SCENES.map((s) => (
-          <button key={s.id} className={`scene ${s.id === PRIMARY[t] ? "rec" : ""}`} title={s.d} onClick={() => A.scene(s.id)}>
-            <Icon n={s.ic} /><b>{s.n}</b>{s.id === PRIMARY[t] && <span className="eyebrow">Suggested</span>}
-          </button>
+          <SceneCard key={s.id} icon={s.ic} name={s.n} title={s.d} tag={s.id === primaryScene(t)?.id ? "Suggested" : undefined} suggested={s.id === primaryScene(t)?.id} onClick={() => A.scene(s.id)} />
         ))}</div>
       </Tile>
-      <Tile id="climate" className="pt t-clay" bare>
-        <div className="th" style={{ minHeight: 24 }}><span className="eyebrow">Living AC</span><Switch checked={!!ac.on} label={ac.n} onChange={() => A.tog(ac.id)} /></div>
+      {ac ? <Tile id="climate" className="pt t-clay" bare>
+        <div className="th" style={{ minHeight: 24 }}><span className="eyebrow">{ac.n}</span><Switch checked={!!ac.on} label={ac.n} onChange={() => A.tog(ac.id)} /></div>
         <div className="mini-big">{ac.cur!.toFixed(1)}°</div>
-        <div className="temp"><StepButton onClick={() => A.tgt("ac", -1)} aria-label="Lower target"><Icon n="minus" /></StepButton><b className="num" style={{ fontSize: 17 }}>{ac.tgt}° <small style={{ fontWeight: 500 }}>target</small></b><StepButton onClick={() => A.tgt("ac", 1)} aria-label="Raise target"><Icon n="plus" /></StepButton></div>
-      </Tile>
+        <div className="temp"><StepButton onClick={() => A.tgt(ac.id, -1)} aria-label="Lower target"><Icon n="minus" /></StepButton><b className="num" style={{ fontSize: 17 }}>{ac.tgt}° <small style={{ fontWeight: 500 }}>target</small></b><StepButton onClick={() => A.tgt(ac.id, 1)} aria-label="Raise target"><Icon n="plus" /></StepButton></div>
+      </Tile> : null}
       <Tile id="energy" className="pt" bare>
         <div className="th" style={{ minHeight: 24 }}><span className="eyebrow">Energy now</span></div>
         <div className="mini-big num">{kw.toFixed(2)}<small>kW</small></div>
-        <Sparkline values={[...S.energy.slice(1), kw]} width={160} height={40} /><small>Today 11.4 kWh</small>
+        <Sparkline values={series(kw)} width={160} height={40} /><small>Today {todayText()}</small>
       </Tile>
       <Tile id="activity" className="pt s2" bare>
         <button className="accrow" onClick={() => { S.exp.act = !S.exp.act; bump(); }} aria-expanded={!!S.exp.act}>
@@ -357,16 +352,17 @@ function HomePhone() {
       </Tile>
       <Tile id="people" className="pt s2" bare>
         <div className="avrow">{S.people.map((p) => (
-          <button key={p.id} className="avp" onClick={() => A.person(p.id)} aria-label={`${p.n} is ${p.home ? "home" : "away"}. Tap to change.`}>
+          <button key={p.id} className="avp" onClick={() => A.person()} aria-label={`${p.n} is ${p.home ? "home" : "away"}. It follows their phone.`}>
             <Avatar initial={p.n[0]} tone={p.c} away={!p.home} />{p.n}<small>{p.home ? "Home" : "Away"}</small>
           </button>
         ))}</div>
+        <LinkPhone />
       </Tile>
       {S.role === "admin" ? (
         <Tile id="backup" className="pt s2 t-sage" bare style={{ padding: "6px 12px" }}>
           <button className="accrow" onClick={() => go("admin", "backups")}>
             <span className="ei" style={{ background: "var(--over)" }}><Icon n={bk.ok ? "shieldcheck" : "alert"} /></span>
-            <span className="grow"><b>Backups {bk.ok ? "verified" : "not verified"}</b><small>Next one at 2:30 am</small></span><Icon n="chev" c="sm accv" />
+            <span className="grow"><b>Backups {bk.ok ? "verified" : "not verified"}</b><small>{S.adm?.backupNone ? "None yet" : `Next one ${S.adm?.nextBackup ?? "at 2:30 am"}`}</small></span><Icon n="chev" c="sm accv" />
           </button>
         </Tile>
       ) : null}

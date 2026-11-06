@@ -1,11 +1,13 @@
 "use client";
-import { Icon, Button, StepButton, Pill, FilterChip, Switch, Segmented, Bar, Empty, PageHeader, resetTileOrder } from "@/ui";
+import { useEffect } from "react";
+import { Icon, Button, IconButton, StepButton, Tooltip, Pill, FilterChip, Switch, Segmented, Bar, Empty, PageHeader, resetTileOrder } from "@/ui";
 import { LockButton, DevSlider } from "./device-controls";
 import { DTile } from "./home";
 import { A, S, useS, usePhone, useMounted, vis, isOn, icn, rname, nowS, bump } from "@/lib/store";
 import { ROOMS, type Dev } from "@/lib/data";
+import { loadHidden, setHidden } from "@/lib/live";
 
-const CAN = ["dim", "light", "plug", "fan", "climate"];
+const CAN = ["dim", "light", "plug", "fan", "climate", "other"];
 
 export function Cam({ d }: { d: Dev }) {
   return (
@@ -22,7 +24,7 @@ function DCard({ d }: { d: Dev }) {
   if (d.t === "dim") body = d.on
     ? <div style={{ display: "flex", alignItems: "center", gap: 10 }}><DevSlider d={d} /><b className="num" style={{ minWidth: 42, textAlign: "right" }}>{d.v}%</b></div>
     : <div className="small">Off · last at {d.v}%</div>;
-  else if (d.t === "light") body = <div className="small">{d.on ? "On" : "Off"} · on/off only</div>;
+  else if (d.t === "light" || d.t === "other") body = <div className="small">{d.on ? "On" : "Off"} · {d.kind ?? "on/off only"}</div>;
   else if (d.t === "plug") {
     const p = d.limit ? Math.round((d.w! / d.limit) * 100) : 0;
     body = <>
@@ -30,7 +32,7 @@ function DCard({ d }: { d: Dev }) {
       {d.limit ? <><Bar percent={Math.min(p, 100)} warn={p >= 90} /><div className="small">Alert at 90% of {d.limit.toLocaleString()} W</div></> : null}
     </>;
   } else if (d.t === "fan") body = (
-    <div className="seg" role="group" aria-label="Fan speed">{[1, 2, 3].map((n) => <button key={n} aria-pressed={!!d.on && d.sp === n} onClick={() => A.fan(d.id, n)}>{n}</button>)}</div>
+    <Segmented value={d.on ? d.sp! : 0} label="Fan speed" items={[[1, "1"], [2, "2"], [3, "3"]]} onChange={(n) => A.fan(d.id, n)} />
   );
   else if (d.t === "climate") body = (
     <div className="temp">
@@ -56,8 +58,8 @@ function DCard({ d }: { d: Dev }) {
     foot = d.t === "lock"
       ? <span className="voice" title="Locks are never exposed to voice assistants"><Icon n="lock" c="sm" />Never by voice</span>
       : can ? <button className="voice" aria-pressed={!!d.voice} onClick={() => A.voice(d.id)}><Icon n="mic" c="sm" />{d.voice ? "Alexa · Google" : "Voice off"}</button>
-        : <span className="small">{d.hw}</span>;
-  } else foot = <span className="small">{d.hw}</span>;
+        : <span />;
+  } else foot = <span />;
 
   return (
     <div className={`dcard ${on ? "is-on" : ""} ${wide ? "wide" : ""}`}>
@@ -69,7 +71,8 @@ function DCard({ d }: { d: Dev }) {
       {body}
       <div className="dc-f">
         {foot}
-        <button className={`icon-btn ${d.fav ? "on" : ""}`} aria-pressed={!!d.fav} aria-label={`${d.fav ? "Remove from" : "Add to"} favourites`} onClick={() => A.fav(d.id)}><Icon n="star" /></button>
+        {S.role !== "guest" ? <Tooltip label="Rename or hide"><IconButton aria-label={`Rename or hide ${d.n}`} onClick={() => A.editDev(d.id)}><Icon n="note" /></IconButton></Tooltip> : null}
+        <Tooltip label={`${d.fav ? "Remove from" : "Add to"} favourites`}><button className={`icon-btn ${d.fav ? "on" : ""}`} aria-pressed={!!d.fav} aria-label={`${d.fav ? "Remove from" : "Add to"} favourites`} onClick={() => A.fav(d.id)}><Icon n="star" /></button></Tooltip>
       </div>
     </div>
   );
@@ -95,8 +98,20 @@ function Results({ phone }: { phone: boolean }) {
   ))}</>;
 }
 
+function Hidden() {
+  return (
+    <section style={{ marginTop: 24 }}>
+      <div className="gh"><h2>Hidden</h2><span className="small">{S.hiddenDevs.length} device{S.hiddenDevs.length === 1 ? "" : "s"} you hid from Alice</span></div>
+      <div className="list">{S.hiddenDevs.map((h) => (
+        <div key={h.id} className="row"><span className="dico"><Icon n="eye" /></span><div><b>{h.n}</b></div><Button size="sm" onClick={() => void setHidden(h.id, false)}>Show again</Button></div>
+      ))}</div>
+    </section>
+  );
+}
+
 export function RoomsView() {
   useS();
+  useEffect(() => { if (S.role === "admin") void loadHidden(); }, []);
   const phone = usePhone(), mounted = useMounted();
   if (!mounted) return null;
   resetTileOrder();
@@ -117,6 +132,7 @@ export function RoomsView() {
       </div>
       {S.role === "admin" ? <p className="small" style={{ marginBottom: 4 }}>Voice items are shared with Alexa and Google through Home Assistant Cloud. Locks are never shared.</p> : null}
       <div className="enterless"><Results phone={phone} /></div>
+      {S.hiddenDevs.length && S.role === "admin" ? <Hidden /> : null}
     </>
   );
 }

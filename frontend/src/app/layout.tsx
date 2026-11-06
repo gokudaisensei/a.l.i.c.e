@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Instrument_Sans, JetBrains_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
+import "@/ui/styles.css";
 import "./globals.css";
 
 // Bricolage Grotesque, variable: weight 200–800 plus the optical-size and width axes.

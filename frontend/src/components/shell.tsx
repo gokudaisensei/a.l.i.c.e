@@ -1,13 +1,15 @@
 "use client";
-import { Icon, Segmented, Avatar } from "@/ui";
-import { useEffect, useState, type ReactNode } from "react";
+import { Icon, Avatar, IconButton, Tooltip } from "@/ui";
+import { useTheme } from "next-themes";
+import { useEffect, useState, ViewTransition, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Overlay, AppToast } from "./overlay";
 import {
-  A, S, useS, useMounted, tod, me, adminAttention, setNavigator, startLive, openPal, closeOv, palMove, runPal, NAV_ROLES,
+  S, useS, useMounted, tod, me, adminAttention, setNavigator, startLive, openPal, closeOv, palMove, runPal, NAV_ROLES,
 } from "@/lib/store";
-import { NAV, type Role } from "@/lib/data";
+import { NAV } from "@/lib/data";
+import { signOut } from "@/lib/auth";
 
 const VIEW_BY_PATH: Record<string, string> = { "/": "home", "/rooms": "rooms", "/automate": "build", "/admin": "admin" };
 
@@ -20,6 +22,8 @@ function Ago() {
 export function Shell({ children }: { children: ReactNode }) {
   useS();
   const router = useRouter(), pathname = usePathname(), mounted = useMounted();
+  const { resolvedTheme, setTheme } = useTheme();
+  const dark = mounted && resolvedTheme === "dark";
   const view = VIEW_BY_PATH[pathname] ?? "home";
   S.view = view;
   // The entrance animation replays whenever the page or the role changes, then settles.
@@ -42,7 +46,15 @@ export function Shell({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
-    const onScroll = () => document.body.classList.toggle("hgone", window.scrollY > 150);
+    let last = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      document.body.classList.toggle("hgone", y > 150);
+      // the Ask Alice button steps aside while reading downward and returns on the way up
+      if (Math.abs(y - last) > 6) { document.body.classList.toggle("fab-away", y > last && y > 200); last = y; }
+    };
+    const onVis = () => document.documentElement.toggleAttribute("data-hidden", document.hidden);
+    document.addEventListener("visibilitychange", onVis);
     const onKey = (e: KeyboardEvent) => {
       const open = !!(S.pk || S.pal || S.sheet);
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); if (open && S.pal) closeOv(); else openPal(); return; }
@@ -56,7 +68,7 @@ export function Shell({ children }: { children: ReactNode }) {
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("keydown", onKey);
-    return () => { window.removeEventListener("scroll", onScroll); window.removeEventListener("keydown", onKey); };
+    return () => { window.removeEventListener("scroll", onScroll); window.removeEventListener("keydown", onKey); document.removeEventListener("visibilitychange", onVis); };
   }, []);
 
   const att = mounted ? adminAttention() : 0, p = me();
@@ -64,23 +76,18 @@ export function Shell({ children }: { children: ReactNode }) {
 
   return (
     <>
-      <div className="review">
-        <span className="grp"><b>Design preview</b></span>
-        <span className="grp"><b>View as</b>
-          <Segmented value={S.role} items={[["admin", "Admin"], ["member", "Member"], ["guest", "Guest"]] as [Role, string][]} onChange={A.role} /></span>
-        <span className="grp"><b>Time of day</b>
-          <Segmented value={S.tod} items={[["auto", "Now"], ["morning", "Morning"], ["day", "Afternoon"], ["evening", "Evening"], ["night", "Night"]]} onChange={A.setTod} /></span>
-      </div>
       <div className="app" id="app" data-tod={mounted ? tod() : "day"}>
         <aside className="rail">
           <div className="brand">alice<i>.</i></div>
           <nav className="nav" aria-label="Main">{items.map((n) => (
             <Link key={n.k} href={n.href} aria-current={view === n.k ? "page" : undefined}>
+              {view === n.k ? <ViewTransition name="nav-pill" share="nav-pill" default="none"><span className="nav-pill" /></ViewTransition> : null}
               <Icon n={n.ic} /><span>{n.n}</span>{n.k === "admin" && att ? <span className="badge">{att}</span> : null}
             </Link>
           ))}</nav>
           <div className="rail-foot">
-            <div className="me"><Avatar initial={p.n[0]} tone={p.c} /><div><b>{p.n}</b><small>{p.role[0].toUpperCase() + p.role.slice(1)} · passkey</small></div></div>
+            <div className="me"><Avatar initial={p.n[0]} tone={p.c} /><div><b>{p.n}</b><small>{p.role[0].toUpperCase() + p.role.slice(1)} · passkey</small></div>
+              <Tooltip label="Sign out"><IconButton aria-label="Sign out" style={{ marginLeft: "auto" }} onClick={() => void signOut()}><Icon n="exit" /></IconButton></Tooltip></div>
           </div>
         </aside>
         <div className="main">
@@ -88,6 +95,7 @@ export function Shell({ children }: { children: ReactNode }) {
             <div className="brand">alice<i>.</i></div>
             <button className="ask" onClick={openPal} aria-label="Ask Alice or search"><Icon n="search" /><span>Try “turn off the kitchen lights”</span><kbd>Ctrl K</kbd></button>
             <div className="live"><i /><span className="lt">Live · synced {mounted ? <Ago /> : <b className="num">0</b>}s ago</span></div>
+            <Tooltip label={dark ? "Switch to light" : "Switch to dark"} side="bottom"><IconButton aria-label={dark ? "Switch to light theme" : "Switch to dark theme"} onClick={() => setTheme(dark ? "light" : "dark")}><Icon n={dark ? "sun" : "moon"} /></IconButton></Tooltip>
           </div>
           <main id="main" className={enter ? "enter" : ""}>{children}</main>
         </div>

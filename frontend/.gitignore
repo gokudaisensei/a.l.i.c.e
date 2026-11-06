@@ -48,3 +48,9 @@ next-env.d.ts
 .vscode/*
 !.vscode/extensions.json
 *.swp
+
+# end-to-end tests
+/.next-e2e
+/test-results
+/playwright-report
+/.next-build

@@ -12,6 +12,11 @@ const eslintConfig = defineConfig([
     files: ["src/**/*.{ts,tsx}"],
     rules: { "react-hooks/immutability": "off", "react-hooks/purity": "off" },
   },
+  {
+    // Backend payloads are loosely typed on purpose here; the shapes are checked where they are used.
+    files: ["src/lib/live.ts"],
+    rules: { "@typescript-eslint/no-explicit-any": "off" },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

@@ -1,10 +1,12 @@
 "use client";
 import { create } from "zustand";
 import { useSyncExternalStore } from "react";
+import { savePreference } from "./admin";
+import { disablePush, enablePush } from "./push";
+import { dismissInsight, saveBuilder, ackAlert, interpretText, runPlan, type Suggestion, deleteAutomation, toggleFavourite, toggleVoice, isLive, markSeen, previewAutomation, runScene, sendCommand, toggleAutomation } from "./live";
 import {
-  ROOMS, MODES, CLOCK, W, ENERGY, TRIG, TDEF,
-  initialPeople, initialDevices, initialActivity, initialBackups, initialAutos, initialBuilder,
-  type Dev, type Person, type Role, type Tod, type Activity, type Builder,
+  ROOMS, MODES, PRIMARY, CLOCK, W, ENERGY, TRIG, TDEF,
+  type Auto, type Dev, type Person, type Role, type Tod, type Activity, type Builder,
 } from "./data";
 
 /* ---------- state: one mutable object + a version counter ---------- */
@@ -12,32 +14,17 @@ export interface PK { title: string; desc: string; ok: () => void; state: "idle"
 export interface PalItem { ic: string; l: string; s?: string; k?: string; dis?: boolean; run?: () => void }
 
 export const S = {
-  role: "admin" as Role, tod: "auto" as "auto" | Tod, view: "home", mode: "Home",
+  meId: "" as string, role: "admin" as Role, tod: "auto" as "auto" | Tod, view: "home", mode: "Home",
   room: "all", group: "room", q: "", voiceOnly: false, at: "people",
   snooze: {} as Record<string, boolean>, ack: {} as Record<string, boolean>, sync: 0,
-  people: initialPeople() as Person[], devices: initialDevices() as Dev[], activity: initialActivity() as Activity[],
-  quiet: true, push: true, lastVerified: "this morning", energy: ENERGY,
+  people: [] as Person[], persons: [] as { entityId: string; name: string }[], devices: [] as Dev[], activity: [] as Activity[], insight: null as null | { id: string; to: string; why: string },
+  edit: null as null | { id: string; name: string },
+  hiddenDevs: [] as { id: string; n: string }[],
+  alertsLive: null as null | { id: string; t: string; d: string; ic: string }[],
+  energyLive: null as null | { pattern: string | null; nowW: number | null; todayKwh: number | null; top: { n: string; w: number }[]; hourly: number[] },
+  quiet: true, push: true, adm: null as null | { backupOk: boolean; backupNone: boolean; lastVerified: string; nextBackup: string; updateReady: boolean; healthWarn: boolean }, energy: ENERGY,
   aopen: {} as Record<string, boolean>, bstep: "when" as string | null, exp: {} as Record<string, boolean>,
-  backups: initialBackups(), bk: { run: null as number | null, dest: "NAS" },
-  invites: [{ code: "MAPLE-4829-KITE", role: "Guest", exp: "Expires in 22 hours" }] as { code: string; role: string; exp: string }[],
-  inv: { role: "Member", exp: "24 hours", code: null as string | null },
-  upd: { cur: "1.8.2", avail: "1.9.0", state: "ready" as "ready" | "scheduled" | "installing" | "done", step: 0 },
-  em: { open: false, reason: "", word: "" },
-  sup: {
-    dur: 1, scope: { health: true, devices: true, cameras: false, control: false } as Record<string, boolean>,
-    active: null as null | { end: number; dur: number },
-  },
-  hlog: [
-    { t: "Tue 4:10 pm", x: "Gokul gave support access for 1 hour" },
-    { t: "Tue 4:12 pm", x: "Support looked at System health" },
-    { t: "Tue 5:10 pm", x: "Support access ended on its own" },
-  ],
-  olog: [
-    { t: "17:10:00", op: "system", a: "session.expire", r: "sess_8f2c" },
-    { t: "16:12:41", op: "ops-114", a: "health.read", r: "/admin/health" },
-    { t: "16:10:02", op: "ops-114", a: "session.start", r: "granted by household, 1h" },
-  ],
-  autos: initialAutos(), b: initialBuilder() as Builder,
+  autos: [] as Auto[], b: { name: "", trig: { k: "arrive", p: "anyone" }, conds: { dark: false, home: false, days: "any", mode: "any" }, acts: [] } as Builder,
   hc: null as null | "run",
   sheet: null as string | null, pk: null as PK | null,
   pal: null as null | { q: string; sel: number; items: PalItem[] },
@@ -77,18 +64,21 @@ export function useMounted() {
 
 /* ---------- helpers ---------- */
 export const PERSONA: Record<Role, string> = { admin: "gokul", member: "arjun", guest: "lakshmi" };
-export const me = () => S.people.find((p) => p.id === PERSONA[S.role])!;
+export const me = () => S.people.find((p) => p.id === S.meId) ?? S.people.find((p) => p.id === PERSONA[S.role]) ?? S.people[0]!;
+/** The scene suggested for this time of day (the design's ids, or a live scene whose name says so). */
+export const primaryScene = (t: Tod) => SCENES.find((s) => (s.key ?? s.id) === PRIMARY[t]);
 export const dev = (id: string) => S.devices.find((d) => d.id === id)!;
+export const mainClimate = () => S.devices.find((d) => d.t === "climate" && (S.role !== "guest" || d.g));
 export const vis = () => S.devices.filter((d) => S.role !== "guest" || d.g);
 export const rname = (id: string) => ROOMS.find((r) => r.id === id)!.n;
 export const isLight = (d: Dev) => d.t === "light" || d.t === "dim";
-const ICON: Record<string, string> = { light: "bulb", dim: "bulb", plug: "plug", fan: "fan", climate: "thermo", lock: "lock", camera: "camera", contact: "door" };
-export const icn = (d: Dev) => (d.t === "lock" ? (d.locked ? "lock" : "unlock") : ICON[d.t]);
+const ICON: Record<string, string> = { light: "bulb", dim: "bulb", plug: "plug", fan: "fan", climate: "thermo", lock: "lock", camera: "camera", contact: "door", other: "plug" };
+export const icn = (d: Dev) => (d.t === "lock" ? (d.locked ? "lock" : "unlock") : d.ic ?? ICON[d.t]);
 export const isOn = (d: Dev) => (d.t === "contact" ? !!d.open : d.t === "lock" || d.t === "camera" ? false : !!d.on);
 export const watts = (d: Dev) =>
   d.t === "plug" && d.on ? d.w! : d.t === "climate" && d.on ? 850 : d.t === "fan" && d.on ? 45
   : d.t === "dim" && d.on ? Math.round(d.v! * 0.12) : d.t === "light" && d.on ? 9 : 0;
-export const totalW = () => 200 + S.devices.reduce((a, d) => a + watts(d), 0);
+export const totalW = () => S.energyLive?.nowW != null ? S.energyLive.nowW : S.energyLive ? 0 : 200 + S.devices.reduce((a, d) => a + watts(d), 0);
 export const clamp = (n: number, a: number, b: number) => Math.min(b, Math.max(a, n));
 export const esc = (s: string) => String(s);
 export function tod(): Tod {
@@ -103,12 +93,13 @@ export const nowT = () => new Date().toLocaleTimeString("en-GB", { hour: "2-digi
 export const nowS = () => new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).toLowerCase();
 export const buzz = (n: number) => { try { navigator.vibrate?.(n); } catch {} };
 
-export function backupState() { const latest = S.backups[0]; return { ok: !latest || latest.verified, latest }; }
-export const adminAttention = () => (backupState().ok ? 0 : 1) + (S.upd.state === "ready" ? 1 : 0);
+export function backupState() { return { ok: S.adm ? S.adm.backupOk : true }; }
+export const adminAttention = () => (backupState().ok ? 0 : 1) + (S.adm?.updateReady ? 1 : 0) + (S.adm?.healthWarn ? 1 : 0);
 
 export interface Alert { id: string; t: string; d: string; ic: string }
 export function alerts(): Alert[] {
   if (S.role === "guest") return [];
+  if (S.alertsLive) return S.alertsLive;
   const out: Alert[] = [];
   S.devices.filter((d) => d.t === "plug" && d.limit && d.on).forEach((d) => {
     const p = d.w! / d.limit!;
@@ -116,6 +107,13 @@ export function alerts(): Alert[] {
   });
   S.devices.filter((d) => d.t === "contact" && d.open && !S.ack["o" + d.id]).forEach((d) => out.push({ id: "o" + d.id, t: `${d.n} is open`, d: "Left open for 12 minutes.", ic: "door" }));
   return out;
+}
+/** One human line about the household, from what actually happened last. */
+export function personal(): string | null {
+  if (S.role === "guest") return null;
+  const plain = (h: string) => h.replace(/<[^>]+>/g, "");
+  const a = S.activity.find((x) => /got home|arrived/i.test(x.t)) ?? S.activity[0];
+  return a ? `${plain(a.t)} · ${a.time}` : null;
 }
 export interface StatusChip { ic: string; t: string; warn?: boolean; to: string | null }
 export function status() {
@@ -133,32 +131,17 @@ export function status() {
   chips.push({ ic: opens.length ? "alert" : "door", t: opens.length ? `${opens[0].n} open` : "Nothing left open", warn: !!opens.length, to: "locks" });
   if (S.role !== "guest") chips.push({ ic: "camera", t: "2 cameras online", to: null });
   if (al.length && al[0].id[0] === "p") chips.push({ ic: "bolt", t: "Water heater near its limit", warn: true, to: "alerts" });
-  if (S.role === "admin") { const nb = backupState(); chips.push({ ic: nb.ok ? "shieldcheck" : "alert", t: nb.ok ? `Backup verified ${S.lastVerified}` : "Backup not verified yet", warn: !nb.ok, to: "backup" }); }
+  if (S.role === "admin") { const nb = backupState(); chips.push({ ic: nb.ok ? "shieldcheck" : "alert", t: nb.ok ? `Backup verified ${S.adm?.lastVerified ?? "never"}` : "Backup not verified yet", warn: !nb.ok, to: "backup" }); }
   const nw = S.activity.filter((a) => a.nw).length;
   if (nw && S.role !== "guest") chips.push({ ic: "clock", t: `${nw} new since last visit`, to: "activity" });
   return { line, chips, al };
 }
 
 /* ---------- scenes ---------- */
-const set = (id: string, p: Partial<Dev>) => Object.assign(dev(id), p);
-const allLights = (on: boolean) => S.devices.filter(isLight).forEach((d) => (d.on = on));
 export const lockAll = () => S.devices.filter((d) => d.t === "lock").forEach((d) => { d.locked = true; d.by = me().n; d.at = "just now"; });
-export const SCENES = [
-  { id: "morning", n: "Good morning", ic: "sun", tag: "Routine · weekdays 6:45", d: "Kitchen lights up, bedroom off, AC off", run() { set("pend", { on: true, v: 90 }); set("strip", { on: true }); set("bed", { on: false }); set("bedac", { on: false }); S.mode = "Home"; } },
-  { id: "leaving", n: "Heading out", ic: "exit", tag: "Scene", d: "Lights off, doors locked, Away mode", run() { allLights(false); lockAll(); set("ac", { on: false }); set("bedac", { on: false }); S.mode = "Away"; } },
-  { id: "movie", n: "Movie night", ic: "play", tag: "Scene", d: "Ceiling off, floor lamp 15%, AC 23°", run() { set("ceil", { on: false }); set("floor", { on: true, v: 15 }); set("pend", { on: false }); set("ac", { on: true, tgt: 23 }); } },
-  { id: "night", n: "Goodnight", ic: "moon", tag: "Routine · 10:30 pm", d: "Lights off, doors locked, Night mode", run() { allLights(false); set("kid", { on: true, v: 10 }); lockAll(); S.mode = "Night"; } },
-  { id: "welcome", n: "Welcome home", ic: "home", tag: "Routine · on arrival", d: "Hall lights on, Home mode", run() { set("hall", { on: true }); set("floor", { on: true, v: 60 }); S.mode = "Home"; } },
-];
-export function suggestion() {
-  const t = tod(), home = S.people.filter((p) => p.home && p.role !== "guest").length;
-  let s: { to: string; why: string } | null = null;
-  if (home === 0 && S.mode === "Home") s = { to: "Away", why: "Everyone has left and the doors are locked." };
-  else if (t === "night" && S.mode === "Home") s = { to: "Night", why: "It is 10:40 pm and the living room has been still for 40 minutes." };
-  else if (home > 0 && S.mode === "Away") s = { to: "Home", why: "Someone just got home." };
-  else if (t === "morning" && S.mode === "Night") s = { to: "Home", why: "It is morning and the kitchen lights are on." };
-  return s && !S.snooze[s.to + t] ? s : null;
-}
+export interface SceneItem { id: string; n: string; ic: string; tag: string; d: string; run: () => void; key?: string; kind?: "scene" | "routine" }
+export const SCENES: SceneItem[] = [];
+export function suggestion() { return S.insight; }
 
 /* ---------- toast / overlays ---------- */
 let tt: ReturnType<typeof setTimeout>;
@@ -178,30 +161,48 @@ export function commit(msg: string, fn: () => void) {
 }
 export const closeOv = () => { S.pk = null; S.pal = null; S.sheet = null; bump(); };
 export function openSheet(id: string) { S.pk = null; S.pal = null; S.sheet = id; bump(); }
+let stepUpFn: () => Promise<void> = async () => {};
+/** The auth module registers the real passkey check here (avoids a circular import). */
+export const setStepUp = (f: () => Promise<void>) => { stepUpFn = f; };
+export const stepUpNow = () => stepUpFn();
 export function passkey(title: string, desc: string, ok: () => void) { S.pk = { title, desc, ok, state: "idle" }; S.pal = null; S.sheet = null; bump(); }
 export function pkRun() {
   const k = S.pk; if (!k || k.state !== "idle") return;
   k.state = "go"; bump();
-  setTimeout(() => { if (S.pk !== k) return; k.state = "ok"; bump(); setTimeout(() => { if (S.pk !== k) return; closeOv(); k.ok(); }, 520); }, 1000);
+  stepUpFn().then(() => {
+    if (S.pk !== k) return;
+    k.state = "ok"; bump();
+    setTimeout(() => { if (S.pk !== k) return; closeOv(); k.ok(); }, 520);
+  }, (e: unknown) => {
+    if (S.pk !== k) return;
+    k.state = "idle"; bump();
+    toast((e as { name?: string })?.name === "NotAllowedError" ? "The passkey prompt was closed" : ((e as Error)?.message || "That didn't work"));
+  });
 }
 
 /* ---------- builder logic ---------- */
 export interface Verb { n: string; ic: string; pick: () => { id: string; n: string }[]; val?: { min: number; max: number; def: number; u: string } }
+/** A device can do this (sample devices have no list, so they always can). */
+const can = (d: Dev, op: string) => !d.ops || d.ops.includes(op);
 export const VERBS: Record<string, Verb> = {
-  on: { n: "Turn on", ic: "bulb", pick: () => S.devices.filter((d) => isLight(d) || d.t === "plug" || d.t === "fan" || d.t === "climate") },
-  off: { n: "Turn off", ic: "bulb", pick: () => S.devices.filter((d) => isLight(d) || d.t === "plug" || d.t === "fan" || d.t === "climate") },
-  dim: { n: "Set brightness", ic: "sun", pick: () => S.devices.filter((d) => d.t === "dim"), val: { min: 1, max: 100, def: 60, u: "%" } },
-  temp: { n: "Set temperature", ic: "thermo", pick: () => S.devices.filter((d) => d.t === "climate"), val: { min: 16, max: 30, def: 24, u: "°" } },
-  lock: { n: "Lock", ic: "lock", pick: () => S.devices.filter((d) => d.t === "lock") },
+  on: { n: "Turn on", ic: "bulb", pick: () => S.devices.filter((d) => (isLight(d) || d.t === "plug" || d.t === "fan" || d.t === "climate" || d.t === "other") && can(d, "turn_on")) },
+  off: { n: "Turn off", ic: "bulb", pick: () => S.devices.filter((d) => (isLight(d) || d.t === "plug" || d.t === "fan" || d.t === "climate" || d.t === "other") && can(d, "turn_off")) },
+  dim: { n: "Set brightness", ic: "sun", pick: () => S.devices.filter((d) => d.t === "dim" && can(d, "set_brightness")), val: { min: 1, max: 100, def: 60, u: "%" } },
+  temp: { n: "Set temperature", ic: "thermo", pick: () => S.devices.filter((d) => d.t === "climate" && can(d, "set_temperature")), val: { min: 16, max: 30, def: 24, u: "°" } },
+  lock: { n: "Lock", ic: "lock", pick: () => S.devices.filter((d) => d.t === "lock" && can(d, "lock")) },
   notify: { n: "Send a notification", ic: "bell", pick: () => S.people.filter((p) => p.role !== "guest").map((p) => ({ id: p.id, n: p.n })) },
-  scene: { n: "Run scene", ic: "play", pick: () => SCENES.map((s) => ({ id: s.id, n: s.n })) },
+  scene: { n: "Run scene", ic: "play", pick: () => SCENES.filter((s) => s.kind !== "routine").map((s) => ({ id: s.id, n: s.n })) },
+  wait: { n: "Wait", ic: "clock", pick: () => [{ id: "wait", n: "then" }], val: { min: 1, max: 3600, def: 30, u: "seconds" } },
+  mode: { n: "Set mode", ic: "home", pick: () => MODES.map((m) => ({ id: m.k, n: m.k })) },
 };
+/** Which verbs each kind of thing can use. */
+export const VERBS_FOR: Record<string, string[]> = { automation: ["on", "off", "dim", "temp", "lock", "notify", "scene"], scene: ["on", "off", "dim", "temp", "lock"], routine: ["on", "off", "dim", "temp", "lock", "scene", "mode", "wait"] };
 export const fmtTime = (t: string | null) => { const [h, m] = (t || "18:30").split(":").map(Number); return `${((h + 11) % 12) + 1}:${String(m).padStart(2, "0")} ${h < 12 ? "am" : "pm"}`; };
 export const joinL = (a: string[]) => (a.length < 2 ? a.join("") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1]);
 const nameOf = (v: string, id: string) => { const o = VERBS[v].pick(); return (o.find((x) => x.id === id) || o[0] || { n: "something" }).n; };
 const actText = (a: { v: string; t: string; n?: number }) => {
   const n = nameOf(a.v, a.t);
-  return ({ on: `turn on ${n}`, off: `turn off ${n}`, dim: `set ${n} to ${a.n}%`, temp: `set ${n} to ${a.n}°`, lock: `lock ${n}`, notify: `send ${n} a notification`, scene: `run the “${n}” scene` } as Record<string, string>)[a.v];
+  return ({ on: `turn on ${n}`, off: `turn off ${n}`, dim: `set ${n} to ${a.n}%`, temp: `set ${n} to ${a.n}°`, lock: `lock ${n}`, notify: `send ${n} a notification`, scene: `run the “${n}” scene`, wait: `wait ${a.n} seconds`, mode: `switch to ${n} mode` } as Record<string, string>)[a.v];
 };
 export function sumParts() {
   const b = S.b, p = b.trig.p as string;
@@ -217,10 +218,17 @@ export function sumParts() {
   return { w, c, a: b.acts.map(actText) };
 }
 export const sumPlain = () => { const { w, c, a } = sumParts(); return `When ${w}${c.length ? ", if " + joinL(c) : ""}, ${a.length ? joinL(a) : "do nothing"}.`; };
-export function setTrigger(k: string) { S.b.trig = { k, p: TDEF[k] }; bump(); }
-export function builderAdd(v: string) { const o = VERBS[v].pick()[0]; S.b.acts.push({ v, t: o.id, n: VERBS[v].val?.def }); bump(); }
+export function setTrigger(k: string) {
+  const live = isLive();
+  const first = (f: (d: Dev) => boolean) => S.devices.find(f)?.id ?? null;
+  S.b.trig = { k, p: live && k === "door" ? first((d) => d.t === "contact") : live && k === "power" ? first((d) => d.t === "plug" && !!d.limit) : TDEF[k] };
+  bump();
+}
+export function builderAdd(v: string) { const o = VERBS[v].pick()[0]; if (!o) { toast("Nothing in your home can do that yet"); return; } S.b.acts.push({ v, t: o.id, n: VERBS[v].val?.def }); bump(); }
+const emptyBuilderLocal = (): Builder => ({ name: "", trig: { k: "arrive", p: "anyone" }, conds: { dark: false, home: false, days: "any", mode: "any" }, acts: [] });
 export function builderSave() {
   const b = S.b;
+  if (isLive()) { if (!b.acts.length) { toast("Add at least one action first"); return; } void saveBuilder(b, stepUpFn).then((ok) => { if (ok) { const k = b.kind; S.b = { ...emptyBuilderLocal(), kind: k }; bump(); } }); return; }
   if (!b.acts.length) { toast("Add at least one action first"); return; }
   const name = b.name.trim() || "Untitled automation";
   S.autos.unshift({ id: "a" + Date.now(), n: name, s: sumPlain(), on: true, last: "Never run" });
@@ -228,9 +236,11 @@ export function builderSave() {
   bump(); toast("Saved. It is live in Home Assistant now");
 }
 export function builderTest() {
+  if (isLive()) { if (!S.b.acts.length) { toast("Nothing to run yet. Add an action"); return; } void previewAutomation(S.b); return; }
   toast(S.b.acts.length ? `Dry run: Alice would ${joinL(sumParts().a)}. Nothing changed` : "Nothing to run yet. Add an action");
 }
 export { TRIG };
+export type { Builder } from "./data";
 
 /* ---------- command palette ---------- */
 const STOP = new Set("turn switch please the all my in on off set to dim lock unlock of a everything degrees percent light lights lamp lamps fan fans plug plugs ac thermostat climate door doors make brighten stop start and".split(" "));
@@ -239,7 +249,7 @@ export function cmdItems(q0: string): PalItem[] {
   const q = q0.trim().toLowerCase(), out: PalItem[] = [], guest = S.role === "guest";
   if (!q) {
     ["turn off all lights", "lock everything", guest ? "turn on the guest lamp" : "goodnight", guest ? "set guest ac to 24" : "set living ac to 23", guest ? "go to rooms" : "switch to night mode"]
-      .forEach((t) => { const r = cmdItems(t)[0]; if (r && !r.dis) out.push(r); });
+      .forEach((t) => { const all = cmdItems(t), r = t.includes("mode") ? all.find((x) => x.l.startsWith("Switch to")) : all[0]; if (r && !r.dis && !out.some((o) => o.l === r.l)) out.push(r); });
     return out;
   }
   const words = q.replace(/[^a-z0-9% ]/g, " ").split(/\s+/).filter(Boolean), num = (q.match(/(\d+)/) || [])[1];
@@ -283,112 +293,104 @@ export function cmdItems(q0: string): PalItem[] {
   if (!out.length) out.push({ ic: "search", l: "No match yet", s: "Try “turn off the kitchen lights” or “lock everything”", dis: true });
   return out;
 }
-export function openPal() { S.pk = null; S.sheet = null; S.pal = { q: "", sel: 0, items: cmdItems("") }; bump(); }
-export function palQuery(q: string) { if (!S.pal) return; S.pal.q = q; S.pal.sel = 0; S.pal.items = cmdItems(q); bump(); }
+let palSeq = 0;
+/** Ask Alice's answers: the server reads the sentence against this home; pages and devices are matched here. */
+function liveItems(q: string, found: Suggestion[]): PalItem[] {
+  const out: PalItem[] = found.map((f) => ({
+    ic: f.icon, l: f.label, s: f.detail, k: "Enter",
+    run: () => {
+      const go2 = () => runPlan(f, stepUpFn, (name) => { S.q = name; S.room = "all"; go("rooms"); }, (m) => A.mode(m));
+      if (f.sensitive) passkey(`${f.label}?`, "This always needs your passkey, even for admins.", go2); else go2();
+    },
+  }));
+  const local = cmdItems(q).filter((x) => x.s === "Page");
+  out.push(...local);
+  if (!out.length) out.push({ ic: "search", l: "No match yet", s: "Try “turn off the kitchen lights” or “lock everything”", dis: true });
+  return out;
+}
+function refreshPal(q: string) {
+  const seq = ++palSeq;
+  void interpretText(q).then((found) => { if (S.pal && seq === palSeq && S.pal.q === q) { S.pal.items = liveItems(q, found); S.pal.sel = 0; bump(); } });
+}
+export function openPal() {
+  S.pk = null; S.sheet = null;
+  S.pal = { q: "", sel: 0, items: isLive() ? [] : cmdItems("") }; bump();
+  if (isLive()) refreshPal("");
+}
+export function palQuery(q: string) {
+  if (!S.pal) return;
+  S.pal.q = q; S.pal.sel = 0;
+  if (isLive()) { S.pal.items = liveItems(q, []).filter((x) => !x.dis); bump(); refreshPal(q); return; }
+  S.pal.items = cmdItems(q); bump();
+}
 export function palMove(d: number) { const p = S.pal; if (!p) return; p.sel = (p.sel + d + p.items.length) % p.items.length; bump(); }
 export function runPal(i: number) { const it = S.pal?.items[i]; if (!it || it.dis) return; closeOv(); it.run?.(); }
 
 /* ---------- actions ---------- */
+/** Switch a device on or off and say so, with a one-tap undo. A fast second tap replaces the toast rather than stacking. */
+function flip(id: string, haptic: boolean) {
+  const d = dev(id);
+  if (isLive()) {
+    const target = !d.on;
+    if (haptic) buzz(12);
+    void sendCommand(id, target ? "turn_on" : "turn_off", undefined, (x) => { x.on = target; }, d.n, stepUpFn);
+    toast(`${d.n} ${target ? "on" : "off"}`, () => flip(id, false));
+    return;
+  }
+  d.on = !d.on; if (haptic) buzz(12); S.sync = Date.now(); bump();
+  toast(`${d.n} ${d.on ? "on" : "off"}`, () => { d.on = !d.on; S.sync = Date.now(); bump(); toast(`${d.n} ${d.on ? "on" : "off"}`); });
+}
 export const A = {
   live: (id: string) => toast(`${dev(id).n} opens full screen on a real device`),
   cmd: () => openPal(),
-  tog: (id: string) => { const d = dev(id); d.on = !d.on; S.sync = Date.now(); bump(); },
+  tog: (id: string) => flip(id, false),
   dtap: (id: string) => {
     const d = dev(id);
     if (d.t === "lock") return d.locked ? A.unlock(id) : A.lock(id);
     if (d.t === "contact" || d.t === "camera") return openSheet(d.id);
-    d.on = !d.on; buzz(12); S.sync = Date.now(); bump();
+    flip(id, true);
   },
-  preset: (id: string, n: number) => { const d = dev(id); d.v = n; d.on = true; buzz(8); bump(); },
-  slide: (id: string, v: number) => { const d = dev(id); d.v = v; d.on = true; S.sync = Date.now(); bump(); },
+  preset: (id: string, n: number) => { const d = dev(id); if (isLive()) { buzz(8); void sendCommand(id, "set_brightness", { brightness_pct: n }, (x) => { x.v = n; x.on = true; }, d.n, stepUpFn); return; } d.v = n; d.on = true; buzz(8); bump(); },
+  slide: (id: string, v: number) => { const d = dev(id); if (isLive()) { void sendCommand(id, "set_brightness", { brightness_pct: v }, (x) => { x.v = v; x.on = true; }, d.n, stepUpFn); return; } d.v = v; d.on = true; S.sync = Date.now(); bump(); },
   role: (r: Role) => { S.role = r; go(S.view); },
   setTod: (t: "auto" | Tod) => { S.tod = t; bump(); },
-  lock: (id: string) => { const d = dev(id); commit(`${d.n} locked`, () => { d.locked = true; d.by = me().n; d.at = "just now"; }); },
-  unlock: (id: string) => { const d = dev(id); passkey(`Unlock ${d.n}?`, "Unlocking always needs your passkey, even for admins.", () => commit(`${d.n} unlocked`, () => { d.locked = false; d.by = me().n; d.at = "just now"; })); },
-  lockall: () => commit("Every door locked", lockAll),
-  mode: (m: string) => { if (S.mode !== m) commit(`Mode: ${m}`, () => { S.mode = m; }); },
-  snooze: (id: string) => { S.snooze[id] = true; bump(); toast("Okay, Alice will not ask again for now"); },
-  scene: (id: string) => { const s = SCENES.find((x) => x.id === id)!; commit(`${s.n} done`, s.run); },
+  lock: (id: string) => { const d = dev(id); if (isLive()) { void sendCommand(id, "lock", undefined, (x) => { x.locked = true; x.by = me().n; x.at = "just now"; }, d.n, stepUpFn); toast(`${d.n} locked`); return; } commit(`${d.n} locked`, () => { d.locked = true; d.by = me().n; d.at = "just now"; }); },
+  unlock: (id: string) => { const d = dev(id); passkey(`Unlock ${d.n}?`, "Unlocking always needs your passkey, even for admins.", () => isLive() ? (void sendCommand(id, "unlock", undefined, (x) => { x.locked = false; x.by = me().n; x.at = "just now"; }, d.n, stepUpFn), toast(`${d.n} unlocked`)) : commit(`${d.n} unlocked`, () => { d.locked = false; d.by = me().n; d.at = "just now"; })); },
+  lockall: () => { if (isLive()) { for (const d of S.devices.filter((x) => x.t === "lock" && !x.locked)) void sendCommand(d.id, "lock", undefined, (x) => { x.locked = true; x.by = me().n; x.at = "just now"; }, d.n, stepUpFn); toast("Locking every door"); return; } commit("Every door locked", lockAll); },
+  mode: (m: string) => { if (isLive() && S.mode !== m) { const prev = S.mode; S.mode = m; bump(); void import("./api").then(({ put }) => put("/household/mode", { mode: m.toLowerCase() })).then(() => toast(`Mode: ${m}`), () => { S.mode = prev; bump(); toast("Couldn't change the mode"); }); return; } if (S.mode !== m) commit(`Mode: ${m}`, () => { S.mode = m; }); },
+  snooze: (id: string) => { if (S.insight) { void dismissInsight(S.insight.id); return; } S.snooze[id] = true; bump(); toast("Okay, Alice will not ask again for now"); },
+  scene: (id: string) => { const s = SCENES.find((x) => x.id === id); if (!s) return; if (isLive()) { void runScene(s); return; } commit(`${s.n} done`, s.run); },
   flash: (id: string) => {
     const go2 = () => { const t = document.getElementById("t-" + id); if (!t) return; t.scrollIntoView({ behavior: "smooth", block: "center" }); t.classList.remove("flash"); void t.offsetWidth; t.classList.add("flash"); };
     if (S.view !== "home") { go("home"); setTimeout(go2, 120); } else go2();
   },
-  fav: (id: string) => { const d = dev(id); d.fav = d.fav ? 0 : 1; bump(); toast(d.fav ? `${d.n} added to Favourites` : `${d.n} removed from Favourites`); },
-  voice: (id: string) => { const d = dev(id); d.voice = d.voice ? 0 : 1; bump(); toast(d.voice ? `${d.n} shared with Alexa and Google` : `${d.n} no longer shared`); },
-  tgt: (id: string, delta: number) => { const d = dev(id); d.tgt = clamp(d.tgt! + delta, 16, 30); d.on = true; bump(); },
-  fan: (id: string, n: number) => { const d = dev(id); d.sp = n; d.on = true; bump(); },
-  ack: (id: string) => { S.ack[id] = true; bump(); toast("Alert cleared. Alice will tell you if it happens again"); },
-  seen: () => { S.activity.forEach((a) => (a.nw = false)); bump(); toast("All caught up"); },
-  person: (id: string) => { const p = S.people.find((x) => x.id === id)!; commit(`${p.n} marked ${p.home ? "away" : "home"}`, () => { p.home = !p.home; }); },
-  push: () => { S.push = !S.push; bump(); }, quiet: () => { S.quiet = !S.quiet; bump(); },
+  editDev: (id: string) => { const d = dev(id); S.edit = { id, name: d.n }; bump(); },
+  fav: (id: string) => { if (isLive()) { void toggleFavourite(id); return; } const d = dev(id); d.fav = d.fav ? 0 : 1; bump(); toast(d.fav ? `${d.n} added to Favourites` : `${d.n} removed from Favourites`); },
+  voice: (id: string) => { if (isLive()) { void toggleVoice(id); return; } const d = dev(id); d.voice = d.voice ? 0 : 1; bump(); toast(d.voice ? `${d.n} shared with Alexa and Google` : `${d.n} no longer shared`); },
+  tgt: (id: string, delta: number) => { const d = dev(id); if (isLive()) { const t = clamp(d.tgt! + delta, 16, 30); void sendCommand(id, "set_temperature", { temperature: t }, (x) => { x.tgt = t; x.on = true; }, d.n, stepUpFn); return; } d.tgt = clamp(d.tgt! + delta, 16, 30); d.on = true; bump(); },
+  fan: (id: string, n: number) => { const d = dev(id); if (isLive()) { void sendCommand(id, "set_speed", { percentage: Math.min(100, n * 33) }, (x) => { x.sp = n; x.on = true; }, d.n, stepUpFn); return; } d.sp = n; d.on = true; bump(); },
+  ack: (id: string) => { if (S.alertsLive) { void ackAlert(id); return; } S.ack[id] = true; bump(); toast("Alert cleared. Alice will tell you if it happens again"); },
+  seen: () => { S.activity.forEach((a) => (a.nw = false)); bump(); toast("All caught up"); if (isLive()) void markSeen(); },
+  person: () => toast("Who is home follows each person's phone in Home Assistant, so it can't be changed here"),
+  push: () => {
+    const on = !S.push; S.push = on; bump();
+    void (async () => {
+      try {
+        if (on) await enablePush(); else await disablePush();
+        await savePreference({ pushEnabled: on });
+        toast(on ? "This browser will get Alice's alerts" : "Push is off for this browser");
+      } catch (e) { S.push = !on; bump(); toast(e instanceof Error ? e.message : "Push didn't change"); }
+    })();
+  }, quiet: () => { S.quiet = !S.quiet; bump(); void savePreference({ quietHours: { enabled: S.quiet } }); },
   copy: (v: string) => { try { navigator.clipboard.writeText(v).then(() => toast("Copied"), () => toast("Select the text to copy it")); } catch { toast("Select the text to copy it"); } },
-  autotog: (id: string) => { const a = S.autos.find((x) => x.id === id)!; a.on = !a.on; bump(); toast(a.on ? `${a.n} is on` : `${a.n} is paused`); },
-  invmake: () => {
-    const w = ["MAPLE", "CEDAR", "RIVER", "AMBER", "PEPPER", "LOTUS"], k = ["KITE", "LAMP", "FERN", "DUSK", "BELL", "SAGE"];
-    const c = `${w[(Math.random() * 6) | 0]}-${1000 + ((Math.random() * 9000) | 0)}-${k[(Math.random() * 6) | 0]}`;
-    S.inv.code = c; S.invites.unshift({ code: c, role: S.inv.role, exp: "Expires in " + S.inv.exp }); bump(); toast("One-time code created");
-  },
-  invrev: (i: number) => { S.invites.splice(i, 1); S.inv.code = null; bump(); toast("Invite revoked"); },
-  addpk: () => passkey("Add a passkey?", "This device will be able to sign in as you.", () => toast("Passkey added to this device")),
-  bkdest: (d: string) => { S.bk.dest = d; bump(); toast(`Backups now go to ${d}`); },
-  bknow: () => { S.backups.unshift({ id: "b" + Date.now(), when: "Just now", size: "41.9 MB", where: S.bk.dest, verified: false }); bump(); toast("Backup saved. It counts once it passes a restore test"); },
-  bktest: () => {
-    S.bk.run = 0; bump();
-    const adv = () => {
-      if (S.bk.run === null) return;
-      S.bk.run++;
-      if (S.bk.run >= 3) { S.bk.run = null; const b = S.backups[0]; b.verified = true; b.note = "Passed just now"; S.lastVerified = "just now"; bump(); toast("Restore test passed. The backup is verified"); return; }
-      bump(); setTimeout(adv, 1000);
-    };
-    setTimeout(adv, 1000);
-  },
-  recheck: () => { S.hc = "run"; bump(); setTimeout(() => { S.hc = null; bump(); }, 1200); },
-  updnight: () => { S.upd.state = "scheduled"; bump(); toast("Scheduled for 2:30 tonight"); },
-  updcancel: () => { S.upd.state = "ready"; bump(); },
-  updnow: () => passkey(`Install ${S.upd.avail} now?`, "Alice will back up first, then restart. This takes about a minute.", () => {
-    S.upd.state = "installing"; S.upd.step = 0; bump();
-    const adv = () => {
-      S.upd.step++;
-      if (S.upd.step >= 4) { S.upd.state = "done"; S.upd.cur = S.upd.avail; S.hlog.unshift({ t: "Today " + nowS(), x: `Gokul installed Alice ${S.upd.cur}` }); bump(); toast(`Alice ${S.upd.cur} is running`); return; }
-      bump(); setTimeout(adv, 900);
-    };
-    setTimeout(adv, 900);
-  }),
-  emtoggle: () => { S.em.open = !S.em.open; bump(); },
-  emgo: () => passkey("Deploy now?", "This skips the nightly window and is recorded with your name.", () => {
-    S.hlog.unshift({ t: "Today " + nowS(), x: "Gokul ran an emergency deploy" });
-    S.olog.unshift({ t: nowT(), op: "gokul", a: "deploy.emergency", r: S.em.reason.trim().slice(0, 40) });
-    S.em = { open: false, reason: "", word: "" }; bump(); toast("Emergency deploy started");
-  }),
-  supgrant: () => passkey("Let support in?", `Access lasts ${S.sup.dur} hour${S.sup.dur > 1 ? "s" : ""} and ends on its own.`, () => {
-    const s = S.sup; s.active = { end: Date.now() + s.dur * 3600e3, dur: s.dur };
-    S.hlog.unshift({ t: "Today " + nowS(), x: `Gokul gave support access for ${s.dur} hour${s.dur > 1 ? "s" : ""}` });
-    S.olog.unshift({ t: nowT(), op: "ops-114", a: "session.start", r: `granted by household, ${s.dur}h` });
-    bump(); toast("Support can now see what you allowed");
-  }),
-  supend: () => { S.sup.active = null; S.hlog.unshift({ t: "Today " + nowS(), x: "Gokul ended support access" }); S.olog.unshift({ t: nowT(), op: "gokul", a: "session.revoke", r: "sess_91ab" }); bump(); toast("Support access ended"); },
-  supext: () => { const a = S.sup.active!; a.end += 3600e3; a.dur += 1; S.hlog.unshift({ t: "Today " + nowS(), x: "Gokul added 1 hour of support access" }); bump(); },
+  autodel: (id: string) => { if (isLive()) void deleteAutomation(id); },
+  autotog: (id: string) => { if (isLive()) { const x = S.autos.find((y) => y.id === id); if (x) void toggleAutomation(id, !x.on); return; } const a = S.autos.find((x) => x.id === id)!; a.on = !a.on; bump(); toast(a.on ? `${a.n} is on` : `${a.n} is paused`); },
 };
 
-/* ---------- live simulation (called once from the shell) ---------- */
+/* ---------- keeps the "synced" clock honest (called once from the shell) ---------- */
 export function startLive() {
   S.sync = Date.now();
-  const i1 = setInterval(() => {
-    const sa = S.sup.active;
-    if (sa && sa.end - Date.now() <= 0) {
-      S.sup.active = null;
-      S.hlog.unshift({ t: "Today " + nowS(), x: "Support access ended on its own" });
-      S.olog.unshift({ t: nowT(), op: "system", a: "session.expire", r: "sess_91ab" });
-      bump();
-    }
-  }, 1000);
-  const i2 = setInterval(() => {
-    const g = dev("geyser"), tv = dev("tv");
-    if (g.on) g.w = clamp(g.w! + Math.round((Math.random() - 0.5) * 50), 1370, 1470);
-    if (tv.on) tv.w = clamp(tv.w! + Math.round((Math.random() - 0.5) * 10), 70, 98);
-    S.sync = Date.now(); bump();
-  }, 5000);
-  return () => { clearInterval(i1); clearInterval(i2); };
+  return () => {};
 }
 export const fmtCd = (ms: number) => { const s = Math.max(0, Math.floor(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60); return `${h}:${String(m).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`; };
 export const dstate = (d: Dev) => {
