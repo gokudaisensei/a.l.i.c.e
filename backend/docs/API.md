@@ -191,7 +191,7 @@ Notifications, alerts and the activity timeline are implemented, over REST and `
 |---|---|---|
 | `GET /notifications?unread=&limit=&before=` | A,M | Your notifications, newest first, with `unread` count |
 | `POST /notifications/:id/read`, `POST /notifications/read-all` | A,M | Mark read (yours only) |
-| `GET /alerts?includeCleared=` | A,M | Active alerts for devices you can see. Today: `power_limit`, raised at 90% of a device's limit and cleared below 85% |
+| `GET /alerts?includeCleared=` | A,M | Active alerts for devices you can see: `power_limit` (raised at 90% of a device's limit, cleared below 85%) and `left_open` (a door, window or garage open for 10 minutes, cleared when it closes) |
 | `POST /alerts/:id/ack` | A,M | "Seen". It stays until usage drops |
 | `GET /activity?limit=&before=&kind=` | A,M | The timeline, newest first (`kind`: device, lock, scene, routine, mode, automation, alert, presence), with `newCount` since you last looked and `nextCursor`. Entries about devices you cannot see are left out; guests have no timeline |
 | `POST /activity/seen` | A,M | "I have looked": clears your new count |
@@ -207,10 +207,17 @@ Energy, history and mode suggestions are implemented.
 |---|---|---|
 | `GET /energy/summary` | A,M | `{ nowWatts, todayKwh, since, statisticsAvailable, monitoredDevices, topToday[] }` for the devices you can see. If Home Assistant cannot give statistics, the live draw is still returned and `todayKwh` is null |
 | `GET /energy/history?from=&to=&resolution=hour\|day` | A,M | `{ totalKwh, series: [{ start, kwh }], devices: [{ thingId, name, kwh, series }] }`. Hourly covers at most 7 days, daily at most 366. 503 if Home Assistant cannot be asked |
+| `GET /energy/pattern` | A,M | `{ pattern: { sentence, percent, weekday, weeks, kwh } \| null }`: how the last evening compares with the same evening on earlier weeks |
 | `GET /energy/devices` | A,M | Each device with a meter: `{ watts, todayKwh, limitW, percentOfLimit }` |
 | `GET /history/devices/:id?from=&to=&entityId=&maxPoints=` | A,M | How a device's state changed (default: its main entity, the last 24 hours, at most 31 days). `points: [{ at, state, values, availability }]`, thinned to `maxPoints` (10 to 1000, default 300) with `downsampled` and `totalPoints`. Home Assistant does not record some attributes, e.g. a light's brightness |
 | `GET /insights` | A,M | Deterministic suggestions, e.g. `{ id: "mode:away", title: "Switch to Away mode?", reason: "Everyone has left.", action: { type: "set_mode", mode: "away" } }`. Rules: everyone gone and mode Home suggests Away; night time and mode Home suggests Night; someone home and mode Away suggests Home; morning and mode Night suggests Home |
 | `POST /insights/:id/dismiss` | A,M | "Not now": hidden for 6 hours |
+
+## AI (Ask Alice)
+
+| Method & path | Perm | Purpose |
+|---|---|---|
+| `POST /ai/interpret` | A,M,G | `{ text }` to `{ items: [{ kind, label, detail, icon, sensitive, plan }] }`. A rule-based reader of short sentences against what the caller may see. `plan` is `commands` (thing, action, parameters), `scene`, `routine`, `mode` or `device`. Nothing is run; the app runs the chosen plan through the normal endpoints. Unlock is `sensitive` |
 
 ## AI (later)
 
@@ -249,6 +256,10 @@ Energy, history and mode suggestions are implemented.
 | `GET /admin/health` | A | `{ status: ok\|warn\|down, version, uptimeSeconds, checks: [{ name, status, detail }] }` for the database, Home Assistant, the config-worker, failed changes, push and backups (warns when none yet, the last good one is over 36 hours old, or the latest failed its restore test) |
 | `GET /admin/diagnostics` | A | Versions, what is configured (push channels, token protection, proxy trust), Home Assistant host, counts, database size. Never secrets |
 | `GET/POST /admin/support-sessions`, `DELETE /admin/support-sessions/:id` | A† | Grant, list, end scoped support access |
+| `GET /admin/support` | A | `{ active, history, householdLog, operatorTrail }` |
+| `POST /admin/support` | A† | `{ hours (1-24), scope: { health?, devices?, cameras?, control? } }`; at least one scope; one grant at a time; admins are notified |
+| `POST /admin/support/:id/extend`, `POST /admin/support/:id/end` | A† / A | Add an hour (24 in total at most) / end now. Grants also end on their own |
+| `GET /operator/homes`, `GET /operator/homes/:id/health`, `GET /operator/homes/:id/devices` | operator token | Support staff, `Authorization: Bearer alice_op_...`. Only homes with an open grant; health needs the `health` scope, devices the `devices` scope (cameras need `cameras`). Read only; each call is logged for the household |
 | `GET /admin/audit?limit=&before=&action=` | A | The security audit log, newest first, with who did it; `action` matches the start of the action name; `nextCursor` for the next page |
 | `GET /admin/security/sensitive-operations` | A | Effective rules: defaults plus household changes, each with `source: "default" \| "custom"` |
 | `PUT /admin/security/sensitive-operations` | A† | `{ rules: [{ domain, action, deviceClass?, sensitive }] }` replace the household's rules; audited, and the response flags any default that was switched off |
