@@ -1,0 +1,13 @@
+/* Badges: Pill, Chip, FilterChip, Eyebrow. Moved out of globals.css; contextual overrides (.hero .btn, .pg3 .dt) stay with the screens that need them. */
+.eyebrow{font:500 11px/1.2 var(--f-mono);letter-spacing:.09em;text-transform:uppercase;color:var(--ink3)}
+.chip{display:inline-flex;align-items:center;gap:7px;padding:7px 13px 7px 10px;border-radius:99px;font-size:13px;font-weight:600;background:var(--hero-chip);color:var(--hero-ink)}
+.chip .ic{width:16px;height:16px}
+.chip.warn{outline:1.5px solid currentColor;outline-offset:-1.5px}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600;background:var(--tile2);color:var(--ink2);white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.crit{background:var(--crit-soft);color:var(--crit)}
+.pill.info{background:var(--sage-soft);color:var(--sage)}
+.rchip{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:99px;background:var(--tile);box-shadow:var(--shadow);font-weight:600;font-size:14px;white-space:nowrap;color:var(--ink2)}
+.rchip[aria-pressed=true]{background:var(--ink);color:var(--tile)}
+.rchip em{font:500 11px var(--f-mono);font-style:normal;opacity:.7}

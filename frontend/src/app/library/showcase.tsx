@@ -1,9 +1,10 @@
 "use client";
 import { useState, type ReactNode } from "react";
+import { AdminToken, ConnectHa, RecoveryCodes } from "@/components/auth";
 import {
-  Avatar, Bar, Button, Chip, ConfirmDialog, Empty, Field, FieldRow, FilterChip, Grid, Icon, IconButton, IconTile, Input, KeyValue,
+  ActionRow, AddTile, Loading, Avatar, Bar, BottomSheet, Button, Checkbox, Chip, ConfirmDialog, DeviceTile, LockTile, Modal, ModeButton, Popover, PopoverClose, Progress, SceneCard, Tooltip, Empty, Field, FieldRow, FilterChip, Grid, Icon, IconButton, IconTile, Input, KeyValue,
   OptionButton, OptionGroup, PageHeader, Pill, Safe, Segmented, Select, Slider, Sparkline, StepButton, Steps, Switch, Table, Tabs, Textarea,
-  Tile, TileHeader, ICON_PATHS,
+  Tile, TileHeader, ICON_PATHS, Notice, Stepper, TimeField,
 } from "@/ui";
 
 function Block({ title, children }: { title: string; children: ReactNode }) {
@@ -19,6 +20,12 @@ export function Showcase() {
   const [opt, setOpt] = useState(true);
   const [room, setRoom] = useState(false);
   const [temp, setTemp] = useState(24);
+  const [sel, setSel] = useState("any");
+  const [chk, setChk] = useState(true);
+  const [pr, setPr] = useState(40);
+  const [keep, setKeep] = useState(14);
+  const [at, setAt] = useState("02:30");
+  const [ov, setOv] = useState<null | "confirm" | "modal" | "sheet">(null);
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto" }}>
       <PageHeader title="Component library">Every presentational piece of Alice Home, in one place. These components never read app state.</PageHeader>
@@ -51,7 +58,7 @@ export function Showcase() {
 
       <Block title="Fields"><Row>
         <Field label="Name"><Input placeholder="Name this automation" /></Field>
-        <Field label="Days"><Select defaultValue="any" options={[["any", "Any day"], ["weekdays", "Weekdays"]]} /></Field>
+        <Field label="Days"><Select value={sel} onChange={setSel} label="Days" options={[["any", "Any day"], ["weekdays", "Weekdays"], ["weekends", "Weekends"]]} /></Field>
         <FieldRow><Field label="Time"><Input type="time" defaultValue="18:30" /></Field></FieldRow>
       </Row><div style={{ marginTop: 10 }}><Textarea rows={2} placeholder="What is broken?" style={{ width: "100%" }} /></div></Block>
 
@@ -72,14 +79,95 @@ export function Showcase() {
 
       <Block title="Tile and Grid">
         <Grid>
-          <Tile id="demo-a" cols={4} rows={2}><TileHeader title="Climate" eyebrow="Living room" right={<Switch checked label="AC" onChange={() => {}} />} /><div className="big">25.6°<small>now</small></div></Tile>
-          <Tile id="demo-b" cols={4} rows={2} className="t-sage"><TileHeader title="Backups" right={<Pill tone="ok" icon="shieldcheck">Verified</Pill>} /><p>Tone classes: t-sage, t-clay, t-glow, t-deep.</p></Tile>
-          <Tile id="demo-c" cols={4} rows={2} className="t-deep deep"><TileHeader title="Doors" /><p className="small">Deep tile.</p></Tile>
+          <Tile id="demo-a" style={{ "--i": 0 }} cols={4} rows={2}><TileHeader title="Climate" eyebrow="Living room" right={<Switch checked label="AC" onChange={() => {}} />} /><div className="big">25.6°<small>now</small></div></Tile>
+          <Tile id="demo-b" style={{ "--i": 1 }} cols={4} rows={2} className="t-sage"><TileHeader title="Backups" right={<Pill tone="ok" icon="shieldcheck">Verified</Pill>} /><p>Tone classes: t-sage, t-clay, t-glow, t-deep.</p></Tile>
+          <Tile id="demo-c" style={{ "--i": 2 }} cols={4} rows={2} className="t-deep deep"><TileHeader title="Doors" /><p className="small">Deep tile.</p></Tile>
         </Grid>
       </Block>
 
-      <Block title="Confirm dialog (static preview)">
-        <div style={{ display: "grid", placeItems: "center" }}><ConfirmDialog title="Unlock Front door?" description="Unlocking always needs your passkey." state="idle" onConfirm={() => {}} onCancel={() => {}} /></div>
+      <Block title="Checkbox, Progress">
+        <Row>
+          <Checkbox checked={chk} onChange={setChk}>Notify me when it stays open</Checkbox>
+          <Checkbox checked={false} onChange={() => {}} indeterminate label="Some selected" />
+          <Checkbox checked={false} onChange={() => {}} disabled>Disabled</Checkbox>
+        </Row>
+        <div style={{ display: "grid", gap: 10, maxWidth: 360, marginTop: 10 }}>
+          <Progress value={pr} label="Backup progress" />
+          <Progress value={92} warn label="Power limit" />
+          <div className="btns"><Button size="sm" onClick={() => setPr((v) => (v >= 100 ? 5 : v + 20))}>Advance</Button></div>
+        </div>
+      </Block>
+
+      <Block title="Stepper, TimeField, ActionRow, Notice">
+        <Row>
+          <Stepper label="Backups to keep" value={keep} onChange={setKeep} min={1} max={90} unit="backups" />
+          <TimeField label="Backup time" value={at} onChange={setAt} />
+        </Row>
+        <div style={{ display: "grid", gap: 8, maxWidth: 520, marginTop: 10 }}>
+          <ActionRow icon="bulb" verb="Turn on" onRemove={() => {}}><span className="small">Floor lamp</span></ActionRow>
+          <Notice tone="warn" action={<Button size="sm">Fix it</Button>}>Home Assistant has not been given an administrator token.</Notice>
+          <Notice tone="ok">Everything is in step with Home Assistant.</Notice>
+          <Notice>Alice checks every 15 minutes.</Notice>
+        </div>
+      </Block>
+
+      <Block title="Tooltip, Popover">
+        <Row>
+          <Tooltip label="Add to favourites"><IconButton aria-label="Add to favourites"><Icon n="star" /></IconButton></Tooltip>
+          <Popover trigger={<Button>Open popover</Button>} title="Quiet hours" align="start">
+            <p className="small">Alice holds non-urgent alerts between 10:30 pm and 6:30 am.</p>
+            <PopoverClose render={<Button size="sm" variant="primary" />}>Got it</PopoverClose>
+          </Popover>
+        </Row>
+      </Block>
+
+      <Block title="Phone tiles">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: 10, maxWidth: 420 }}>
+          <DeviceTile icon="bulb" name="Floor lamp" detail="60% · Living room" on fill={60} label="Floor lamp" onTap={() => {}} onHold={() => {}} onMore={() => {}} />
+          <DeviceTile icon="lock" name="Back door" detail="Open · Hall" warn label="Back door" onTap={() => {}} />
+          <AddTile onClick={() => {}}>Add favourite</AddTile>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, maxWidth: 420, marginTop: 10 }}>
+          <ModeButton icon="home" label="Home" description="Everyone is in" pressed onClick={() => {}} />
+          <ModeButton icon="moon" label="Night" description="Quiet hours" pressed={false} onClick={() => {}} />
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, maxWidth: 420, marginTop: 10 }}>
+          <SceneCard icon="play" name="Movie night" description="Ceiling off, lamp 15%" tag="Suggested now" suggested onClick={() => {}} />
+          <SceneCard icon="sun" name="Good morning" description="Kitchen lights up" tag="Routine" onClick={() => {}} />
+        </div>
+        <div className="t-deep deep" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, maxWidth: 420, marginTop: 10, padding: 12, borderRadius: 20 }}>
+          <LockTile icon="lock" name="Front door" status="Locked" locked label="Front door" onClick={() => {}} />
+          <LockTile icon="unlock" name="Back door" status="Open · tap to lock" locked={false} label="Back door" onClick={() => {}} />
+        </div>
+      </Block>
+
+      <Block title="Button states, Loading">
+        <Row>
+          <Button variant="primary" loading>Waiting for your passkey…</Button>
+          <Button loading>Saving</Button>
+          <Button variant="primary" size="lg">Large</Button>
+          <Button variant="ghost">Ghost</Button>
+        </Row>
+        <Loading label="Loading your home…" />
+      </Block>
+
+      <Block title="Onboarding screens (static preview)">
+        <div className="auth-embed">
+          <RecoveryCodes codes={["MAPLE-4829", "KITE-1175", "PINE-9032", "FERN-6641", "OAK-2218", "REED-7750"]} />
+          <ConnectHa onDone={() => {}} onSkip={() => {}} />
+          <AdminToken onDone={() => {}} onSkip={() => {}} />
+        </div>
+      </Block>
+
+      <Block title="Overlays (live)">
+        <div className="btns">
+          <Button onClick={() => setOv("confirm")}>Confirm dialog</Button>
+          <Button onClick={() => setOv("modal")}>Modal</Button>
+          <Button onClick={() => setOv("sheet")}>Bottom sheet (drag to dismiss)</Button>
+        </div>
+        <ConfirmDialog open={ov === "confirm"} title="Unlock Front door?" description="Unlocking always needs your passkey." state="idle" onConfirm={() => setOv(null)} onCancel={() => setOv(null)} />
+        <Modal open={ov === "modal"} onOpenChange={(o) => !o && setOv(null)} label="Example modal"><div style={{ padding: 24 }}><h3 className="tt">Modal</h3><p className="muted">Focus is trapped here. Escape or a tap outside closes it.</p></div></Modal>
+        <BottomSheet open={ov === "sheet"} onOpenChange={(o) => !o && setOv(null)} label="Example sheet"><h3 className="tt">Bottom sheet</h3><p className="muted">Drag the sheet down, or flick it, to dismiss.</p><Slider value={v} onChange={setV} label="Demo" size="xl" /></BottomSheet>
       </Block>
 
       <Block title={`Icons (${Object.keys(ICON_PATHS).length})`}>

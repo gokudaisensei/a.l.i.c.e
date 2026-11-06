@@ -1,0 +1,2 @@
+.arow{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:10px 12px;border-radius:16px;background:var(--tile2)}
+.arow .verb{display:inline-flex;align-items:center;gap:7px;font-weight:700;min-width:120px}

@@ -1,0 +1,11 @@
+/* Form fields: Field, Input, Textarea, Select. Moved out of globals.css; contextual overrides (.hero .btn, .pg3 .dt) stay with the screens that need them. */
+.sel,.inp{height:40px;border-radius:12px;border:1.5px solid var(--line);background:var(--tile);padding:0 12px;min-width:0;max-width:100%}
+textarea.inp{height:auto;padding:10px 12px;width:100%;resize:vertical}
+.sel:focus,.inp:focus{outline:2px solid var(--sage);outline-offset:1px}
+.field{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.inp--sm{width:84px}
+.inp--code{width:140px}
+.inp--fill{width:100%}
+.inp--mono{font:13px var(--f-mono);min-width:0}
+.time-field{min-width:116px;font-variant-numeric:tabular-nums}
+@media(pointer:coarse){.inp,.sel{min-height:44px}}

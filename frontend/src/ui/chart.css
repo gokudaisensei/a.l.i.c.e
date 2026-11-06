@@ -1,0 +1,2 @@
+/* Sparkline. Moved out of globals.css; contextual overrides (.hero .btn, .pg3 .dt) stay with the screens that need them. */
+.spark{width:100%;height:auto;display:block;overflow:visible}

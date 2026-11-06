@@ -28,7 +28,7 @@ export interface TileProps {
   className?: string;
   /** Skip the card chrome. Used for phone layouts that style themselves. */
   bare?: boolean;
-  style?: CSSProperties;
+  style?: Vars;
   /** Start expanded when inside an accordion. */
   defaultOpen?: boolean;
   children: ReactNode;
@@ -44,7 +44,7 @@ export function Tile({ id, cols = 4, colsTablet = 3, colsMobile = 6, rows = 2, t
   const open = key && api ? api.isOpen(key, !!defaultOpen) : false;
   return (
     <TileKey.Provider value={key && api ? { key, open, api } : null}>
-      <section className={cn("tile", cls, key && "aacc", key && open && "open")} id={`t-${id}`} style={vars}>{children}</section>
+      <section data-slot="tile" className={cn("tile", cls, key && "aacc", key && open && "open")} id={`t-${id}`} style={vars}>{children}</section>
     </TileKey.Provider>
   );
 }

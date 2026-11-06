@@ -1,0 +1,21 @@
+/* Buttons: Button, IconButton, StepButton. Moved out of globals.css; contextual overrides (.hero .btn, .pg3 .dt) stay with the screens that need them. */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:0 18px;border-radius:99px;font-weight:600;font-size:14px;background:var(--tile2);color:var(--ink);transition:transform .12s,filter .2s;white-space:nowrap}
+@media(hover:hover){
+  .btn:hover{filter:brightness(.97)}
+}
+.btn--p{background:var(--ink);color:var(--tile)}
+.btn--sage{background:var(--sage);color:var(--on-sage)}
+.btn--sm{min-height:34px;padding:0 13px;font-size:13px}
+.btn--danger{background:var(--crit);color:#fff}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.icon-btn{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;color:var(--ink2);flex:none}
+@media(hover:hover){
+  .icon-btn:hover{background:var(--tile2)}
+}
+.icon-btn.on{color:var(--glow-ink)}
+.icon-btn.on .ic{fill:var(--glow)}
+.step-btn{width:42px;height:42px;border-radius:50%;background:var(--over);display:grid;place-items:center}
+.btn--ghost{background:transparent}
+.btn--lg{min-height:50px;padding:0 24px;font-size:15px}
+.btn[data-loading]{cursor:progress;opacity:1}
+.btn[data-loading][disabled]{opacity:.85}

@@ -1,0 +1,17 @@
+.rng{display:block;width:100%;touch-action:none}
+.rng-c{display:flex;align-items:center;height:28px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.rng-t{position:relative;width:100%;height:8px;border-radius:99px;background:var(--tile2);box-shadow:inset 0 0 0 1px var(--line)}
+.rng-i{height:100%;border-radius:inherit;background:var(--glow);transition:width .35s var(--ease-ios)}
+.rng-th{width:22px;height:22px;border-radius:50%;background:var(--tile);border:2px solid var(--glow);box-shadow:0 1px 5px rgba(0,0,0,.25);
+  transition:scale .3s var(--spring),inset-inline-start .35s var(--ease-ios),box-shadow .2s}
+.rng-th::before{content:"";position:absolute;inset:-12px}
+.rng-th:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.rng[data-dragging] .rng-i,.rng[data-dragging] .rng-th{transition-property:scale,box-shadow}
+.rng[data-dragging] .rng-th{scale:1.18;box-shadow:0 3px 10px rgba(0,0,0,.32)}
+/* extra large: the full-width brightness bar in the device sheet */
+.rng[data-size=xl] .rng-c{height:60px}
+.rng[data-size=xl] .rng-t{height:60px;border-radius:22px;overflow:hidden}
+.rng[data-size=xl] .rng-th{width:10px;height:40px;border-radius:6px;border:0;background:var(--ink);box-shadow:none}
+.rng[data-size=xl][data-dragging] .rng-th{scale:1.12 1.04}
+.rng[data-disabled]{opacity:.5}
+@media (prefers-reduced-motion:reduce){.rng-i,.rng-th{transition:none}.rng[data-dragging] .rng-th{scale:1}}

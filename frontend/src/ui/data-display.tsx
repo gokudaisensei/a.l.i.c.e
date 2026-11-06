@@ -1,10 +1,11 @@
 import type { CSSProperties, ReactNode } from "react";
 import { Icon } from "./icon";
 import { cn } from "./cn";
+import { Progress } from "./progress";
 
 /** Horizontal meter. `warn` turns it clay. */
-export function Bar({ percent, warn }: { percent: number; warn?: boolean }) {
-  return <div className={cn("bar", warn && "warn")}><i style={{ width: `${Math.max(0, Math.min(100, percent))}%` }} /></div>;
+export function Bar({ percent, warn, label }: { percent: number; warn?: boolean; label?: string }) {
+  return <Progress value={percent} warn={warn} label={label} />;
 }
 
 /** Round initial. `tone` 1–4 picks the colour; `away` greys it. */
@@ -51,17 +52,6 @@ export function Table({ head, rows, mono }: { head: string[]; rows: ReactNode[][
       <thead><tr>{head.map((h) => <th key={h}>{h}</th>)}</tr></thead>
       <tbody>{rows.map((r, i) => <tr key={i}>{r.map((c, j) => <td key={j}>{c}</td>)}</tr>)}</tbody>
     </table></div>
-  );
-}
-
-/** Underlined section switcher. */
-export function Tabs<T extends string>({ value, tabs, onChange, label }: { value: T; tabs: { id: T; label: string; badge?: boolean }[]; onChange: (id: T) => void; label: string }) {
-  return (
-    <div className="tabs" role="tablist" aria-label={label}>{tabs.map((t) => (
-      <button key={t.id} type="button" className="tab" role="tab" aria-selected={value === t.id} onClick={() => onChange(t.id)}>
-        {t.label}{t.badge ? <span className="dotb" title="Needs a look" /> : null}
-      </button>
-    ))}</div>
   );
 }
 
