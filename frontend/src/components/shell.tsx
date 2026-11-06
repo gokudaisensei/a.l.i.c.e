@@ -1,7 +1,7 @@
 "use client";
 import { Icon, Avatar, Button, IconButton, Popover, PopoverClose, Switch, Tooltip } from "@/ui";
 import { useTheme } from "next-themes";
-import { useEffect, useState, ViewTransition, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Overlay, AppToast } from "./overlay";
@@ -81,8 +81,7 @@ export function Shell({ children }: { children: ReactNode }) {
           <div className="brand">alice<i>.</i></div>
           <nav className="nav" aria-label="Main">{items.map((n) => (
             <Link key={n.k} href={n.href} aria-current={view === n.k ? "page" : undefined}>
-              {view === n.k ? <ViewTransition name="nav-pill" share="nav-pill" default="none"><span className="nav-pill" /></ViewTransition> : null}
-              <Icon n={n.ic} /><span>{n.n}</span>{n.k === "admin" && att ? <span className="badge">{att}</span> : null}
+                            <Icon n={n.ic} /><span>{n.n}</span>{n.k === "admin" && att ? <span className="badge">{att}</span> : null}
             </Link>
           ))}</nav>
           <div className="rail-foot">

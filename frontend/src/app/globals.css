@@ -370,12 +370,21 @@ kbd{font:500 11px var(--f-mono);padding:3px 7px;border-radius:7px;background:var
 .btn:active,.mode:active,.scene:active,.lkb:active,.dt:active,.step-btn:active,.icon-btn:active,.opt:active,.chip:active,.tab:active,.fab:active,.nav a:active,.seg button:active,.rchip:active,.dmore:active{transform:scale(var(--press));transition-duration:var(--t-press),.22s,.22s,.22s,.2s;transition-timing-function:var(--ease-out),var(--ease-out),var(--ease-out),ease,ease}
 .btn:disabled,[aria-disabled=true]{transform:none}
 /* route changes: a quick crossfade, and the nav pill glides to the new tab */
-::view-transition-old(root){animation:vt-out .16s var(--ease-in) both}
-::view-transition-new(root){animation:vt-in .34s var(--ease-out) both}
+/* The top bar (with the logo), the tab bar and the Ask Alice button are layers of their own and never fade; only the page changes,
+   and the old page stays on screen until the new one is ready, so there is never a blank moment (the logo used to vanish for a
+   fraction of a second on a phone, because the whole screen faded out and back in). */
+.top{view-transition-name:chrome-top}
+.rail{view-transition-name:chrome-rail}
+.fab{view-transition-name:chrome-fab}
+#main{view-transition-name:page}
+::view-transition-group(chrome-top),::view-transition-group(chrome-rail),::view-transition-group(chrome-fab){animation:none}
+::view-transition-old(chrome-top),::view-transition-new(chrome-top),::view-transition-old(chrome-rail),::view-transition-new(chrome-rail),::view-transition-old(chrome-fab),::view-transition-new(chrome-fab){animation:none;mix-blend-mode:normal}
+::view-transition-old(root),::view-transition-new(root){animation:none}
+::view-transition-old(page){animation:vt-out .1s var(--ease-in) both;mix-blend-mode:normal}
+::view-transition-new(page){animation:vt-fade .2s linear .08s both;mix-blend-mode:normal}
 @keyframes vt-out{to{opacity:0}}
+@keyframes vt-fade{from{opacity:0}}
 @keyframes vt-in{from{opacity:0;transform:translateY(6px)}}
-::view-transition-group(.nav-pill){animation-duration:.5s;animation-timing-function:var(--spring)}
-::view-transition-old(.nav-pill),::view-transition-new(.nav-pill){animation:none;mix-blend-mode:normal}
 /* reduced motion: keep the fades, drop the movement */
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{scroll-behavior:auto!important}
@@ -385,9 +394,6 @@ kbd{font:500 11px var(--f-mono);padding:3px 7px;border-radius:7px;background:var
   .btn:active,.mode:active,.scene:active,.lkb:active,.dt:active,.step-btn:active,.icon-btn:active,.opt:active,.chip:active,.tab:active,.fab:active,.nav a:active,.seg button:active,.rchip:active,.dmore:active{transform:none}
   ::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation-duration:.01ms!important}
 }
-.nav-pill{position:absolute;inset:0;border-radius:inherit;background:var(--tile);box-shadow:var(--shadow);z-index:-1}
-.nav a{isolation:isolate}
-.nav a[aria-current=page]{background:transparent;box-shadow:none}
 
 /* ---- audit fixes: legibility, touch, phone ---- */
 .dc-h .name b,.dc-h .name small{display:block}

@@ -140,6 +140,31 @@ test("on a phone, switching rooms and pages moves without jumps", async () => {
   await page.setViewportSize({ width: 1280, height: 720 });
 });
 
+test("on a phone, the logo and tab bar stay put while pages change", async () => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await page.getByText(/Good (morning|afternoon|evening)|Quiet night/).first().waitFor();
+  await page.waitForTimeout(1500);
+  // The top bar, tab bar and Ask Alice button are separate layers during a page change; only the page itself is animated.
+  const layers = await page.evaluate(() => ["top", "rail", "fab", "main"].map((c) => getComputedStyle(document.querySelector(c === "main" ? "#main" : `.${c}`)!).viewTransitionName));
+  expect(layers).toEqual(["chrome-top", "chrome-rail", "chrome-fab", "page"]);
+  for (const tab of ["Rooms", "Automate", "Home"]) {
+    await page.getByRole("link", { name: tab }).click();
+    const animated = await page.evaluate(async () => {
+      const seen = new Set<string>();
+      for (let i = 0; i < 40; i++) {
+        for (const a of document.getAnimations()) { const pe = (a.effect as KeyframeEffect | null)?.pseudoElement; const name = (a as CSSAnimation).animationName; if (pe && name) seen.add(`${pe}:${name}`); }
+        await new Promise((r) => setTimeout(r, 25));
+      }
+      return [...seen];
+    });
+    // Nothing fades the whole screen (root) and nothing fades the chrome; the page fades in.
+    expect(animated.filter((x) => x.includes("(root)") || x.includes("chrome-")), `${tab}: ${animated.join(", ")}`).toEqual([]);
+    await page.waitForTimeout(500);
+  }
+  await page.setViewportSize({ width: 1280, height: 720 });
+});
+
 test("push: the switch asks for permission, subscribes this browser, and turning it off forgets it", async () => {
   await page.context().grantPermissions(["notifications"]);
   await page.getByRole("link", { name: "Home" }).first().click();
