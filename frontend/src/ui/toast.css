@@ -1,0 +1,26 @@
+/* Toast: a card at the bottom of the screen. See toast.tsx. */
+.toast{position:fixed;left:50%;bottom:calc(var(--toast-bottom,22px) + env(safe-area-inset-bottom,0px));z-index:60;width:max-content;min-width:min(280px,calc(100vw - 32px));max-width:min(440px,calc(100vw - 32px));
+  display:flex;gap:12px;align-items:flex-start;padding:12px 8px 12px 16px;border-radius:18px;overflow:hidden;background:var(--ink);color:var(--tile);box-shadow:0 14px 40px -10px rgba(0,0,0,.5);
+  transform:translate(-50%,16px) scale(.98);opacity:0;pointer-events:none;visibility:hidden;
+  transition:transform .5s var(--spring),opacity .18s var(--ease-out),visibility 0s .5s}
+.toast[data-show=true]{transform:translate(-50%,0) scale(1);opacity:1;pointer-events:auto;visibility:visible;transition:transform .5s var(--spring),opacity .18s var(--ease-out),visibility 0s}
+.toast[data-placement=inline]{position:relative;left:auto;bottom:auto;transform:none;z-index:auto;width:auto;max-width:440px}
+.toast[data-placement=inline][data-show=false]{display:none}
+@media (max-width:900px){.toast{--toast-bottom:96px}}
+
+.toast-i{flex:none;display:grid;place-items:center;width:22px;height:22px;margin-top:1px;border-radius:50%;background:color-mix(in srgb,var(--tile) 18%,transparent)}
+.toast[data-tone=warn] .toast-i{background:var(--clay);color:#fff}
+.toast[data-tone=ok] .toast-i{background:var(--ok);color:#fff}
+.toast-b{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px;padding-top:2px}
+.toast-h{font-weight:700}
+.toast-t{margin:0;overflow-wrap:anywhere;word-break:break-word;line-height:1.4}
+.toast-t.clamp{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:var(--lines,5);overflow:hidden}
+.toast-more{align-self:flex-start;margin-top:2px;font-size:12.5px;font-weight:700;opacity:.8;text-decoration:underline;text-underline-offset:3px}
+.toast-a{flex:none;display:flex;align-items:center;gap:2px;margin-top:-2px}
+.toast-undo{min-height:36px;padding:0 10px;font-weight:700;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
+.toast-x{width:36px;height:36px;color:inherit;opacity:.7;background:transparent}
+.toast-x:hover{opacity:1}
+.toast-bar{position:absolute;left:0;bottom:0;height:3px;width:100%;background:color-mix(in srgb,var(--tile) 35%,transparent);transform-origin:left;animation:toast-run linear forwards}
+.toast[data-paused=true] .toast-bar{animation-play-state:paused}
+@keyframes toast-run{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+@media (prefers-reduced-motion:reduce){.toast,.toast[data-show=true]{transition:opacity .18s;transform:translate(-50%,0)}.toast[data-placement=inline]{transform:none}.toast-bar{display:none}}

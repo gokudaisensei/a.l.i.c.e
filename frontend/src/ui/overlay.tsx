@@ -51,15 +51,6 @@ export function BottomSheet({ open, onOpenChange, label, children }: SurfaceProp
   );
 }
 
-export function Toast({ message, show, onUndo }: { message: string; show: boolean; onUndo?: () => void }) {
-  return (
-    <div id="toast" data-slot="toast" role="status" aria-live="polite" className={cn(show && "show")} inert={!show}>
-      <span>{message}</span>
-      {onUndo ? <button type="button" onClick={onUndo}>Undo</button> : null}
-    </div>
-  );
-}
-
 /** Passkey-style confirmation dialog. */
 export function ConfirmDialog({ open, title, description, state, onConfirm, onCancel, confirmLabel = "Use passkey", confirmRef }: {
   open: boolean; title: string; description: string; state: "idle" | "go" | "ok"; onConfirm: () => void; onCancel: () => void; confirmLabel?: string;

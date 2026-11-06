@@ -19,7 +19,8 @@ export { Bar, Avatar, IconTile, Empty, Safe, KeyValue, Steps, Table, PageHeader,
 export { Tabs, type TabsProps } from "./tabs";
 export { Tile, TileHeader, Grid, AccordionContext, resetTileOrder, type TileProps, type AccordionApi } from "./tile";
 export { Sparkline } from "./chart";
-export { Modal, BottomSheet, Toast, ConfirmDialog } from "./overlay";
+export { Modal, BottomSheet, ConfirmDialog } from "./overlay";
+export { Toast, toastDuration, type ToastProps, type ToastTone } from "./toast";
 export { DeviceTile, AddTile, type DeviceTileProps } from "./device-tile";
 export { ModeButton, SceneCard } from "./choice";
 export { LockTile } from "./lock-tile";

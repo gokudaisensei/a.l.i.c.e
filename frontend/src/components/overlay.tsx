@@ -4,7 +4,7 @@ import { renameDevice, setHidden } from "@/lib/live";
 import { DevSlider } from "./device-controls";
 import { useRef, useState } from "react";
 import { Cam } from "./rooms";
-import { A, S, useS, usePhone, dev, isOn, icn, rname, closeOv, pkRun, palQuery, runPal, bump } from "@/lib/store";
+import { A, S, useS, usePhone, dev, isOn, icn, rname, closeOv, pkRun, palQuery, runPal, bump, dismissToast } from "@/lib/store";
 import type { Dev } from "@/lib/data";
 
 const CAN = ["dim", "light", "plug", "fan", "climate"];
@@ -133,5 +133,5 @@ export function Overlay() {
 export function AppToast() {
   useS();
   const t = S.toast;
-  return <Toast message={t.msg} show={t.show} onUndo={t.undo ? () => { S.toast.show = false; const u = t.undo; bump(); u?.(); } : undefined} />;
+  return <Toast key={t.id} message={t.msg} title={t.title} tone={t.tone} show={t.show} onDismiss={dismissToast} onUndo={t.undo ? () => { const u = t.undo; dismissToast(); u?.(); } : undefined} />;
 }

@@ -4,7 +4,7 @@ import { AdminToken, ConnectHa, RecoveryCodes } from "@/components/auth";
 import {
   ActionRow, AddTile, Loading, Avatar, Bar, BottomSheet, Button, Checkbox, Chip, ConfirmDialog, DeviceTile, LockTile, Modal, ModeButton, Popover, PopoverClose, Progress, SceneCard, Tooltip, Empty, Field, FieldRow, FilterChip, Grid, Icon, IconButton, IconTile, Input, KeyValue,
   OptionButton, OptionGroup, PageHeader, Pill, Safe, Segmented, Select, Slider, Sparkline, StepButton, Steps, Switch, Table, Tabs, Textarea,
-  Tile, TileHeader, ICON_PATHS, Notice, Stepper, TimeField,
+  Tile, TileHeader, ICON_PATHS, Notice, Stepper, TimeField, Toast,
 } from "@/ui";
 
 function Block({ title, children }: { title: string; children: ReactNode }) {
@@ -24,6 +24,7 @@ export function Showcase() {
   const [chk, setChk] = useState(true);
   const [pr, setPr] = useState(40);
   const [keep, setKeep] = useState(14);
+  const [toastDemo, setToastDemo] = useState(false);
   const [at, setAt] = useState("02:30");
   const [ov, setOv] = useState<null | "confirm" | "modal" | "sheet">(null);
   return (
@@ -109,6 +110,17 @@ export function Showcase() {
           <Notice tone="ok">Everything is in step with Home Assistant.</Notice>
           <Notice>Alice checks every 15 minutes.</Notice>
         </div>
+      </Block>
+
+      <Block title="Toast">
+        <p className="small" style={{ marginBottom: 10 }}>A card, not a pill: it wraps long messages, cuts them after five lines with a tap to read the rest, pauses while pointed at or touched, and warnings are announced straight away. Here they are in the page; in the app they sit at the bottom of the screen.</p>
+        <div style={{ display: "grid", gap: 10, justifyItems: "start" }}>
+          <Toast placement="inline" show message="Floor lamp on" onDismiss={() => {}} onUndo={() => {}} duration={1_000_000} />
+          <Toast placement="inline" show tone="ok" message="Saved. Alice is adding it to Home Assistant" onDismiss={() => {}} duration={1_000_000} />
+          <Toast placement="inline" show tone="warn" title="Home Assistant refused it" message="Home Assistant did not accept turning on the Kitchen Door lock because it needs a fresh passkey confirmation, and the confirmation window of five minutes has already passed since you last touched your phone. Confirm with your passkey and try again, or ask an admin to change which actions need a passkey." onDismiss={() => {}} duration={1_000_000} />
+        </div>
+        <div className="btns" style={{ marginTop: 12 }}><Button size="sm" onClick={() => setToastDemo(true)}>Show one at the bottom</Button></div>
+        <Toast show={toastDemo} message="This one sits at the bottom of the screen and goes by itself." onDismiss={() => setToastDemo(false)} onUndo={() => setToastDemo(false)} />
       </Block>
 
       <Block title="Tooltip, Popover">

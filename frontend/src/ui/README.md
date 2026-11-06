@@ -16,7 +16,8 @@ Presentational components for the Alice Home design. Import everything from `@/u
 | Layout | `Tile`, `TileHeader`, `Grid`, `AccordionContext`, `PageHeader`, `Tabs` |
 | Data | `Bar`, `Avatar`, `IconTile`, `Empty`, `Safe`, `Notice`, `KeyValue`, `Steps`, `Table`, `Sparkline`, `Html` |
 | Builders | `ActionRow` |
-| Overlays | `Modal`, `BottomSheet`, `ConfirmDialog`, `Toast` |
+| Overlays | `Modal`, `BottomSheet`, `ConfirmDialog` |
+| Feedback | `Toast`, `Notice` |
 | Icons | `Icon` (24px grid, 1.7 stroke) |
 
 `Tile` staggers its entrance by render order: call `resetTileOrder()` at the top of a view.
@@ -56,6 +57,7 @@ Designed first, then used by the screens that needed them:
 - **`Stepper`**: a bounded number with round − and + buttons (`value`, `onChange`, `min`, `max`, `step`, `unit`, `label`). For small counts such as "backups to keep". The value is a live region; the buttons disable at the limits.
 - **`TimeField`**: a 24-hour time of day (`value` "HH:MM", `onChange`, `label`) on the device's native picker.
 - **`ActionRow`**: one step of a builder: an icon and verb, the controls that complete it as children, and an optional remove button. The automation builder and the scene and routine builders all use it (it replaced the builder's local `.arow` styles).
+- **`Toast`** (redesigned, now in `toast.tsx`): a card at the bottom of the screen for short notices: `message`, optional `title`, `tone` (`neutral`, `ok`, `warn`), `onUndo`, `onDismiss`, `duration`. Long messages wrap and are cut after five lines with a "Show more" tap; it stays longer for longer text (`toastDuration`), pauses while pointed at, focused or touched, and has a close button and a shrinking bar for the time left. `placement="inline"` is for the library page. Warnings use `role="alert"`. The old pill is gone.
 - **`Notice`**: an inline message with a tone (`info`, `ok`, `warn`), an icon and an optional action. Warnings use `role="alert"`.
 
 ## Added with the backend work

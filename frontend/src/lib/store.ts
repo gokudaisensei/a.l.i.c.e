@@ -28,7 +28,7 @@ export const S = {
   hc: null as null | "run",
   sheet: null as string | null, pk: null as PK | null,
   pal: null as null | { q: string; sel: number; items: PalItem[] },
-  toast: { msg: "", show: false, undo: null as null | (() => void) },
+  toast: { id: 0, msg: "", title: undefined as string | undefined, tone: "neutral" as "neutral" | "ok" | "warn", show: false, undo: null as null | (() => void) },
 };
 
 export const useStore = create<{ v: number }>(() => ({ v: 0 }));
@@ -64,7 +64,9 @@ export function useMounted() {
 
 /* ---------- helpers ---------- */
 export const PERSONA: Record<Role, string> = { admin: "gokul", member: "arjun", guest: "lakshmi" };
-export const me = () => S.people.find((p) => p.id === S.meId) ?? S.people.find((p) => p.id === PERSONA[S.role]) ?? S.people[0]!;
+const NOBODY: Person = { id: "", n: "", role: "member", home: false, c: 1 };
+/** The signed-in person (a blank placeholder before sign-in has finished, so the page frame can render without data). */
+export const me = () => S.people.find((p) => p.id === S.meId) ?? S.people.find((p) => p.id === PERSONA[S.role]) ?? S.people[0] ?? NOBODY;
 /** The scene suggested for this time of day (the design's ids, or a live scene whose name says so). */
 export const primaryScene = (t: Tod) => SCENES.find((s) => (s.key ?? s.id) === PRIMARY[t]);
 export const dev = (id: string) => S.devices.find((d) => d.id === id)!;
@@ -144,13 +146,15 @@ export const SCENES: SceneItem[] = [];
 export function suggestion() { return S.insight; }
 
 /* ---------- toast / overlays ---------- */
-let tt: ReturnType<typeof setTimeout>;
-export function toast(msg: string, undo?: () => void) {
-  S.toast = { msg, show: true, undo: undo ?? null };
-  clearTimeout(tt);
-  tt = setTimeout(() => { S.toast.show = false; bump(); }, undo ? 6000 : 3200);
+/** Wording that means something went wrong: shown as a warning, and announced to screen readers at once. */
+const BAD = /\b(couldn.t|could not|didn.t|did not|can.t|cannot|isn.t|wasn.t|won.t|failed|refused|blocked|not allowed|too many|too late|unable|no longer|error|wrong|offline|expired)\b/i;
+let toastId = 0;
+/** A short notice at the bottom of the screen. `undo` adds an Undo button. Tone is a warning for wording that says something failed. */
+export function toast(msg: string, undo?: () => void, opts: { title?: string; tone?: "neutral" | "ok" | "warn" } = {}) {
+  S.toast = { id: ++toastId, msg, title: opts.title, tone: opts.tone ?? (BAD.test(msg) ? "warn" : "neutral"), show: true, undo: undo ?? null };
   bump();
 }
+export function dismissToast() { if (S.toast.show) { S.toast.show = false; bump(); } }
 export function commit(msg: string, fn: () => void) {
   const before = structuredClone({ d: S.devices, m: S.mode, p: S.people });
   fn(); S.sync = Date.now(); buzz(14);
