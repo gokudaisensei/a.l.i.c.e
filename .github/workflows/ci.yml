@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: backend } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: 1.3.14 }
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
+      # The live tests skip themselves when no mock Home Assistant is configured.
+      - run: bun test
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: frontend } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: 1.3.14 }
+      - run: bun install --frozen-lockfile
+      - run: bunx tsc --noEmit
+      - run: bunx eslint src e2e
+      - run: bunx next build
+
+  # The whole product in a real browser, against the mock Home Assistant in Docker.
+  e2e:
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: 1.3.14 }
+      - name: Install both apps
+        run: |
+          (cd backend && bun install --frozen-lockfile)
+          (cd frontend && bun install --frozen-lockfile)
+      - name: Start and prepare the mock Home Assistant
+        working-directory: backend
+        run: |
+          bun run ha:up
+          bun run ha:bootstrap
+          bun run ha:seed
+      - name: End-to-end tests (uses the Chrome on the runner)
+        working-directory: frontend
+        run: bun run e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-traces
+          path: frontend/test-results
