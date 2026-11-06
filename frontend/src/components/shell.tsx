@@ -86,7 +86,7 @@ export function Shell({ children }: { children: ReactNode }) {
             </Link>
           ))}</nav>
           <div className="rail-foot">
-            <div className="me"><Avatar initial={p.n[0]} tone={p.c} /><div><b>{p.n}</b><small>{p.role[0].toUpperCase() + p.role.slice(1)} · passkey</small></div>
+            <div className="me"><Avatar initial={p.n[0] ?? "·"} tone={p.c} /><div><b>{p.n}</b><small>{(p.role[0] ?? "m").toUpperCase() + p.role.slice(1)} · passkey</small></div>
               <Tooltip label="Sign out"><IconButton aria-label="Sign out" style={{ marginLeft: "auto" }} onClick={() => void signOut()}><Icon n="exit" /></IconButton></Tooltip></div>
           </div>
         </aside>
@@ -98,7 +98,7 @@ export function Shell({ children }: { children: ReactNode }) {
             <Tooltip label={dark ? "Switch to light" : "Switch to dark"} side="bottom"><IconButton aria-label={dark ? "Switch to light theme" : "Switch to dark theme"} onClick={() => setTheme(dark ? "light" : "dark")}><Icon n={dark ? "sun" : "moon"} /></IconButton></Tooltip>
             {/* The side rail with Sign out is hidden on a phone, so the phone gets its own way to sign out. */}
             <span className="me-phone"><Popover trigger={<IconButton aria-label={`${p.n}: account`}><Avatar initial={p.n[0]} tone={p.c} /></IconButton>} title={p.n} align="end">
-              <p className="small">{p.role[0].toUpperCase() + p.role.slice(1)} · passkey</p>
+              <p className="small">{(p.role[0] ?? "m").toUpperCase() + p.role.slice(1)} · passkey</p>
               {p.role !== "guest" ? <>
                 <label className="field" style={{ justifyContent: "space-between" }}><span>Push notifications</span><Switch checked={S.push} label="Push notifications" onChange={A.push} /></label>
                 <label className="field" style={{ justifyContent: "space-between" }}><span>Quiet hours</span><Switch checked={S.quiet} label="Quiet hours" onChange={A.quiet} /></label>

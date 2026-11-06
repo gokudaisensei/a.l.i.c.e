@@ -214,7 +214,9 @@ export function AuthGate({ children }: { children: ReactNode }) {
   const state = useAuth((s) => s.state);
   useEffect(() => { void loadSession(); }, []);
   switch (state.status) {
-    case "loading": return <Card title="Alice" hideTitle center><Loading /></Card>;
+    // The page is rendered here too, hidden, so the route has a real static shell (what Next's instant-navigation check
+    // looks for) while the session is looked up; it shows nothing until there is data.
+    case "loading": return <><Card title="Alice" hideTitle center><Loading /></Card><div hidden>{children}</div></>;
     case "offline": return <Card title="Can't reach Alice" lead={state.message}><Button onClick={() => void loadSession()}>Try again</Button></Card>;
     case "setup": return <Setup />;
     case "anon": return <SignIn />;

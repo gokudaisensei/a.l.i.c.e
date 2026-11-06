@@ -421,9 +421,6 @@ button,.nav a{-webkit-user-select:none;user-select:none}
 .hl-c{font:500 14px/1.3 var(--f-body);opacity:.72;margin-top:2px;max-width:34ch}
 .dt.add small{display:block;font-size:11.5px;font-weight:500;color:var(--ink3);margin-top:2px}
 .top .icon-btn{margin-left:2px}
-@media (max-width:900px){
-  #toast{bottom:calc(86px + env(safe-area-inset-bottom,0px))}
-}
 @media (max-width:700px){
   .tabs{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 32px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 32px),transparent);scrollbar-width:none;padding-right:24px}
   .tabs::-webkit-scrollbar{display:none}
@@ -473,3 +470,10 @@ button,.nav a{-webkit-user-select:none;user-select:none}
 /* Account menu in the top bar: only on a phone, where the side rail (and its Sign out) is hidden. */
 .me-phone{display:none}
 @media (max-width:700px){.me-phone{display:inline-flex}}
+
+/* Rooms: the list rises in when the room or grouping changes (the page holds its height meanwhile; see RoomsView). */
+.swap-in .gh,.swap-in .pg3,.swap-in .dgrid{animation:rise .32s var(--ease-out) both}
+.swap-in>:nth-child(2) .gh,.swap-in>:nth-child(2) .pg3,.swap-in>:nth-child(2) .dgrid{animation-delay:40ms}
+.swap-in>:nth-child(3) .gh,.swap-in>:nth-child(3) .pg3,.swap-in>:nth-child(3) .dgrid{animation-delay:80ms}
+.swap-in>:nth-child(n+4) .gh,.swap-in>:nth-child(n+4) .pg3,.swap-in>:nth-child(n+4) .dgrid{animation-delay:110ms}
+@media (prefers-reduced-motion:reduce){.swap-in .gh,.swap-in .pg3,.swap-in .dgrid{animation:vt-in .15s linear both;animation-delay:0s!important}}

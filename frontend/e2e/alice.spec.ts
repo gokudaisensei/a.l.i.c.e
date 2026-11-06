@@ -102,6 +102,44 @@ test("admin: a backup is made, passes its restore test, and support access needs
   await expect(page.getByText("No one has access right now")).toBeVisible();
 });
 
+test("on a phone, switching rooms and pages moves without jumps", async () => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/rooms");
+  const chips = page.locator(".scroller button");
+  await chips.first().waitFor();
+  await page.waitForTimeout(1500);
+  type Shifting = Window & { __shifts: number[] };
+  type Shift = PerformanceEntry & { value: number; hadRecentInput: boolean };
+  const shifts = () => page.evaluate(() => (window as unknown as Shifting).__shifts.reduce((a, b) => a + b, 0));
+  await page.evaluate(() => {
+    const w = window as unknown as Shifting;
+    w.__shifts = [];
+    new PerformanceObserver((l) => { for (const e of l.getEntries() as Shift[]) if (!e.hadRecentInput) w.__shifts.push(e.value); }).observe({ type: "layout-shift", buffered: false });
+  });
+  const tall = await page.evaluate(() => document.documentElement.scrollHeight);
+
+  // A short room after "All": the page must not collapse in one frame, and nothing may shift.
+  await chips.nth(3).click();
+  const heights: number[] = [];
+  for (let i = 0; i < 12; i++) { heights.push(await page.evaluate(() => document.documentElement.scrollHeight)); await page.waitForTimeout(50); }
+  expect(heights[0]).toBeGreaterThan(tall * 0.9); // held for a moment, not dropped at once
+  expect(heights.at(-1)!).toBeLessThan(tall);       // then let go
+  await page.waitForTimeout(900);
+  expect(await shifts()).toBeLessThan(0.02);
+
+  // And back, and between pages with the bottom tab bar.
+  await chips.nth(0).click();
+  await page.waitForTimeout(700);
+  await page.getByRole("link", { name: "Home" }).click();
+  await page.getByText(/Good (morning|afternoon|evening)|Quiet night/).first().waitFor();
+  await page.waitForTimeout(900);
+  await page.getByRole("link", { name: "Rooms" }).click();
+  await chips.first().waitFor();
+  await page.waitForTimeout(900);
+  expect(await shifts()).toBeLessThan(0.05);
+  await page.setViewportSize({ width: 1280, height: 720 });
+});
+
 test("push: the switch asks for permission, subscribes this browser, and turning it off forgets it", async () => {
   await page.context().grantPermissions(["notifications"]);
   await page.getByRole("link", { name: "Home" }).first().click();

@@ -340,7 +340,7 @@ function HomePhone() {
       <Tile id="activity" className="pt s2" bare>
         <button className="accrow" onClick={() => { S.exp.act = !S.exp.act; bump(); }} aria-expanded={!!S.exp.act}>
           <span className="ei"><Icon n={nw ? "clock" : "check"} /></span>
-          <span className="grow"><b>{nw ? nw + " new since you were away" : "Caught up"}</b><small>{plain(S.activity[0].t)}</small></span>
+          <span className="grow"><b>{nw ? nw + " new since you were away" : "Caught up"}</b><small>{S.activity[0] ? plain(S.activity[0].t) : "Nothing yet"}</small></span>
           <Icon n="chev" c="sm accv" />
         </button>
         {S.exp.act ? (<>

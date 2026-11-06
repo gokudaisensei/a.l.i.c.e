@@ -1,5 +1,5 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Icon, Button, IconButton, StepButton, Tooltip, Pill, FilterChip, Switch, Segmented, Bar, Empty, PageHeader, resetTileOrder } from "@/ui";
 import { LockButton, DevSlider } from "./device-controls";
 import { DTile } from "./home";
@@ -111,27 +111,45 @@ function Hidden() {
 
 export function RoomsView() {
   useS();
+  const results = useRef<HTMLDivElement>(null), filters = useRef<HTMLDivElement>(null);
   useEffect(() => { if (S.role === "admin") void loadHidden(); }, []);
   const phone = usePhone(), mounted = useMounted();
   if (!mounted) return null;
   resetTileOrder();
   const all = vis(), rs = ROOMS.filter((r) => all.some((d) => d.r === r.id)), vc = all.filter((d) => d.voice).length;
+
+  /**
+   * Changes what the list shows without the page lurching. Swapping a long list for a short one used to collapse the page in
+   * one frame and throw the scroll position to the top. Now the old height is held while the new list rises in, the page glides
+   * up to the filters if it was scrolled below them, the chosen chip slides into view, and the held height is let go gently.
+   */
+  const swap = (change: () => void, chip?: HTMLElement | null) => {
+    const el = results.current, reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (el) { el.style.transition = "none"; el.style.minHeight = `${el.offsetHeight}px`; }
+    chip?.scrollIntoView({ inline: "center", block: "nearest", behavior: reduced ? "auto" : "smooth" });
+    change();
+    requestAnimationFrame(() => {
+      const top = filters.current ? filters.current.getBoundingClientRect().top + window.scrollY - 12 : 0;
+      if (window.scrollY > top) window.scrollTo({ top, behavior: reduced ? "auto" : "smooth" });
+    });
+    if (el) setTimeout(() => { el.style.transition = reduced ? "none" : "min-height .3s var(--ease-out)"; el.style.minHeight = "0px"; setTimeout(() => { el.style.minHeight = ""; el.style.transition = ""; }, 340); }, reduced ? 0 : 380);
+  };
   return (
     <>
       <PageHeader title={S.role === "guest" ? "Your rooms" : "Rooms"}>{S.role === "guest" ? "Only what Gokul has shared with you." : "Everything Alice can reach, grouped the way you think about it. Controls change to match what each device can do."}</PageHeader>
-      <div className="scroller" role="group" aria-label="Filter by room">
-        <FilterChip pressed={S.room === "all"} count={all.length} onClick={() => { S.room = "all"; bump(); }}>All</FilterChip>
-        {rs.map((r) => <FilterChip key={r.id} pressed={S.room === r.id} count={all.filter((d) => d.r === r.id).length} onClick={() => { S.room = r.id; bump(); }}>{r.n}</FilterChip>)}
-      </div>
+      <div ref={filters}><div className="scroller" role="group" aria-label="Filter by room">
+        <FilterChip pressed={S.room === "all"} count={all.length} onClick={(e) => swap(() => { S.room = "all"; bump(); }, e.currentTarget)}>All</FilterChip>
+        {rs.map((r) => <FilterChip key={r.id} pressed={S.room === r.id} count={all.filter((d) => d.r === r.id).length} onClick={(e) => swap(() => { S.room = r.id; bump(); }, e.currentTarget)}>{r.n}</FilterChip>)}
+      </div></div>
       <div className="toolbar" style={{ marginTop: 12 }}>
         <label className="search"><Icon n="search" />
           <input type="search" placeholder="Search devices, rooms or hardware" value={S.q} aria-label="Search devices" onChange={(e) => { S.q = e.target.value; bump(); }} />
         </label>
-        <Segmented value={S.group} label="Group by" items={[["room", "By room"], ["hw", "By hardware"]]} onChange={(v) => { S.group = v; bump(); }} />
+        <Segmented value={S.group} label="Group by" items={[["room", "By room"], ["hw", "By hardware"]]} onChange={(v) => swap(() => { S.group = v; bump(); })} />
         {S.role === "admin" ? <FilterChip pressed={S.voiceOnly} icon="mic" count={vc} onClick={() => { S.voiceOnly = !S.voiceOnly; bump(); }}>Voice-enabled</FilterChip> : null}
       </div>
       {S.role === "admin" ? <p className="small" style={{ marginBottom: 4 }}>Voice items are shared with Alexa and Google through Home Assistant Cloud. Locks are never shared.</p> : null}
-      <div className="enterless"><Results phone={phone} /></div>
+      <div ref={results} className="enterless"><div key={`${S.room}|${S.group}`} className="swap-in"><Results phone={phone} /></div></div>
       {S.hiddenDevs.length && S.role === "admin" ? <Hidden /> : null}
     </>
   );
