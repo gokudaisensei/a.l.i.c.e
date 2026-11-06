@@ -1,2 +1,2 @@
 export { aiController } from "./controller";
-export { aiService } from "./service";
+export { AssistantService } from "./assistant.service";

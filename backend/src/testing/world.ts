@@ -26,6 +26,8 @@ export const BACKUP_KEY = randomBytes(32).toString("base64");
 export const ADMIN_TOKEN = "admin-token-1234567890";
 export const HA_TOKEN = "fake-long-lived-token-1234567890";
 export const MIN = 60_000;
+/** Passkey settings for tests: independent of any .env a developer has (their WEBAUTHN_ORIGIN is their frontend). */
+export const TEST_AUTH = { rpId: "localhost", rpName: "Alice", origin: "http://localhost:3000", sessionTtlHours: 24 };
 
 /** A fake Home Assistant loaded with the Echo/plug/lamp/lock fixture. It reacts to on/off, brightness and lock/unlock. */
 export function fakeHa() {
@@ -84,7 +86,7 @@ export function createWorld(opts: { sleep?: Parameters<typeof createServices>[1]
     now: () => clock.now, secretsKey: SECRETS_KEY, sleep: opts.sleep, backupDir, backupKey: BACKUP_KEY, currentVersion: "0.1.0",
     updateSource: { latest: async () => { if (updateFake.sourceError) throw updateFake.sourceError; return updateFake.latest; } },
     updateInstaller: { request: async (v) => { if (updateFake.installError) throw updateFake.installError; updateFake.requested.push(v); } }, dbPath: null, adminSealPublicKey: SEAL_KEYS.publicKey,
-    auth: { rpId: "localhost", rpName: "Alice", origin: "http://localhost:3000", sessionTtlHours: 24 },
+    auth: TEST_AUTH,
     gatewayFactory: (cfg) => {
       if (cfg.token.startsWith("bad-")) { const b = new FakeGateway(); b.connectFailures = [new HaAuthError()]; return b; }
       if (cfg.id === "test") return new FakeGateway(); // credential checks use their own short-lived connection, as in real life

@@ -45,6 +45,9 @@ export const env = {
   updateSigningPublicKey: process.env.UPDATE_SIGNING_PUBLIC_KEY ?? null,
   /** Allow installing a manifest that is not signed (no key configured). Off by default. */
   updateAllowUnsigned: process.env.UPDATE_ALLOW_UNSIGNED === "true",
+  /** Optional: lets Ask Alice ask Claude when its own rules find nothing. The model sees device and room names and the sentence typed, nothing else. */
+  aiApiKey: process.env.AI_API_KEY ?? null,
+  aiModel: process.env.AI_MODEL ?? "claude-haiku-5-5",
   /** Web Push (VAPID). Generate with `bun run keys:generate`. */
   vapid: process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY ? { publicKey: process.env.VAPID_PUBLIC_KEY, privateKey: process.env.VAPID_PRIVATE_KEY, subject: process.env.VAPID_SUBJECT ?? "mailto:admin@localhost" } : null,
   /** Firebase Cloud Messaging service account, as base64 of the JSON key file. */

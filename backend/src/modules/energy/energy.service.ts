@@ -134,6 +134,37 @@ export class EnergyService {
     };
   }
 
+  /**
+   * "Last evening ran N% above your last eight Thursdays." Compares the most recent finished evening (17:00-23:00 local)
+   * with the same evening on up to eight earlier weeks. Needs at least three of those weeks, and a difference of 10% or
+   * more; otherwise there is nothing worth saying. Day lengths are taken as 24 hours (a daylight-saving week can shift one hour).
+   */
+  async pattern(c: Caller): Promise<{ sentence: string; percent: number; weekday: string; weeks: number; kwh: number } | null> {
+    const tz = this.timezone(c.householdId), now = this.now(), meters = this.meters(c);
+    if (!meters.some((m) => m.energySensor)) return null;
+    const hourOf = (t: number) => Number(new Intl.DateTimeFormat("en-GB", { hour: "numeric", hourCycle: "h23", timeZone: tz }).format(t));
+    const today = startOfLocalDay(now, tz);
+    const target = hourOf(now) >= 23 ? today : today - DAY;
+    const evening = async (dayStart: number) => {
+      const stats = await this.consumption(c, meters, dayStart, dayStart + DAY, "hour");
+      if (!stats) return null;
+      let kwh = 0, any = false;
+      for (const pts of stats.values()) for (const pt of pts) { const h = hourOf(pt.start); if (h >= 17 && h < 23 && pt.change != null) { kwh += pt.change; any = true; } }
+      return any ? kwh : null;
+    };
+    const was = await evening(target);
+    if (was === null) return null;
+    const base: number[] = [];
+    for (let k = 1; k <= 8; k++) { const v = await evening(target - 7 * k * DAY); if (v !== null && v > 0) base.push(v); }
+    if (base.length < 3) return null;
+    const avg = base.reduce((a, b) => a + b, 0) / base.length;
+    const percent = Math.round(((was - avg) / avg) * 100);
+    if (Math.abs(percent) < 10) return null;
+    const weekday = new Intl.DateTimeFormat("en-GB", { weekday: "long", timeZone: tz }).format(target + 12 * 3_600_000);
+    const day = target === today ? "This evening" : "Last evening";
+    return { sentence: `${day} ran ${Math.abs(percent)}% ${percent > 0 ? "above" : "below"} your last ${base.length} ${weekday}s. Plain statistics, no guessing.`, percent, weekday, weeks: base.length, kwh: round(was) };
+  }
+
   /** Each device with a meter: draw now, use today, and where it is against its limit. */
   async deviceList(c: Caller): Promise<{ devices: DeviceEnergy[]; statisticsAvailable: boolean }> {
     const meters = this.meters(c);

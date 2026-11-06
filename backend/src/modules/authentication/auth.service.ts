@@ -78,6 +78,11 @@ export class AuthService {
     return row;
   }
 
+  /** True until the first person has registered: the app shows the "set up your home" screen. */
+  needsSetup(): boolean {
+    return this.db.select({ id: users.id }).from(users).limit(1).get() === undefined;
+  }
+
   // ---- registration (first user, or invited user) ----
 
   async registrationOptions(input: { displayName: string; inviteCode?: string }) {

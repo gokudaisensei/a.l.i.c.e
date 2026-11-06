@@ -21,6 +21,7 @@ import { aiController } from "./ai";
 import { backupsController } from "./backups";
 import { updatesController } from "./updates";
 import { administrationController } from "./administration";
+import { operatorController } from "./administration/operator.controller";
 
 /** Everything under /api/v1. Modules that are still stubs answer GET / with "not_implemented". */
 export const buildModules = (s: Services) =>
@@ -47,7 +48,8 @@ export const buildModules = (s: Services) =>
     .use(energyController(s))
     .use(insightsController(s))
     .use(historyController(s))
-    .use(aiController)
+    .use(aiController(s))
     .use(backupsController(s))
     .use(updatesController(s))
-    .use(administrationController(s));
+    .use(administrationController(s))
+    .use(operatorController(s));

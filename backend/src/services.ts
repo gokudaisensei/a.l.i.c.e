@@ -18,7 +18,11 @@ import { parseBackupKey } from "@/modules/backups/crypto";
 import { UpdateService } from "@/modules/updates/update.service";
 import { ManifestUpdateSource, MarkerFileInstaller, NoUpdateSource, type UpdateInstaller, type UpdateSource } from "@/modules/updates/sources";
 import pkg from "../package.json" with { type: "json" };
+import { AssistantService } from "@/modules/ai/assistant.service";
+import { AnthropicInterpreter, type Interpreter } from "@/modules/ai/llm";
 import { AdminService } from "@/modules/administration/admin.service";
+import { SupportService } from "@/modules/administration/support.service";
+import { OperatorService } from "@/modules/administration/operator.service";
 import { ActionService } from "@/modules/devices/actions";
 import { VoiceExposureService } from "@/modules/devices/voice";
 import { DevicesService } from "@/modules/devices/devices.service";
@@ -78,6 +82,9 @@ export interface Services {
   admin: AdminService;
   backups: BackupService;
   updates: UpdateService;
+  assistant: AssistantService;
+  support: SupportService;
+  operators: OperatorService;
   activity: ActivityService;
   history: HistoryService;
   energy: EnergyService;
@@ -125,6 +132,8 @@ export interface ServiceOptions {
   /** Update source and installer. Default: the manifest in UPDATE_MANIFEST_URL and a marker file next to the database. */
   updateSource?: UpdateSource;
   updateInstaller?: UpdateInstaller;
+  /** A model-backed reader for Ask Alice. Defaults to Claude when AI_API_KEY is set, otherwise none. */
+  interpreter?: Interpreter | null;
   currentVersion?: string;
   allowUnsignedUpdates?: boolean;
 }
@@ -156,6 +165,7 @@ export function createServices(db: Db, opts: ServiceOptions = {}): Services {
   notifications.onCreated((n) => void push.deliver(n));
   const alerts = new AlertsService(db, bus, things, notifications, devices, opts.now);
   alerts.start();
+  if (opts.background) setInterval(() => alerts.sweepAll(), 60_000).unref();
   const actions = new ActionService(things, permissions, commands);
   const groups = new GroupsService(db, things, devices, actions, opts.now);
   const modes = new ModesService(db, bus, opts.now);
@@ -173,6 +183,10 @@ export function createServices(db: Db, opts: ServiceOptions = {}): Services {
   const realtime = new RealtimeHub({ bus, things, permissions, households, auth, devices, alerts, notifications, activity, log: logger.child({ module: "realtime" }), now: opts.now });
   realtime.start();
 
+  const support = new SupportService(db, notifications, opts.now);
+  if (opts.background) support.start();
+  const interpreter = opts.interpreter !== undefined ? opts.interpreter : env.aiApiKey ? new AnthropicInterpreter(env.aiApiKey, env.aiModel) : null;
+  const assistant = new AssistantService(devices, scenes, routines, interpreter, (e) => log.warn({ err: e instanceof Error ? e.message : String(e) }, "the model could not read that sentence"), opts.now);
   const automations = new AutomationsService(db, bus, configJobs, sync, things, actions, modeMirror, households, scenes, routines, presence, notifications, opts.now);
   automations.start();
   const tellAdmins = (householdId: string, names: string[]) => notifications.notifyAdmins(householdId, { kind: "config_drift", title: "Changed in Home Assistant", body: `${names.map((n) => `“${n}”`).join(", ")} ${names.length === 1 ? "was" : "were"} edited or removed in Home Assistant. Restore ${names.length === 1 ? "it" : "them"} from the sync settings.` });
@@ -198,10 +212,11 @@ export function createServices(db: Db, opts: ServiceOptions = {}): Services {
   });
   if (opts.background) updates.startTimer();
   const admin = new AdminService(db, ha, configJobs, push, things, households, opts.now, backups, updates);
+  const operators = new OperatorService(db, support, admin, devices, opts.now);
   ha.afterAdminToken((householdId, userId) => sync.reconcile(householdId, userId));
 
   return {
-    db, bus, households, permissions, manager, things, commands, auth, devices, favorites, actions, groups, modes, modeMirror, insights, presence, scenes, routines, automations, notifications, push, admin, backups, updates, activity, history, energy, alerts, realtime,
+    db, bus, households, permissions, manager, things, commands, auth, devices, favorites, actions, groups, modes, modeMirror, insights, presence, scenes, routines, automations, notifications, push, admin, backups, updates, assistant, support, operators, activity, history, energy, alerts, realtime,
     users: new UserService(db),
     limits: createLimits(opts.now),
     ha,

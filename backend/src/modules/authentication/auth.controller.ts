@@ -27,6 +27,7 @@ export const authController = ({ auth, households, limits }: Services) => {
 
   return new Elysia({ name: "module.auth", prefix: "/auth", tags: ["auth"] })
     .use(sessionPlugin(auth, households))
+    .get("/setup", (ctx) => { throttle(ctx); return { needsSetup: auth.needsSetup() }; }, { detail: { summary: "Is this a brand new install? (public; says only whether anyone has registered)" } })
     // ---- registration ----
     .post("/register/options", (ctx) => { throttle(ctx, { secret: !!ctx.body.inviteCode }); return auth.registrationOptions(ctx.body); }, {
       body: t.Object({ displayName: t.String(), inviteCode: t.Optional(t.String()) }),

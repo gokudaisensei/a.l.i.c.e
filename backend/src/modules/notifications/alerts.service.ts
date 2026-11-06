@@ -1,6 +1,6 @@
 import { and, desc, eq, isNull } from "drizzle-orm";
 import type { Db } from "@/core/database/client";
-import { alerts } from "@/core/database/schema";
+import { alerts, households } from "@/core/database/schema";
 import { notFound } from "@/core/errors/errors";
 import type { AppEvent } from "@/core/events/app-events";
 import type { EventBus, Unsubscribe } from "@/core/events/event-bus";
@@ -13,10 +13,13 @@ import type { NotificationsService } from "./notifications.service";
 /** Raise at this share of the limit, clear below the lower one, so a device hovering at the limit does not flap. */
 export const RAISE_AT = 0.9;
 export const CLEAR_BELOW = 0.85;
+/** A door or window open this long is reported. */
+export const LEFT_OPEN_AFTER_MS = 10 * 60_000;
+const CONTACT_CLASSES = new Set(["door", "window", "garage_door", "opening"]);
 
 export interface AlertView {
   id: string;
-  kind: "power_limit";
+  kind: "power_limit" | "left_open";
   title: string;
   detail: string;
   thingId: string | null;
@@ -50,12 +53,55 @@ export class AlertsService {
     this.unsubs.push(
       this.bus.subscribe("entity.state_changed", (e) => { if ((e.normalized.sensor as { deviceClass?: string } | undefined)?.deviceClass === "power") this.evaluate(e.householdId, e.connectionId, e.entityId); }),
       // A changed limit applies straight away, using the latest reading.
+      // A door that closes ends its alert straight away.
+      this.bus.subscribe("entity.state_changed", (e) => { if (!this.isOpen(e.normalized) && this.isContact(e.normalized)) this.closeFor(e.householdId, e.connectionId, e.entityId); }),
       this.bus.subscribe("settings.changed", (e) => this.evaluateThingOf(e.householdId, e.connectionId, e.entityId)),
     );
   }
 
   stop() {
     for (const u of this.unsubs.splice(0)) u();
+  }
+
+  private isContact(n: Record<string, unknown>) {
+    return n.cover !== undefined || (n.binary_sensor !== undefined && CONTACT_CLASSES.has(String(n.device_class)));
+  }
+  private isOpen(n: Record<string, unknown>) {
+    return n.cover !== undefined ? n.cover !== "closed" : n.binary_sensor === true;
+  }
+
+  private closeFor(householdId: string, connectionId: string, entityId: string) {
+    const found = this.things.findEntity(householdId, entityId);
+    if (!found?.thing || found.thing.primary?.entityId !== entityId) return;
+    for (const a of this.db.select().from(alerts).where(and(eq(alerts.householdId, householdId), eq(alerts.connectionId, connectionId), eq(alerts.thingRef, found.thing.ref), eq(alerts.kind, "left_open"), isNull(alerts.clearedAt))).all()) this.clear(a.id, householdId);
+  }
+
+  /** Raises an alert for each door, window or garage that has been open for ten minutes. Run every minute. */
+  sweepLeftOpen(householdId: string) {
+    const now = this.now();
+    for (const ct of this.things.forHousehold(householdId)) {
+      for (const thing of ct.things) {
+        const entityId = thing.primary?.entityId;
+        const p = entityId ? ct.conn.cache.get(entityId) : undefined;
+        if (!entityId || !p || !this.isContact(p.normalized) || !this.isOpen(p.normalized)) continue;
+        const since = Date.parse(p.lastChanged);
+        if (!Number.isFinite(since) || now - since < LEFT_OPEN_AFTER_MS) continue;
+        const minutes = Math.floor((now - since) / 60_000);
+        const active = this.db.select().from(alerts).where(and(eq(alerts.householdId, householdId), eq(alerts.connectionId, ct.conn.config.id), eq(alerts.thingRef, thing.ref), eq(alerts.kind, "left_open"), isNull(alerts.clearedAt))).get();
+        if (active) { this.db.update(alerts).set({ data: { minutes, since }, detail: `Left open for ${minutes} minutes.` }).where(eq(alerts.id, active.id)).run(); continue; }
+        const title = `${thing.name} is open`;
+        const detail = `Left open for ${minutes} minutes.`;
+        const id = newId("alr");
+        this.db.insert(alerts).values({ id, householdId, kind: "left_open", connectionId: ct.conn.config.id, entityId, thingRef: thing.ref, title, detail, data: { minutes, since }, createdAt: now }).run();
+        this.bus.publish({ type: "alert.created", householdId, alertId: id, timestamp: new Date(now).toISOString() });
+        this.notifications.notifyHousehold(householdId, { kind: "left_open", title, body: detail, data: { alertId: id, thingId: thing.id } });
+      }
+    }
+  }
+
+  /** Every household. For the server's once-a-minute timer. */
+  sweepAll() {
+    for (const h of this.db.select({ id: households.id }).from(households).all()) this.sweepLeftOpen(h.id);
   }
 
   private limitFor(connectionId: string, entityIds: string[]): number | null {

@@ -12,7 +12,7 @@ import type { AppEvent } from "@/core/events/app-events";
 import { InMemoryEventBus } from "@/core/events/event-bus";
 import { createServices } from "@/services";
 import { Browser } from "@/testing/http";
-import { SEAL_KEYS, SECRETS_KEY } from "@/testing/world";
+import { SEAL_KEYS, SECRETS_KEY, TEST_AUTH } from "@/testing/world";
 import { ConfigWorker } from "./config-worker";
 import { HaAdminApi } from "./ha-admin-api";
 
@@ -27,7 +27,7 @@ const until = async (pred: () => boolean | Promise<boolean>, what: string, ms = 
 
 run("config-worker against the mock Home Assistant", () => {
   const db = createTestDb();
-  const services = createServices(db, { bus: new InMemoryEventBus<AppEvent>(), secretsKey: SECRETS_KEY, adminSealPublicKey: SEAL_KEYS.publicKey });
+  const services = createServices(db, { auth: TEST_AUTH, bus: new InMemoryEventBus<AppEvent>(), secretsKey: SECRETS_KEY, adminSealPublicKey: SEAL_KEYS.publicKey });
   const app = buildApp(services);
   const admin = new Browser(app);
   const worker = new ConfigWorker({ db, privateKeyPem: SEAL_KEYS.privateKey, apiFactory: (u, t) => new HaAdminApi(u, t), log: pino({ level: "silent" }), retryDelayMs: 0 });

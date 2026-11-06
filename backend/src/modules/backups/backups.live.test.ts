@@ -14,7 +14,7 @@ import type { AppEvent } from "@/core/events/app-events";
 import { InMemoryEventBus } from "@/core/events/event-bus";
 import { createServices } from "@/services";
 import { Browser } from "@/testing/http";
-import { BACKUP_KEY, SEAL_KEYS, SECRETS_KEY } from "@/testing/world";
+import { BACKUP_KEY, SEAL_KEYS, SECRETS_KEY, TEST_AUTH } from "@/testing/world";
 import { ConfigWorker } from "@/worker/config-worker";
 import { HaAdminApi } from "@/worker/ha-admin-api";
 
@@ -25,6 +25,7 @@ const run = url && token ? describe : describe.skip;
 run("backups against the mock Home Assistant", () => {
   const db = createTestDb();
   const services = createServices(db, {
+    auth: TEST_AUTH,
     bus: new InMemoryEventBus<AppEvent>(), secretsKey: SECRETS_KEY, adminSealPublicKey: SEAL_KEYS.publicKey,
     backupDir: mkdtempSync(join(tmpdir(), "alice-live-backups-")), backupKey: BACKUP_KEY, dbPath: null,
   });

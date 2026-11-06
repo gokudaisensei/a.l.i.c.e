@@ -1,9 +1,9 @@
 import { Elysia, t } from "elysia";
-import { requirePermission } from "@/core/http/guards";
+import { requirePermission, requireStepUp } from "@/core/http/guards";
 import { sessionPlugin } from "@/core/http/session-plugin";
 import type { Services } from "@/services";
 
-export const administrationController = ({ auth, households, configJobs, sync, admin }: Services) =>
+export const administrationController = ({ auth, households, configJobs, sync, admin, support }: Services) =>
   new Elysia({ name: "module.administration", prefix: "/admin", tags: ["administration"] })
     .use(sessionPlugin(auth, households))
     .get("/health", (ctx) => admin.health(requirePermission(ctx, "admin.view").membership.householdId), { detail: { summary: "Is everything Alice depends on working? Database, Home Assistant, the config-worker, push" } })
@@ -24,4 +24,26 @@ export const administrationController = ({ auth, households, configJobs, sync, a
     .post("/config-sync/resync", (ctx) => {
       const { membership, session } = requirePermission(ctx, "ha.manage");
       return { queued: sync.reconcile(membership.householdId, session.userId) };
-    }, { detail: { summary: "Queue everything that is not in Home Assistant yet or failed to get there" } });
+    }, { detail: { summary: "Queue everything that is not in Home Assistant yet or failed to get there" } })
+    // ---- support access ----
+    .get("/support", (ctx) => {
+      const { membership } = requirePermission(ctx, "security.manage");
+      return { active: support.active(membership.householdId), history: support.history(membership.householdId), householdLog: support.householdLog(membership.householdId), operatorTrail: support.operatorTrail(membership.householdId) };
+    }, { detail: { summary: "Whether support has access now, past grants, what the household sees in plain language, and what support itself did" } })
+    .post("/support", (ctx) => {
+      const { membership, session } = requirePermission(ctx, "security.manage");
+      requireStepUp(session);
+      return support.grant(membership.householdId, session.userId, ctx.body);
+    }, {
+      body: t.Object({ hours: t.Number({ minimum: 1, maximum: 24 }), scope: t.Object({ health: t.Optional(t.Boolean()), devices: t.Optional(t.Boolean()), cameras: t.Optional(t.Boolean()), control: t.Optional(t.Boolean()) }) }),
+      detail: { summary: "Let support in for a set time and choose what they may see. Needs a recent passkey confirmation. Support can never unlock a door" },
+    })
+    .post("/support/:id/extend", (ctx) => {
+      const { membership, session } = requirePermission(ctx, "security.manage");
+      requireStepUp(session);
+      return support.extend(membership.householdId, session.userId, ctx.params.id);
+    }, { params: t.Object({ id: t.String() }), detail: { summary: "Add an hour (24 hours in total at most)" } })
+    .post("/support/:id/end", (ctx) => {
+      const { membership, session } = requirePermission(ctx, "security.manage");
+      return support.end(membership.householdId, session.userId, ctx.params.id);
+    }, { params: t.Object({ id: t.String() }), detail: { summary: "End support access now" } });

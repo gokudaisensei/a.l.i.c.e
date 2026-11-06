@@ -5,13 +5,14 @@ import { buildApp } from "@/app";
 import { createTestDb } from "@/core/database/client";
 import { createServices } from "@/services";
 import { Browser } from "@/testing/http";
+import { TEST_AUTH } from "@/testing/world";
 
 const url = process.env.HA_URL;
 const token = process.env.HA_TOKEN;
 const run = url && token ? describe : describe.skip;
 
 run("Alice over HTTP against the mock Home Assistant", () => {
-  const services = createServices(createTestDb(), { secretsKey: randomBytes(32).toString("base64") });
+  const services = createServices(createTestDb(), { auth: TEST_AUTH, secretsKey: randomBytes(32).toString("base64") });
   const app = buildApp(services);
   const admin = new Browser(app);
   const guest = new Browser(app);

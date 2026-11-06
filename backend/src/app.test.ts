@@ -22,9 +22,9 @@ describe("app basics", () => {
     expect(((await res.json()) as { status: string }).status).toBe("ok");
   });
 
-  test("modules that are still stubs are mounted under /api/v1", async () => {
-    const res = await app.handle(new Request("http://localhost/api/v1/ai"));
-    expect(await res.json()).toEqual({ module: "ai", status: "not_implemented" });
+  test("every module is mounted under /api/v1 and private ones answer 401 without a session", async () => {
+    const res = await app.handle(new Request("http://localhost/api/v1/updates"));
+    expect(res.status).toBe(401);
   });
 
   test("everything private says 401 without a session", async () => {

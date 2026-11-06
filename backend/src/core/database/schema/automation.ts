@@ -108,7 +108,7 @@ export const alerts = sqliteTable(
   {
     id: text("id").primaryKey(),
     householdId: text("household_id").notNull().references(() => households.id, { onDelete: "cascade" }),
-    kind: text("kind", { enum: ["power_limit"] }).notNull(),
+    kind: text("kind", { enum: ["power_limit", "left_open"] }).notNull(),
     connectionId: text("connection_id").notNull(),
     entityId: text("entity_id").notNull(),
     thingRef: text("thing_ref").notNull(),

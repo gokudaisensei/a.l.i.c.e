@@ -100,3 +100,34 @@ export const updateRecords = sqliteTable(
   },
   (t) => [index("update_records_idx").on(t.householdId, t.createdAt)],
 );
+
+/** Time-boxed access a household gives to Zoho Robotics support. Ends by itself. */
+export const supportSessions = sqliteTable(
+  "support_sessions",
+  {
+    id: text("id").primaryKey(),
+    householdId: text("household_id").notNull().references(() => households.id, { onDelete: "cascade" }),
+    grantedBy: text("granted_by").notNull(),
+    /** What support may look at: { health, devices, cameras, control }. Never includes unlocking. */
+    scope: text("scope", { mode: "json" }).$type<Record<string, boolean>>().notNull(),
+    startsAt: integer("starts_at").notNull(),
+    endsAt: integer("ends_at").notNull(),
+    endedAt: integer("ended_at"),
+    endedBy: text("ended_by", { enum: ["user", "expiry"] }),
+    createdAt: integer("created_at").notNull(),
+  },
+  (t) => [index("support_sessions_idx").on(t.householdId, t.createdAt)],
+);
+
+/** Zoho Robotics support staff. Separate from household members: they have no household login, only a token. */
+export const operators = sqliteTable("operators", {
+  id: text("id").primaryKey(),
+  /** Shown in the household's trail, e.g. "ops-114". */
+  label: text("label").notNull().unique(),
+  tokenHash: text("token_hash").notNull(),
+  createdAt: integer("created_at").notNull(),
+  revokedAt: integer("revoked_at"),
+  lastSeenAt: integer("last_seen_at"),
+  /** Tokens do not last forever: after this the operator needs a new one. */
+  expiresAt: integer("expires_at"),
+});

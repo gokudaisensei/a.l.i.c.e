@@ -17,4 +17,5 @@ export const energyController = ({ auth, households, energy }: Services) =>
       query: t.Object({ from: t.Optional(t.String()), to: t.Optional(t.String()), resolution: t.Optional(t.Union([t.Literal("hour"), t.Literal("day")])) }),
       detail: { summary: "Energy used over time (kWh), hourly for up to 7 days or daily for up to a year" },
     })
+    .get("/pattern", async (ctx) => ({ pattern: await energy.pattern(caller(ctx)) }), { detail: { summary: "How the last evening compares with the same evening on earlier weeks, or null when there is nothing to say" } })
     .get("/devices", (ctx) => energy.deviceList(caller(ctx)), { detail: { summary: "Each device with a meter: power now, energy today, and its power limit" } });

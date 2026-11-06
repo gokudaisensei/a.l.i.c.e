@@ -1,0 +1,1 @@
+ALTER TABLE `operators` ADD `expires_at` integer;
