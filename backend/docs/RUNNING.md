@@ -52,6 +52,10 @@ Without it everything in Alice still works, but nothing is written to Home Assis
 
 Backend (`backend/`), each in its own terminal: `bun run ha:up`, `bun run ha:bootstrap`, `bun run ha:seed` (once), then `bun run dev` and `bun run worker`. Put keys in `backend/.env` (`bun run keys:generate`; the worker also needs `ADMIN_SEAL_PRIVATE_KEY`). Frontend (`frontend/`): set `BACKEND_URL` and `NEXT_PUBLIC_WS_URL` in `.env.local`, then `bun run dev`. The backend's `WEBAUTHN_ORIGIN` must be the address you open the frontend at (for example `http://localhost:3001`), and the backend must not use the frontend's port.
 
+## Trying it on a phone
+
+Plug in an Android phone with USB debugging, then (ports as in your `.env` files): `adb reverse tcp:3001 tcp:3001`, `adb reverse tcp:3002 tcp:3002` and open `http://localhost:3001` in Chrome on the phone; localhost counts as a secure page, so passkeys and push are allowed. `adb forward tcp:9333 localabstract:chrome_devtools_remote` lets `INVITE=<code> node frontend/e2e/phone-debug.mjs` drive Chrome on the phone (with the software passkey, see L40 and L99). A real passkey store may refuse `http://localhost`; use an HTTPS domain for that.
+
 ## End-to-end tests
 
 `cd frontend && bun run e2e` (needs Google Chrome and the seeded mock Home Assistant). See L96 in LIMITATIONS.md.

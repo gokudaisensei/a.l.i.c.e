@@ -85,9 +85,10 @@ The API exposes **Things** (one per physical device), not raw HA entities. In UR
 | `GET /suggestions?status=pending` | A | Proposed names, roles, merges and attachments |
 | `POST /suggestions/:id/accept`, `POST /suggestions/:id/reject` | A | Accept writes the override; reject is remembered |
 | `POST /suggestions/run` | A | Queue the (optional, off by default) LLM suggestion job |
-| `POST /devices/:id/commands` | A,M,G (per policy); `†` for lock/unlock-type operations | `{ entityId?, action, parameters }`; `entityId` defaults to the primary and must belong to the Thing. Returns `202 Command` |
+| `POST /devices/:id/commands` (optional `Idempotency-Key` header) | A,M,G (per policy); `†` for lock/unlock-type operations | `{ entityId?, action, parameters }`; `entityId` defaults to the primary and must belong to the Thing. Returns `202 Command` |
 | `GET /devices/:id/activity` | A,M | Recent events for the Thing (all its entities) |
 | `GET /commands/:id` | owner or A | Command with lifecycle state |
+| `POST /commands/:id/undo` | A,M | Put back what a finished command changed (once, within ten minutes, by its sender or an admin). Works for on/off, brightness, temperature, fan speed and lock when the earlier state was known. Returns the new command (`undoOf`); the original shows `undoneBy` and `undoable`. A lock being unlocked by an undo still needs a fresh passkey |
 | `POST /commands/:id/cancel` | owner or A | Cancel while `pending`/`authorized` |
 | `POST /commands/:id/undo` | owner or A | Compensating command from `actual_state` |
 | `GET /commands?state=&limit=` | A | Command log |
