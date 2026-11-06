@@ -1,12 +1,12 @@
 "use client";
-import { Icon, Avatar, IconButton, Tooltip } from "@/ui";
+import { Icon, Avatar, Button, IconButton, Popover, PopoverClose, Switch, Tooltip } from "@/ui";
 import { useTheme } from "next-themes";
 import { useEffect, useState, ViewTransition, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Overlay, AppToast } from "./overlay";
 import {
-  S, useS, useMounted, tod, me, adminAttention, setNavigator, startLive, openPal, closeOv, palMove, runPal, NAV_ROLES,
+  A, S, useS, useMounted, tod, me, adminAttention, setNavigator, startLive, openPal, closeOv, palMove, runPal, NAV_ROLES,
 } from "@/lib/store";
 import { NAV } from "@/lib/data";
 import { signOut } from "@/lib/auth";
@@ -96,6 +96,15 @@ export function Shell({ children }: { children: ReactNode }) {
             <button className="ask" onClick={openPal} aria-label="Ask Alice or search"><Icon n="search" /><span>Try “turn off the kitchen lights”</span><kbd>Ctrl K</kbd></button>
             <div className="live"><i /><span className="lt">Live · synced {mounted ? <Ago /> : <b className="num">0</b>}s ago</span></div>
             <Tooltip label={dark ? "Switch to light" : "Switch to dark"} side="bottom"><IconButton aria-label={dark ? "Switch to light theme" : "Switch to dark theme"} onClick={() => setTheme(dark ? "light" : "dark")}><Icon n={dark ? "sun" : "moon"} /></IconButton></Tooltip>
+            {/* The side rail with Sign out is hidden on a phone, so the phone gets its own way to sign out. */}
+            <span className="me-phone"><Popover trigger={<IconButton aria-label={`${p.n}: account`}><Avatar initial={p.n[0]} tone={p.c} /></IconButton>} title={p.n} align="end">
+              <p className="small">{p.role[0].toUpperCase() + p.role.slice(1)} · passkey</p>
+              {p.role !== "guest" ? <>
+                <label className="field" style={{ justifyContent: "space-between" }}><span>Push notifications</span><Switch checked={S.push} label="Push notifications" onChange={A.push} /></label>
+                <label className="field" style={{ justifyContent: "space-between" }}><span>Quiet hours</span><Switch checked={S.quiet} label="Quiet hours" onChange={A.quiet} /></label>
+              </> : null}
+              <PopoverClose render={<Button size="sm" onClick={() => void signOut()} />}><Icon n="exit" c="sm" />Sign out</PopoverClose>
+            </Popover></span>
           </div>
           <main id="main" className={enter ? "enter" : ""}>{children}</main>
         </div>

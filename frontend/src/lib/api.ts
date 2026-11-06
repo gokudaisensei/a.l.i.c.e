@@ -5,12 +5,13 @@ export class ApiError extends Error {
 
 const BASE = "/api/v1";
 
-export async function api<T = unknown>(method: string, path: string, body?: unknown): Promise<T> {
+export async function api<T = unknown>(method: string, path: string, body?: unknown, extra?: Record<string, string>): Promise<T> {
   let res: Response;
   try {
     res = await fetch(BASE + path, {
       method, credentials: "same-origin",
-      headers: body === undefined ? undefined : { "content-type": "application/json" },
+      // X-Requested-With tells the backend this call comes from the app itself, not a form on another site.
+      headers: { "x-requested-with": "alice", ...(body === undefined ? {} : { "content-type": "application/json" }), ...extra },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch {

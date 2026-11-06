@@ -1,7 +1,7 @@
 /**
  * Dev and test only: a software passkey for browsers with no authenticator (CI, the in-app browser).
  * Replaces navigator.credentials.create/get with an ES256 authenticator built on WebCrypto, the same idea as the backend's
- * VirtualAuthenticator. Keys live in sessionStorage so sign-in survives a reload. Load it before the app asks for a passkey.
+ * VirtualAuthenticator. Keys live in localStorage so sign-in survives a reload and a new tab. Load it before the app asks for a passkey.
  */
 (() => {
   if (window.__virtualPasskey) return;
@@ -18,8 +18,8 @@
     return cat(Uint8Array.from(head(5, v.length)), ...v.flatMap(([k, x]) => [cbor(k), cbor(x)]));
   };
   const sha = async (b) => new Uint8Array(await crypto.subtle.digest("SHA-256", b));
-  const store = () => JSON.parse(sessionStorage.getItem("vpk") || "{}");
-  const save = (s) => sessionStorage.setItem("vpk", JSON.stringify(s));
+  const store = () => JSON.parse(localStorage.getItem("vpk") || "{}");
+  const save = (s) => localStorage.setItem("vpk", JSON.stringify(s));
   const ab = (u8) => u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength);
   const clientData = (type, challenge) => enc.encode(JSON.stringify({ type, challenge: b64u(challenge), origin: location.origin, crossOrigin: false }));
 

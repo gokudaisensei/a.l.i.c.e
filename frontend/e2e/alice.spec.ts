@@ -58,6 +58,15 @@ test("real devices appear in their rooms and a switch changes the light in Home 
   await expect(sw).not.toBeChecked({ timeout: 15_000 });
 });
 
+test("undo in the toast puts the lamp back, and the session is refreshed for the cookie to follow", async () => {
+  const sw = page.getByRole("switch", { name: "Floor lamp" });
+  await sw.click();
+  await until(async () => (await haState(LAMP)) === "on", "the lamp to turn on");
+  await page.getByRole("button", { name: "Undo" }).click();
+  await until(async () => (await haState(LAMP)) === "off", "the undo to turn it off again");
+  await expect(sw).not.toBeChecked({ timeout: 15_000 });
+});
+
 test("a scene built in the app reaches Home Assistant and runs from Home", async () => {
   await page.getByRole("link", { name: "Automate" }).click();
   await page.getByRole("radio", { name: "Scene" }).click();

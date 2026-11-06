@@ -3,7 +3,7 @@ import { create } from "zustand";
 import { useSyncExternalStore } from "react";
 import { savePreference } from "./admin";
 import { disablePush, enablePush } from "./push";
-import { dismissInsight, saveBuilder, ackAlert, interpretText, runPlan, type Suggestion, deleteAutomation, toggleFavourite, toggleVoice, isLive, markSeen, previewAutomation, runScene, sendCommand, toggleAutomation } from "./live";
+import { undoCommand, dismissInsight, saveBuilder, ackAlert, interpretText, runPlan, type Suggestion, deleteAutomation, toggleFavourite, toggleVoice, isLive, markSeen, previewAutomation, runScene, sendCommand, toggleAutomation } from "./live";
 import {
   ROOMS, MODES, PRIMARY, CLOCK, W, ENERGY, TRIG, TDEF,
   type Auto, type Dev, type Person, type Role, type Tod, type Activity, type Builder,
@@ -333,8 +333,8 @@ function flip(id: string, haptic: boolean) {
   if (isLive()) {
     const target = !d.on;
     if (haptic) buzz(12);
-    void sendCommand(id, target ? "turn_on" : "turn_off", undefined, (x) => { x.on = target; }, d.n, stepUpFn);
-    toast(`${d.n} ${target ? "on" : "off"}`, () => flip(id, false));
+    void sendCommand(id, target ? "turn_on" : "turn_off", undefined, (x) => { x.on = target; }, d.n, stepUpFn)
+      .then((cmd) => { if (cmd) toast(`${d.n} ${target ? "on" : "off"}`, () => void undoCommand(cmd)); });
     return;
   }
   d.on = !d.on; if (haptic) buzz(12); S.sync = Date.now(); bump();
@@ -354,8 +354,8 @@ export const A = {
   slide: (id: string, v: number) => { const d = dev(id); if (isLive()) { void sendCommand(id, "set_brightness", { brightness_pct: v }, (x) => { x.v = v; x.on = true; }, d.n, stepUpFn); return; } d.v = v; d.on = true; S.sync = Date.now(); bump(); },
   role: (r: Role) => { S.role = r; go(S.view); },
   setTod: (t: "auto" | Tod) => { S.tod = t; bump(); },
-  lock: (id: string) => { const d = dev(id); if (isLive()) { void sendCommand(id, "lock", undefined, (x) => { x.locked = true; x.by = me().n; x.at = "just now"; }, d.n, stepUpFn); toast(`${d.n} locked`); return; } commit(`${d.n} locked`, () => { d.locked = true; d.by = me().n; d.at = "just now"; }); },
-  unlock: (id: string) => { const d = dev(id); passkey(`Unlock ${d.n}?`, "Unlocking always needs your passkey, even for admins.", () => isLive() ? (void sendCommand(id, "unlock", undefined, (x) => { x.locked = false; x.by = me().n; x.at = "just now"; }, d.n, stepUpFn), toast(`${d.n} unlocked`)) : commit(`${d.n} unlocked`, () => { d.locked = false; d.by = me().n; d.at = "just now"; })); },
+  lock: (id: string) => { const d = dev(id); if (isLive()) { void sendCommand(id, "lock", undefined, (x) => { x.locked = true; x.by = me().n; x.at = "just now"; }, d.n, stepUpFn).then((cmd) => { if (cmd) toast(`${d.n} locked`, () => void undoCommand(cmd)); }); return; } commit(`${d.n} locked`, () => { d.locked = true; d.by = me().n; d.at = "just now"; }); },
+  unlock: (id: string) => { const d = dev(id); passkey(`Unlock ${d.n}?`, "Unlocking always needs your passkey, even for admins.", () => isLive() ? (void sendCommand(id, "unlock", undefined, (x) => { x.locked = false; x.by = me().n; x.at = "just now"; }, d.n, stepUpFn).then((cmd) => { if (cmd) toast(`${d.n} unlocked`, () => void undoCommand(cmd)); })) : commit(`${d.n} unlocked`, () => { d.locked = false; d.by = me().n; d.at = "just now"; })); },
   lockall: () => { if (isLive()) { for (const d of S.devices.filter((x) => x.t === "lock" && !x.locked)) void sendCommand(d.id, "lock", undefined, (x) => { x.locked = true; x.by = me().n; x.at = "just now"; }, d.n, stepUpFn); toast("Locking every door"); return; } commit("Every door locked", lockAll); },
   mode: (m: string) => { if (isLive() && S.mode !== m) { const prev = S.mode; S.mode = m; bump(); void import("./api").then(({ put }) => put("/household/mode", { mode: m.toLowerCase() })).then(() => toast(`Mode: ${m}`), () => { S.mode = prev; bump(); toast("Couldn't change the mode"); }); return; } if (S.mode !== m) commit(`Mode: ${m}`, () => { S.mode = m; }); },
   snooze: (id: string) => { if (S.insight) { void dismissInsight(S.insight.id); return; } S.snooze[id] = true; bump(); toast("Okay, Alice will not ask again for now"); },

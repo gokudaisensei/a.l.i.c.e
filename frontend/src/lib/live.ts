@@ -3,7 +3,7 @@
  * Connects the app's store to the Alice backend: loads the household into `S`, keeps it current from `/ws`,
  * and turns taps into commands. The screens keep reading `S`; only where it comes from has changed.
  */
-import { ApiError, del, get, patch, post, put } from "./api";
+import { ApiError, api, del, get, patch, post, put } from "./api";
 import { ROOMS, type Builder, type Activity, type Dev, type DevType, type Person, type Role } from "./data";
 import { S, SCENES, bump, toast, type SceneItem } from "./store";
 import { loadAdminSummary, loadPreferences } from "./admin";
@@ -461,21 +461,30 @@ function onCommandEnd(id: string, ok: boolean, c: { error?: { message?: string }
  * Sends a command for a device. `optimistic` changes the tile at once; if the command fails (now, or later over `/ws`)
  * it is put back and the person is told why. A sensitive action asks for a passkey first.
  */
-export async function sendCommand(id: string, action: string, parameters: Record<string, unknown> | undefined, optimistic: (d: Dev) => void, label: string, stepUp: () => Promise<void>) {
+export async function sendCommand(id: string, action: string, parameters: Record<string, unknown> | undefined, optimistic: (d: Dev) => void, label: string, stepUp: () => Promise<void>): Promise<string | null> {
   const d = S.devices.find((x) => x.id === id);
-  if (!d) return;
+  if (!d) return null;
   const before = { ...d };
   const revert = () => { Object.assign(d, before); bump(); };
   optimistic(d); S.sync = Date.now(); bump();
-  const send = () => post<{ id: string; state: string }>(`/devices/${id}/commands`, { action, parameters });
+  // One key per tap: if the request is repeated (a retry, a double delivery) the backend runs it once.
+  const key = crypto.randomUUID();
+  const send = () => api<{ id: string; state: string }>("POST", `/devices/${id}/commands`, { action, parameters }, { "idempotency-key": key });
   try {
     let c: { id: string };
     try { c = await send(); }
     catch (e) { if (e instanceof ApiError && e.code === "step_up_required") { await stepUp(); c = await send(); } else throw e; }
     pending.set(c.id, { revert, label });
     setTimeout(() => pending.delete(c.id), 60_000);
+    return c.id;
   } catch (e) {
     revert();
     toast(e instanceof ApiError ? e.message : "That didn't go through");
+    return null;
   }
+}
+
+/** Puts back what a finished command changed (the backend works out the opposite and checks it is still allowed). */
+export async function undoCommand(commandId: string) {
+  try { await post(`/commands/${commandId}/undo`); toast("Put back"); } catch (e) { toast(e instanceof ApiError ? e.message : "That couldn't be put back"); }
 }

@@ -470,3 +470,6 @@ button,.nav a{-webkit-user-select:none;user-select:none}
 .auth-embed{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;align-items:start}
 .auth-embed .auth{min-height:0;padding:0;overflow:visible}
 .auth-embed .auth::before{display:none}
+/* Account menu in the top bar: only on a phone, where the side rail (and its Sign out) is hidden. */
+.me-phone{display:none}
+@media (max-width:700px){.me-phone{display:inline-flex}}
