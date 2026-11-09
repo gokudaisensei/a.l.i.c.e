@@ -182,8 +182,17 @@ async function mintToken(url: string, username: string, password: string): Promi
 info("Checking tools");
 ok(`bun ${Bun.version}`);
 Bun.which("node") ? ok(`node ${run(["node", "--version"], { quiet: true }).out.trim()}`) : warn("node not found; Next.js dev server may need it");
-const dockerOk = !!Bun.which("docker") && run(["docker", "compose", "version"], { quiet: true }).code === 0 && run(["docker", "info"], { quiet: true }).code === 0;
-dockerOk ? ok("docker + compose") : warn("Docker (with compose, and a running daemon) not available: the test Home Assistant can't be started");
+function dockerProblem(): string {
+  if (!Bun.which("docker")) return "the docker command is not on PATH";
+  if (run(["docker", "compose", "version"], { quiet: true }).code !== 0) return "`docker compose` (the v2 plugin) is not installed";
+  const i = Bun.spawnSync(["docker", "info"], { stdout: "pipe", stderr: "pipe" });
+  if (i.exitCode === 0) return "";
+  const err = i.stderr.toString().trim().split("\n").pop() ?? "";
+  return /permission denied/i.test(err) ? `your user cannot reach the Docker daemon (${err}). Fix: sudo usermod -aG docker $USER, then log out and in`
+    : `the Docker daemon is not reachable (${err}). Is it running? sudo systemctl start docker`;
+}
+const dockerWhy = dockerProblem(), dockerOk = !dockerWhy;
+dockerOk ? ok("docker + compose") : warn(`Docker is not usable: ${dockerWhy}. The test Home Assistant can't be started.`);
 
 // ---------- 2. choose Home Assistant mode ----------
 if (!opt.ha) {
