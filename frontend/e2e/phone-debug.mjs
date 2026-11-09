@@ -1,6 +1,6 @@
 /**
  * Drives the real Chrome on an Android phone (USB debugging) through its debug port. Android Chrome has no virtual
- * authenticator in its debug protocol, so the passkey is the software one in dev/virtual-passkey.js (the app's real
+ * authenticator in its debug protocol, so the passkey is the software one in public/dev/virtual-passkey.js (the app's real
  * WebAuthn code runs against it); the phone's real credential store is not involved.
  * Needs: adb forward tcp:9333 localabstract:chrome_devtools_remote, adb reverse for the app and backend ports, and an
  * invitation code in INVITE. Run: INVITE=... node e2e/phone-debug.mjs
@@ -10,7 +10,7 @@ import { chromium } from "@playwright/test";
 const invite = process.env.INVITE;
 const browser = await chromium.connectOverCDP("http://localhost:9333");
 const ctx = browser.contexts()[0];
-await ctx.addInitScript({ path: new URL("../dev/virtual-passkey.js", import.meta.url).pathname });
+await ctx.addInitScript({ path: new URL("../public/dev/virtual-passkey.js", import.meta.url).pathname });
 const page = await ctx.newPage();
 const shot = (n) => page.screenshot({ path: `/tmp/phone-cdp-${n}.png` });
 page.on("pageerror", (e) => console.log("page error:", e.message));

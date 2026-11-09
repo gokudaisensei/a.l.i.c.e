@@ -5,7 +5,7 @@
  * The phone's system font size is NOT used: Android Chrome does not pass it to a page's rem (the root stayed 16 px at every
  * system level when this was tried), and changing a person's phone settings for a test is not worth it. What is real here is
  * the phone's Chrome engine, fonts, pixel density and touch.
- * Android Chrome has no virtual authenticator, so the passkey is the software one in dev/virtual-passkey.js.
+ * Android Chrome has no virtual authenticator, so the passkey is the software one in public/dev/virtual-passkey.js.
  * Needs the isolated stack (node dev/phone-stack.mjs) and, with the phone on USB:
  *   adb reverse tcp:3020 tcp:3020; adb reverse tcp:3022 tcp:3022; adb forward tcp:9333 localabstract:chrome_devtools_remote
  * Run: node e2e/phone-tiers.mjs [out-dir].
@@ -27,7 +27,7 @@ const base = "http://localhost:3020";
 
 const browser = await chromium.connectOverCDP("http://localhost:9333");
 const ctx = browser.contexts()[0];
-await ctx.addInitScript({ path: new URL("../dev/virtual-passkey.js", import.meta.url).pathname });
+await ctx.addInitScript({ path: new URL("../public/dev/virtual-passkey.js", import.meta.url).pathname });
 let page = ctx.pages().find((p) => p.url().startsWith(base)) ?? (await ctx.newPage());
 page.on("pageerror", (e) => console.log("page error:", e.message));
 const root = () => page.evaluate(() => ({ px: parseFloat(getComputedStyle(document.documentElement).fontSize), tier: document.documentElement.dataset.text, w: innerWidth, dpr: devicePixelRatio, ua: navigator.userAgent.slice(0, 60) }));

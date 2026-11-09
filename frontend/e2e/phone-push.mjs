@@ -2,7 +2,7 @@
 import { chromium } from "@playwright/test";
 const browser = await chromium.connectOverCDP("http://localhost:9333");
 const ctx = browser.contexts()[0];
-await ctx.addInitScript({ path: new URL("../dev/virtual-passkey.js", import.meta.url).pathname });
+await ctx.addInitScript({ path: new URL("../public/dev/virtual-passkey.js", import.meta.url).pathname });
 const page = await ctx.newPage();
 await page.goto("http://localhost:3001/?r=" + Date.now(), { waitUntil: "domcontentloaded" });
 await page.getByText(/Good (morning|afternoon|evening)|Quiet night/).first().waitFor({ timeout: 30000 });

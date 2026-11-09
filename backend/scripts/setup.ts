@@ -27,6 +27,7 @@ const USAGE = `Usage: ./setup.sh [options]
       --ha-token TOKEN           Existing HA long-lived token (or env HA_TOKEN)
       --ha-user NAME             Existing HA login; with --ha-password (or env HA_PASSWORD) setup mints the token itself
       --ha-password PASSWORD
+      --virtual-passkey          Dev only: sign in with a software passkey kept in the browser (no phone/key needed)
       --seed | --no-seed         Fill the test HA with a furnished home (default: seed)
       --install-bun              (handled by setup.sh) Install Bun automatically if missing
       --skip-install             Skip \`bun install\`
@@ -47,7 +48,7 @@ const die = (m: string): never => { console.error(red(`✗ ${m}`)); process.exit
 const opt = {
   interactive: !!process.stdin.isTTY, feport: "", beport: "", haport: "", host: "", ha: "", haUrl: "",
   haToken: process.env.HA_TOKEN ?? "", haUser: "", haPassword: process.env.HA_PASSWORD ?? "",
-  seed: true, skipInstall: false, force: false, start: false,
+  virtualPasskey: false, seed: true, skipInstall: false, force: false, start: false,
 };
 {
   const a = process.argv.slice(2);
@@ -64,6 +65,7 @@ const opt = {
       case "--ha-token": opt.haToken = val(i++); break;
       case "--ha-user": opt.haUser = val(i++); break;
       case "--ha-password": opt.haPassword = val(i++); break;
+      case "--virtual-passkey": opt.virtualPasskey = true; break;
       case "--seed": opt.seed = true; break;
       case "--no-seed": opt.seed = false; break;
       case "--install-bun": break;
@@ -80,7 +82,7 @@ const opt = {
 // ---------- prompts (@clack/prompts; only used when interactive) ----------
 const answer = <T>(v: T | symbol): T => { if (p.isCancel(v)) { p.cancel("Setup cancelled."); process.exit(130); } return v as T; };
 const ask = async (q: string, def: string) => answer<string>(await p.text({ message: q, placeholder: def, defaultValue: def })).trim();
-const confirm = async (q: string, def: boolean) => (opt.interactive ? answer(await p.confirm({ message: q, initialValue: def })) : def);
+const confirm = async (q: string, def: boolean) => (opt.interactive ? answer<boolean>(await p.confirm({ message: q, initialValue: def })) : def);
 const secret = async (q: string) => answer<string>(await p.password({ message: q, validate: (v) => (v ? undefined : "Required") }));
 const choose = async <T extends string>(q: string, options: { value: T; label: string; hint?: string }[], initial: T) =>
   answer(await p.select({ message: q, options: options as any, initialValue: initial })) as T;
@@ -273,7 +275,11 @@ env += `PORT=${bePort}\nCORS_ORIGINS=http://${host}:${fePort}\nWEBAUTHN_RP_ID=${
 if (!/^SETUP_CODE=.+/m.test(env)) env += `SETUP_CODE=${hex(6)}\n`;
 writeFileSync(envFile, env);
 mkdirSync(join(BACKEND, "data"), { recursive: true });
-writeFileSync(join(ROOT, "frontend/.env.local"), `BACKEND_URL=http://localhost:${bePort}\nNEXT_PUBLIC_WS_URL=ws://localhost:${bePort}/ws\n`);
+if (!opt.virtualPasskey && opt.interactive && host === "localhost") {
+  opt.virtualPasskey = await confirm("Use a software passkey in the browser instead of a real one? (dev only; Firefox on Linux often has no authenticator)", true);
+}
+writeFileSync(join(ROOT, "frontend/.env.local"),
+  `BACKEND_URL=http://localhost:${bePort}\nNEXT_PUBLIC_WS_URL=ws://localhost:${bePort}/ws\n${opt.virtualPasskey ? "NEXT_PUBLIC_VIRTUAL_PASSKEY=1\n" : ""}`);
 ok("backend/.env, backend/.env.worker, frontend/.env.local");
 
 // ---------- 6. Home Assistant ----------
@@ -338,7 +344,7 @@ chmodSync(STATE, 0o600);
 
 console.log(`
 ${green(bold("Setup complete."))}
-  Start it:        ./run.sh
+${opt.virtualPasskey ? "  Passkey:         software passkey (dev). It lives in this browser's site data: clearing it loses the login.\n" : ""}  Start it:        ./run.sh
   Open:            http://${host}:${fePort}
   First sign-up:   setup code  ${envGet(envFile, "SETUP_CODE")}   (you become the household admin)`);
 if (haUrl) {

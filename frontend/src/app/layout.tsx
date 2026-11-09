@@ -27,10 +27,14 @@ export const viewport: Viewport = {
   colorScheme: "light dark",
 };
 
+// Dev only (`./setup.sh --virtual-passkey`): a software passkey stored in this browser, for machines whose browser
+// cannot reach a real authenticator. Never loaded in a production build.
+const VIRTUAL_PASSKEY = process.env.NEXT_PUBLIC_VIRTUAL_PASSKEY === "1" && process.env.NODE_ENV !== "production";
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" suppressHydrationWarning className={`${bricolage.variable} ${instrument.variable} ${jetbrains.variable}`}>
-      <head><script dangerouslySetInnerHTML={{ __html: TIER_SCRIPT }} /><script dangerouslySetInnerHTML={{ __html: LENS_SCRIPT }} /></head>
+      <head>{VIRTUAL_PASSKEY && <script src="/dev/virtual-passkey.js" />}<script dangerouslySetInnerHTML={{ __html: TIER_SCRIPT }} /><script dangerouslySetInnerHTML={{ __html: LENS_SCRIPT }} /></head>
       <body>
         <LensDefs />
         <ThemeProvider attribute="data-theme" defaultTheme="system" enableSystem disableTransitionOnChange>
