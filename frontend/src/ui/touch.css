@@ -1,0 +1,16 @@
+/* Touch targets. A finger needs about 44 x 44 pt (Apple's default; never under 28). On a touch screen every small control gets an
+   invisible hit area up to that size, so nothing looks bigger because of it. The tests probe the real hit areas of every example
+   (e2e/library-targets.spec.ts). The padding is only ever added: a control already 44 tall keeps its own box.
+   `inset: min(0px, calc((100% - 44px) / 2))` reads each side's own percentage: it reaches out by half the shortfall, and not at all
+   when the control is big enough. */
+@media (pointer: coarse) {
+  .icon-btn, .step-btn, .dmore, .seg button, .rchip, .opt, .toast-undo, .toast-x, .sw, .cbx, .btn--sm, .sel-item, .chip:not([tabindex="-1"]), .dt.add { position: relative; }
+  .icon-btn::after, .step-btn::after, .dmore::after, .seg button::after, .rchip::after, .opt::after, .toast-undo::after, .toast-x::after, .sw::after, .cbx::after, .btn--sm::after, .sel-item::after, .chip:not([tabindex="-1"])::after {
+    content: ""; position: absolute; inset: min(0px, calc((100% - 44px) / 2));
+  }
+  /* tabs scroll sideways, which clips anything outside their box: they are made 44 tall instead */
+  .tab { min-height: 44px; }
+  .btn { min-height: 44px; }
+  /* the toast clips what overflows it, so its "Show more" gets real height instead of a padded hit area */
+  .toast-more { min-height: 44px; display: inline-flex; align-items: center; }
+}

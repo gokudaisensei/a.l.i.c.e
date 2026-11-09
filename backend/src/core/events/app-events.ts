@@ -1,6 +1,6 @@
-import type { NormalizedState } from "@/modules/home-assistant/capabilities/state-normalizer";
-import type { DeviceCommand } from "@/modules/devices/commands/command-types";
-import type { ConnectionStatus } from "@/modules/home-assistant/types";
+import type { NormalizedState } from "../../modules/home-assistant/capabilities/state-normalizer";
+import type { DeviceCommand } from "../../modules/devices/commands/command-types";
+import type { ConnectionStatus } from "../../modules/home-assistant/types";
 
 export type Availability = "available" | "unavailable" | "unknown";
 

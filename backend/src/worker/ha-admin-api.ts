@@ -1,6 +1,6 @@
 import { createConnection, createLongLivedTokenAuth, type Connection } from "home-assistant-js-websocket";
-import { type BackupInfo, type HaConfigApi, HaConfigHttpError } from "@/modules/home-assistant/config-api";
-import { type AutomationConfig, MODE_HELPER_ENTITY, MODE_HELPER_NAME, type ScriptConfig } from "@/modules/home-assistant/config-ops";
+import { type BackupInfo, type HaConfigApi, HaConfigHttpError } from "../modules/home-assistant/config-api";
+import { type AutomationConfig, MODE_HELPER_ENTITY, MODE_HELPER_NAME, type ScriptConfig } from "../modules/home-assistant/config-ops";
 
 /** The real thing: REST for config files and reloads, a WebSocket for helpers and voice exposure. Uses the admin token. */
 export class HaAdminApi implements HaConfigApi {

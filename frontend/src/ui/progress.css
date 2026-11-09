@@ -1,0 +1,4 @@
+/* Progress and Bar. */
+.bar{height:8px;border-radius:99px;background:var(--tile2);overflow:hidden;box-shadow:inset 0 0 0 1px var(--line)}
+.bar i{display:block;height:100%;border-radius:99px;background:var(--sage);transition:width .6s var(--ease-ios)}
+.bar.warn i{background:var(--clay)}

@@ -24,6 +24,8 @@ const serverEnv = {
 
 export default defineConfig({
   testDir: "./e2e",
+  // screenshots for build-to-build comparison are taken only on request (SHOTS=dir)
+  testIgnore: process.env.SHOTS ? undefined : /shots\.spec\.ts/,
   timeout: 120_000,
   expect: { timeout: 15_000 },
   workers: 1,

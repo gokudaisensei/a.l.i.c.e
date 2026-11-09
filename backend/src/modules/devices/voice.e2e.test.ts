@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { httpError } from "@/testing/fake-config-api";
-import { createWorld, homeWithHa, type World } from "@/testing/world";
+import { httpError } from "../../testing/fake-config-api";
+import { createWorld, homeWithHa, type World } from "../../testing/world";
 
 let w: World;
 let h: Awaited<ReturnType<typeof homeWithHa>>;

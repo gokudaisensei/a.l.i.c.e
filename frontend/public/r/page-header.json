@@ -1,0 +1,30 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "page-header",
+  "type": "registry:ui",
+  "title": "Page header",
+  "description": "The title of a page: the one h1, with an optional line under it.",
+  "dependencies": [],
+  "registryDependencies": [
+    "utilities"
+  ],
+  "files": [
+    {
+      "path": "ui/page-header.tsx",
+      "type": "registry:ui",
+      "content": "import type { ComponentProps } from \"react\";\nimport { cn } from \"./cn\";\n\n/** Page title block: the page's one `h1`, with an optional line under it. */\nexport function PageHeader({ title, children, className, ...rest }: Omit<ComponentProps<\"div\">, \"title\"> & {\n  /** The page title (the one `h1`). */\n  title: string;\n}) {\n  return <div data-slot=\"page-header\" className={cn(\"ph\", className)} {...rest}><div><h1>{title}</h1>{children ? <p>{children}</p> : null}</div></div>;\n}\n"
+    },
+    {
+      "path": "ui/page-header.css",
+      "type": "registry:style",
+      "content": "/* PageHeader. */\n.ph{margin:4px 0 18px;display:flex;flex-wrap:wrap;gap:10px 20px;align-items:flex-end;justify-content:space-between}\n.ph h1{font:760 clamp(2.2rem,4.4vw,3.6rem)/.95 var(--f-display);font-stretch:80%;letter-spacing:-.035em}\n.ph p{color:var(--ink2);margin-top:8px;max-width:56ch}\n@media (max-width:700px){\n  .ph h1{font-size:2rem}\n  .ph{margin:0 0 10px}\n  .ph p{display:none}\n}\n"
+    }
+  ],
+  "meta": {
+    "category": "Navigation and layout",
+    "status": "stable",
+    "exports": [
+      "PageHeader"
+    ]
+  }
+}

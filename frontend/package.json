@@ -7,10 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "lint:css": "node scripts/check-css.mjs",
     "e2e": "playwright test"
   },
   "dependencies": {
+    "alice-backend": "workspace:*",
     "@base-ui/react": "^1.9.0",
+    "@elysiajs/eden": "^1.4.0",
     "@simplewebauthn/browser": "^14",
     "class-variance-authority": "^0.7.1",
     "next": "16.4.5",
@@ -20,6 +23,7 @@
     "zustand": "^5.0.16"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@playwright/test": "^1.65.0",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
@@ -27,6 +31,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.5",
+    "shiki": "^4.6.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   },

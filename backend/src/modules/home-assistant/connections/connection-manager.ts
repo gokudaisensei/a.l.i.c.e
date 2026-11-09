@@ -1,6 +1,6 @@
 import type { Logger } from "pino";
-import type { AppEvent } from "@/core/events/app-events";
-import type { EventBus } from "@/core/events/event-bus";
+import type { AppEvent } from "../../../core/events/app-events";
+import type { EventBus } from "../../../core/events/event-bus";
 import type { HaConnectionConfig, HomeAssistantGateway } from "../gateway";
 import { ManagedConnection } from "./managed-connection";
 

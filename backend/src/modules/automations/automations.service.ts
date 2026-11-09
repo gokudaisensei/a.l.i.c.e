@@ -1,11 +1,11 @@
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
-import type { Db } from "@/core/database/client";
-import { automationRuns, automations, routines, scenes, type SyncStatus } from "@/core/database/schema";
-import { AppError, notFound } from "@/core/errors/errors";
-import type { AppEvent } from "@/core/events/app-events";
-import type { EventBus, Unsubscribe } from "@/core/events/event-bus";
-import { newId } from "@/core/ids";
-import { writeAudit } from "@/core/security/audit";
+import type { Db } from "../../core/database/client";
+import { automationRuns, automations, routines, scenes, type SyncStatus } from "../../core/database/schema";
+import { AppError, notFound } from "../../core/errors/errors";
+import type { AppEvent } from "../../core/events/app-events";
+import type { EventBus, Unsubscribe } from "../../core/events/event-bus";
+import { newId } from "../../core/ids";
+import { writeAudit } from "../../core/security/audit";
 import { createHash } from "node:crypto";
 import type { NotificationsService } from "../notifications/notifications.service";
 import type { PresenceService } from "../households/presence.service";

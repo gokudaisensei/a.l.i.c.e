@@ -1,0 +1,16 @@
+/* Pointer feedback. With a mouse or trackpad (not a finger), controls answer the pointer: a faint veil of the ink colour over the
+   control, so it follows the theme, and a slightly lifted shadow on the big tiles. Apple's rule for pointers: highlight small
+   controls, lift large ones. Nothing here runs on touch. */
+@media (hover: hover) and (pointer: fine) {
+  :root { --veil: color-mix(in srgb, var(--ink) 6%, transparent); }
+  .btn:not(:disabled):hover, .icon-btn:hover, .step-btn:not(:disabled):hover, .seg button:hover, .tab:hover, .rchip:hover, .opt:hover,
+  .chip:not([tabindex="-1"]):hover, .toast-undo:hover, .toast-x:hover, .sel-item:hover, .mode:hover, .scene:hover {
+    background-image: linear-gradient(var(--veil), var(--veil));
+  }
+  .dt:not(.add):hover, .lkb:hover { background-image: linear-gradient(var(--veil), var(--veil)); }
+  .dt:not(.add):hover { box-shadow: var(--shadow), 0 14px 26px -16px rgba(44, 38, 24, .5); }
+  .sw:not([data-disabled]):hover { box-shadow: inset 0 0 0 1.5px var(--ink3); }
+  .rng-th:hover, .dial:hover .dial-k, .cwheel:hover .cthumb, .wstrip:hover .wthumb { filter: brightness(1.05); }
+  .dial, .cwheel, .wstrip, .cshade, .rng-c { cursor: grab; }
+  .dial:active, .cwheel:active, .wstrip:active, .cshade:active { cursor: grabbing; }
+}

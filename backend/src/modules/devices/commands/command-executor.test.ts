@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import pino from "pino";
-import type { AppEvent } from "@/core/events/app-events";
-import { InMemoryEventBus } from "@/core/events/event-bus";
-import { ConnectionManager } from "@/modules/home-assistant";
-import { FakeGateway, state } from "@/modules/home-assistant/testing";
-import type { HaServiceCallInput } from "@/modules/home-assistant/types";
+import type { AppEvent } from "../../../core/events/app-events";
+import { InMemoryEventBus } from "../../../core/events/event-bus";
+import { ConnectionManager } from "../../home-assistant";
+import { FakeGateway, state } from "../../home-assistant/testing";
+import type { HaServiceCallInput } from "../../home-assistant/types";
 import type { Authorizer } from "./authorizer";
 import { CommandExecutor } from "./command-executor";
 import type { Actor, CommandInput } from "./command-types";

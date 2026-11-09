@@ -1,10 +1,10 @@
 import { and, asc, eq, lte } from "drizzle-orm";
 import type { Logger } from "pino";
-import type { Db } from "@/core/database/client";
-import { configJobs, configWorkerHeartbeat, haConnections } from "@/core/database/schema";
-import { open } from "@/core/security/sealed";
-import { type HaConfigApi, type HaConfigApiFactory, HaConfigHttpError } from "@/modules/home-assistant/config-api";
-import { ConfigOpError, type DriftItem, fromJob, sameConfig, type ConfigOperation, validateOperation } from "@/modules/home-assistant/config-ops";
+import type { Db } from "../core/database/client";
+import { configJobs, configWorkerHeartbeat, haConnections } from "../core/database/schema";
+import { open } from "../core/security/sealed";
+import { type HaConfigApi, type HaConfigApiFactory, HaConfigHttpError } from "../modules/home-assistant/config-api";
+import { ConfigOpError, type DriftItem, fromJob, sameConfig, type ConfigOperation, validateOperation } from "../modules/home-assistant/config-ops";
 
 const MAX_ATTEMPTS = 3;
 

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "badge",
+  "type": "registry:ui",
+  "title": "Badge",
+  "description": "Small labels: Pill for a status, Chip for a fact on the hero, FilterChip for a filter with a count, and Eyebrow for the small caps line above a title.",
+  "dependencies": [],
+  "registryDependencies": [
+    "haptics",
+    "icon",
+    "utilities"
+  ],
+  "files": [
+    {
+      "path": "ui/badge.tsx",
+      "type": "registry:ui",
+      "content": "import type { ComponentProps } from \"react\";\nimport { Icon } from \"./icon\";\nimport { cn } from \"./cn\";\nimport { haptic } from \"./haptics\";\n\nexport type Tone = \"neutral\" | \"ok\" | \"warn\" | \"info\";\n\n/** Small status label with an optional leading icon. Colour is never the only signal: say the status in words too. */\nexport function Pill({ tone = \"neutral\", icon, className, children, ...rest }: ComponentProps<\"span\"> & {\n  /** Meaning of the colour: ok (done, safe), warn (needs a look), info (for your information). */\n  tone?: Tone;\n  /** Leading icon name. */\n  icon?: string;\n}) {\n  return <span data-slot=\"pill\" data-tone={tone} className={cn(\"pill\", tone !== \"neutral\" && tone, className)} {...rest}>{icon ? <Icon n={icon} c=\"sm\" /> : null}{children}</span>;\n}\n\n/** Status chip for the hero. A button when given `onClick`, otherwise inert text that is skipped by Tab. */\nexport function Chip({ icon, warn, onClick, className, children, ...rest }: Omit<ComponentProps<\"button\">, \"type\"> & {\n  icon: string;\n  /** Outlines the chip: something to look at. */\n  warn?: boolean;\n}) {\n  return (\n    <button type=\"button\" data-slot=\"chip\" data-warn={warn ? \"\" : undefined} className={cn(\"chip\", warn && \"warn\", className)} {...(onClick ? { onClick } : { tabIndex: -1 })} {...rest}>\n      <Icon n={icon} /><span className=\"chip-t\">{children}</span>\n    </button>\n  );\n}\n\n/** Filter chip with an optional count, used for room filters. `pressed` is the selected state. */\nexport function FilterChip({ pressed, count, icon, className, children, onClick, ...rest }: Omit<ComponentProps<\"button\">, \"type\"> & {\n  pressed: boolean;\n  /** A number shown after the label. */\n  count?: number;\n  icon?: string;\n}) {\n  return (\n    <button type=\"button\" data-slot=\"filter-chip\" className={cn(\"rchip\", className)} aria-pressed={pressed} onClick={(e) => { haptic(\"select\"); onClick?.(e); }} {...rest}>\n      {icon ? <Icon n={icon} c=\"sm\" /> : null}{children}{count !== undefined ? <> <em>{count}</em></> : null}\n    </button>\n  );\n}\n\n/** Small uppercase mono label that sits above a title. */\nexport function Eyebrow({ className, ...rest }: ComponentProps<\"div\">) {\n  return <div data-slot=\"eyebrow\" className={cn(\"eyebrow\", className)} {...rest} />;\n}\n"
+    },
+    {
+      "path": "ui/badge.css",
+      "type": "registry:style",
+      "content": "/* Badges: Pill, Chip, FilterChip, Eyebrow. Moved out of globals.css; contextual overrides (.hero .btn, .pg3 .dt) stay with the screens that need them. */\n.eyebrow{font:500 0.6875rem/1.2 var(--f-mono);letter-spacing:.09em;text-transform:uppercase;color:var(--ink3)}\n.chip{display:inline-flex;align-items:center;gap:7px;padding:7px 13px 7px 10px;border-radius:99px;font-size:0.8125rem;font-weight:600;background:var(--hero-chip);color:var(--hero-ink)}\n.chip{max-width:100%;min-width:0}\n.chip-t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}   /* a long name ends in an ellipsis instead of being cut mid-word */\n.chip .ic{width:16px;height:16px}\n.chip.warn{outline:1.5px solid currentColor;outline-offset:-1.5px}\n.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:99px;font-size:0.75rem;font-weight:600;background:var(--tile2);color:var(--ink2);white-space:nowrap}\n.pill.ok{background:var(--ok-soft);color:var(--ok)}\n.pill.warn{background:var(--warn-soft);color:var(--warn)}\n.pill.crit{background:var(--crit-soft);color:var(--crit)}\n.pill.info{background:var(--sage-soft);color:var(--sage-ink)}\n.rchip{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:99px;background:var(--tile);box-shadow:var(--shadow);font-weight:600;font-size:0.875rem;white-space:nowrap;color:var(--ink2)}\n.rchip[aria-pressed=true]{background:var(--ink);color:var(--tile)}\n.rchip em{font:500 0.6875rem var(--f-mono);font-style:normal;opacity:.7}\n"
+    }
+  ],
+  "meta": {
+    "category": "Display",
+    "status": "stable",
+    "exports": [
+      "Pill",
+      "Chip",
+      "FilterChip",
+      "Eyebrow"
+    ]
+  }
+}

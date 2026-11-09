@@ -1,7 +1,7 @@
 import { Elysia, t } from "elysia";
-import { requirePermission } from "@/core/http/guards";
-import { sessionPlugin } from "@/core/http/session-plugin";
-import type { Services } from "@/services";
+import { requirePermission } from "../../core/http/guards";
+import { sessionPlugin } from "../../core/http/session-plugin";
+import type { Services } from "../../services";
 
 export const historyController = ({ auth, households, history }: Services) =>
   new Elysia({ name: "module.history", prefix: "/history", tags: ["history"] })

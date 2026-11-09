@@ -1,0 +1,30 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "time-field",
+  "type": "registry:ui",
+  "title": "Time field",
+  "description": "A time of day in 24-hour form. It uses the device's own time picker, so on a phone it is the native one people already know.",
+  "dependencies": [],
+  "registryDependencies": [
+    "utilities"
+  ],
+  "files": [
+    {
+      "path": "ui/time-field.tsx",
+      "type": "registry:ui",
+      "content": "import type { InputHTMLAttributes } from \"react\";\nimport { cn } from \"./cn\";\n\ntype Props = Omit<InputHTMLAttributes<HTMLInputElement>, \"type\" | \"value\" | \"onChange\"> & {\n  /** 24-hour \"HH:MM\". */\n  value: string;\n  onChange: (next: string) => void;\n  /** Names the field for screen readers, e.g. \"Backup time\". */\n  label: string;\n};\n\n/** A time of day. Uses the device's own time picker, so it is native on phones. */\nexport function TimeField({ value, onChange, label, className, ...rest }: Props) {\n  return <input data-slot=\"time-field\" type=\"time\" className={cn(\"inp time-field\", className)} aria-label={label} value={value} onChange={(e) => e.target.value && onChange(e.target.value)} {...rest} />;\n}\n"
+    },
+    {
+      "path": "ui/fields.css",
+      "type": "registry:style",
+      "content": "/* Form fields: Field, Input, Textarea, Select. Moved out of globals.css; contextual overrides (.hero .btn, .pg3 .dt) stay with the screens that need them. */\n.sel,.inp{min-height:40px;border-radius:12px;border:1.5px solid var(--line);background:var(--tile);padding:0 12px;min-width:0;max-width:100%}\ntextarea.inp{height:auto;padding:10px 12px;width:100%;resize:vertical}\n.sel:focus,.inp:focus{outline:2px solid var(--sage);outline-offset:1px}\n.field{display:flex;flex-wrap:wrap;gap:10px;align-items:center;max-width:100%;min-width:0}\n.inp--sm{width:84px}\n.inp--code{width:140px}\n.inp--fill{width:100%}\n.inp--mono{font:0.8125rem var(--f-mono);min-width:0}\n.time-field{min-width:116px;font-variant-numeric:tabular-nums}\n@media(pointer:coarse){.inp,.sel{min-height:44px}}\n"
+    }
+  ],
+  "meta": {
+    "category": "Inputs",
+    "status": "stable",
+    "exports": [
+      "TimeField"
+    ]
+  }
+}

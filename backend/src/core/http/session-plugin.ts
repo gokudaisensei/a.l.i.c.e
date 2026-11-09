@@ -1,7 +1,7 @@
 import { Elysia } from "elysia";
-import type { AuthService } from "@/modules/authentication/auth.service";
-import type { HouseholdService } from "@/modules/households/household.service";
-import { env } from "@/core/config/env";
+import type { AuthService } from "../../modules/authentication/auth.service";
+import type { HouseholdService } from "../../modules/households/household.service";
+import { env } from "../config/env";
 import { COOKIE, type RequestAuth, sessionCookieOptions } from "./guards";
 
 /** Resolves the session cookie into `{ session, membership }` for every route below it. */

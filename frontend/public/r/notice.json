@@ -1,0 +1,32 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "notice",
+  "type": "registry:ui",
+  "title": "Notice",
+  "description": "An inline message that stays on the page: something to know, something that worked, or something to fix.",
+  "dependencies": [],
+  "registryDependencies": [
+    "badge",
+    "icon",
+    "utilities"
+  ],
+  "files": [
+    {
+      "path": "ui/notice.tsx",
+      "type": "registry:ui",
+      "content": "import type { ComponentProps, ReactNode } from \"react\";\nimport { Icon } from \"./icon\";\nimport { cn } from \"./cn\";\nimport type { Tone } from \"./badge\";\n\n/** An inline message that stays on the page: something to know (info), something done (ok), or something to fix (warn, announced to screen readers). */\nexport function Notice({ tone = \"info\", icon, children, action, className, ...rest }: Omit<ComponentProps<\"div\">, \"children\"> & {\n  /** `warn` is something to fix (announced at once); `ok` confirms; `info` is for your information. */\n  tone?: Tone;\n  /** Replaces the icon the tone would pick. */\n  icon?: string;\n  children: ReactNode;\n  /** An optional button at the end. */\n  action?: ReactNode;\n}) {\n  return (\n    <div data-slot=\"notice\" data-tone={tone} role={tone === \"warn\" ? \"alert\" : \"status\"} className={cn(\"notice\", `notice--${tone}`, className)} {...rest}>\n      <Icon n={icon ?? (tone === \"warn\" ? \"alert\" : tone === \"ok\" ? \"check\" : \"sparkle\")} />\n      <span className=\"notice-t\">{children}</span>\n      {action}\n    </div>\n  );\n}\n"
+    },
+    {
+      "path": "ui/notice.css",
+      "type": "registry:style",
+      "content": ".notice{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:14px;background:var(--tile2);font-size:0.8438rem;line-height:1.4;flex-wrap:wrap;animation:rise .4s var(--ease-out) both}\n.notice .ic{flex:none;color:var(--ink2)}\n.notice--warn .ic{color:var(--clay)}\n.notice--ok .ic{color:var(--sage)}\n.notice-t{flex:1 1 220px;min-width:0}\n.notice--warn{background:color-mix(in srgb,var(--clay) 18%,var(--tile2))}\n.notice--ok{background:color-mix(in srgb,var(--sage) 22%,var(--tile2))}\n@media (prefers-reduced-motion:reduce){.notice{animation:none}}\n"
+    }
+  ],
+  "meta": {
+    "category": "Feedback",
+    "status": "stable",
+    "exports": [
+      "Notice"
+    ]
+  }
+}

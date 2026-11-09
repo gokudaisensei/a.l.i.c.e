@@ -1,8 +1,8 @@
 import { Elysia, t } from "elysia";
-import { requireMember } from "@/core/http/guards";
-import { sessionPlugin } from "@/core/http/session-plugin";
-import { checkSocketOrigin } from "@/core/http/csrf";
-import type { Services } from "@/services";
+import { requireMember } from "../core/http/guards";
+import { sessionPlugin } from "../core/http/session-plugin";
+import { checkSocketOrigin } from "../core/http/csrf";
+import type { Services } from "../services";
 import type { ClientSocket } from "./hub";
 
 /**

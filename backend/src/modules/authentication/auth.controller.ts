@@ -1,9 +1,9 @@
 import { Elysia, t } from "elysia";
-import { env } from "@/core/config/env";
-import { clientIp, enforce } from "@/core/http/rate-limit";
-import { COOKIE, requireMember, requireSession, requireStepUp, sessionCookieOptions } from "@/core/http/guards";
-import { sessionPlugin } from "@/core/http/session-plugin";
-import type { Services } from "@/services";
+import { env } from "../../core/config/env";
+import { clientIp, enforce } from "../../core/http/rate-limit";
+import { COOKIE, requireMember, requireSession, requireStepUp, sessionCookieOptions } from "../../core/http/guards";
+import { sessionPlugin } from "../../core/http/session-plugin";
+import type { Services } from "../../services";
 import type { SignedIn } from "./auth.service";
 
 const anyJson = t.Any();

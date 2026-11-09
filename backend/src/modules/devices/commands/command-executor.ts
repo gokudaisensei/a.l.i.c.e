@@ -1,8 +1,8 @@
 import type { Logger } from "pino";
-import type { AppEvent, CommandEvent } from "@/core/events/app-events";
-import type { EventBus } from "@/core/events/event-bus";
-import { newId } from "@/core/ids";
-import { type ConnectionManager, type ManagedConnection, resolveOperation, supportsOperation, type NormalizedState } from "@/modules/home-assistant";
+import type { AppEvent, CommandEvent } from "../../../core/events/app-events";
+import type { EventBus } from "../../../core/events/event-bus";
+import { newId } from "../../../core/ids";
+import { type ConnectionManager, type ManagedConnection, resolveOperation, supportsOperation, type NormalizedState } from "../../home-assistant";
 import { assertTransition, type CommandState, isTerminal } from "../command-lifecycle";
 import { type Authorizer, allowAll } from "./authorizer";
 import { type CommandStore, InMemoryCommandStore } from "./command-store";

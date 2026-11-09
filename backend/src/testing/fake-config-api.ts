@@ -1,7 +1,7 @@
-import type { BackupInfo, HaConfigApi } from "@/modules/home-assistant/config-api";
-import { HaConfigHttpError } from "@/modules/home-assistant/config-api";
-import type { AutomationConfig, ScriptConfig } from "@/modules/home-assistant/config-ops";
-import { MODE_HELPER_ENTITY } from "@/modules/home-assistant/config-ops";
+import type { BackupInfo, HaConfigApi } from "../modules/home-assistant/config-api";
+import { HaConfigHttpError } from "../modules/home-assistant/config-api";
+import type { AutomationConfig, ScriptConfig } from "../modules/home-assistant/config-ops";
+import { MODE_HELPER_ENTITY } from "../modules/home-assistant/config-ops";
 
 /** An in-memory Home Assistant admin API for tests. Records what was written. */
 /** What Home Assistant does to a config on the way back out: new key names, an id, and defaults filled or dropped. */

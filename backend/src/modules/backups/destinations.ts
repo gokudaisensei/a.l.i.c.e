@@ -1,7 +1,7 @@
 import { accessSync, constants, existsSync, mkdirSync, statSync } from "node:fs";
 import { readFile, rm, writeFile } from "node:fs/promises";
 import { basename, isAbsolute, join, resolve, sep } from "node:path";
-import { AppError } from "@/core/errors/errors";
+import { AppError } from "../../core/errors/errors";
 
 /** Somewhere Alice's own backups can be kept. Home Assistant's backups stay where Home Assistant puts them. */
 export interface BackupDestination {

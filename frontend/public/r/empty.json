@@ -1,0 +1,30 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "empty",
+  "type": "registry:ui",
+  "title": "Empty",
+  "description": "What to show when there is nothing yet. It is temporary: say what to do next.",
+  "dependencies": [],
+  "registryDependencies": [
+    "utilities"
+  ],
+  "files": [
+    {
+      "path": "ui/empty.tsx",
+      "type": "registry:ui",
+      "content": "import type { ComponentProps, ReactNode } from \"react\";\nimport { cn } from \"./cn\";\n\n/** What to show when there is nothing yet. It is temporary: say what to do next, and give the action if there is one. */\nexport function Empty({ action, className, children, ...rest }: ComponentProps<\"div\"> & {\n  /** The next step, usually a Button: an empty state is a signpost, not a dead end. */\n  action?: ReactNode;\n}) {\n  return <div data-slot=\"empty\" className={cn(\"empty\", className)} {...rest}>{children}{action ? <div className=\"empty-a\">{action}</div> : null}</div>;\n}\n"
+    },
+    {
+      "path": "ui/empty.css",
+      "type": "registry:style",
+      "content": "/* Empty. */\n.empty{padding:14px;border-radius:16px;background:var(--tile2);color:var(--ink2);text-align:center}\n.empty-a{margin-top:10px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap}\n"
+    }
+  ],
+  "meta": {
+    "category": "Display",
+    "status": "stable",
+    "exports": [
+      "Empty"
+    ]
+  }
+}

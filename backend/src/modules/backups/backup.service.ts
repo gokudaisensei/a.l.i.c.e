@@ -1,10 +1,10 @@
 import { createHash } from "node:crypto";
 import { and, desc, eq } from "drizzle-orm";
-import type { Db } from "@/core/database/client";
-import { backupRecords, householdSettings, households as householdsTable } from "@/core/database/schema";
-import { AppError, notFound } from "@/core/errors/errors";
-import { newId } from "@/core/ids";
-import { writeAudit } from "@/core/security/audit";
+import type { Db } from "../../core/database/client";
+import { backupRecords, householdSettings, households as householdsTable } from "../../core/database/schema";
+import { AppError, notFound } from "../../core/errors/errors";
+import { newId } from "../../core/ids";
+import { writeAudit } from "../../core/security/audit";
 import type { ConfigJob, ConfigJobService } from "../home-assistant/config-jobs.service";
 import type { NotificationsService } from "../notifications/notifications.service";
 import { BackupFormatError, packBackup, unpackBackup } from "./crypto";

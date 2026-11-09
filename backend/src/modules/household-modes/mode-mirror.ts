@@ -1,7 +1,7 @@
 import type { Logger } from "pino";
-import { HOUSEHOLD_MODES } from "@/core/database/schema";
-import type { AppEvent } from "@/core/events/app-events";
-import type { EventBus, Unsubscribe } from "@/core/events/event-bus";
+import { HOUSEHOLD_MODES } from "../../core/database/schema";
+import type { AppEvent } from "../../core/events/app-events";
+import type { EventBus, Unsubscribe } from "../../core/events/event-bus";
 import { MODE_HELPER_ENTITY } from "../home-assistant/config-ops";
 import type { ConfigJobService } from "../home-assistant/config-jobs.service";
 import type { ConnectionManager, ManagedConnection } from "../home-assistant";

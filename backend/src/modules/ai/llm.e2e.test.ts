@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { createWorld, homeWithHa, type World } from "@/testing/world";
+import { createWorld, homeWithHa, type World } from "../../testing/world";
 import { MODEL_CALLS_PER_MINUTE } from "./assistant.service";
 import type { Interpreter } from "./llm";
 

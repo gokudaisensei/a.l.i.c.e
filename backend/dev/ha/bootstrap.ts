@@ -1,6 +1,6 @@
 /**
  * Onboards a fresh test HA instance and mints a long-lived access token.
- * Usage: bun dev/ha/bootstrap.ts   (writes backend/.env.test)
+ * Usage: bun dev/ha/bootstrap.ts   (writes backend/.env.test; ENV_FILE=... writes elsewhere, HA_URL=... targets another instance)
  */
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -61,7 +61,7 @@ await waitForHa();
 const status = (await (await fetch(`${BASE}/api/onboarding`)).json()) as { step: string; done: boolean }[];
 const userStep = status.find((s) => s.step === "user");
 if (!userStep || userStep.done) {
-  throw new Error("HA is already onboarded; run `docker compose -f dev/ha/docker-compose.yml down -v` and retry.");
+  throw new Error("HA is already onboarded; run `docker compose -f dev/ha/docker-compose.yml down -v` (or the demo compose file) and retry.");
 }
 
 const { auth_code } = await post("/api/onboarding/users", { client_id: CLIENT_ID, ...USER });
@@ -74,6 +74,6 @@ for (const step of ["core_config", "analytics"]) {
 await post("/api/onboarding/integration", { client_id: CLIENT_ID, redirect_uri: `${BASE}/?auth_callback=1` }, accessToken).catch(() => {});
 
 const token = await mintLongLivedToken(accessToken);
-const out = join(import.meta.dir, "../../.env.test");
+const out = process.env.ENV_FILE ?? join(import.meta.dir, "../../.env.test");
 writeFileSync(out, `HA_URL=${BASE}\nHA_TOKEN=${token}\n`);
 console.log(`Onboarded. Token written to ${out}`);

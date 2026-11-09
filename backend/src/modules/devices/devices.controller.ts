@@ -1,9 +1,9 @@
 import { Elysia, t } from "elysia";
-import { AppError } from "@/core/errors/errors";
-import { requireMember, requirePermission, requireStepUp, type RequestAuth } from "@/core/http/guards";
-import { sessionPlugin } from "@/core/http/session-plugin";
+import { AppError } from "../../core/errors/errors";
+import { requireMember, requirePermission, requireStepUp, type RequestAuth } from "../../core/http/guards";
+import { sessionPlugin } from "../../core/http/session-plugin";
 import { COMMAND_STATES } from "./command-lifecycle";
-import type { Services } from "@/services";
+import type { Services } from "../../services";
 import { toPublicCommand } from "./commands/public-command";
 import type { Caller } from "./devices.service";
 

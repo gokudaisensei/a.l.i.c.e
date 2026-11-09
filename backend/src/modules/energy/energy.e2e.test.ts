@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { changeState, createWorld, homeWithHa, type World } from "@/testing/world";
+import { changeState, createWorld, homeWithHa, type World } from "../../testing/world";
 import { startOfLocalDay, toKwh, toWatts } from "./energy.service";
 
 describe("units and the start of the day", () => {

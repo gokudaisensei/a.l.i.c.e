@@ -1,0 +1,33 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "text-input",
+  "type": "registry:ui",
+  "title": "Text input",
+  "description": "Single and multi-line text fields, and the Field that gives one a label. Native inputs with the app's look: every attribute works.",
+  "dependencies": [],
+  "registryDependencies": [
+    "utilities"
+  ],
+  "files": [
+    {
+      "path": "ui/fields.tsx",
+      "type": "registry:ui",
+      "content": "import type { ComponentProps, ReactNode } from \"react\";\nimport { cn } from \"./cn\";\n\n/** A label and its control, on one line (wrapping when narrow). The label is the control's accessible name. */\nexport function Field({ label, children, minLabel, className, ...rest }: Omit<ComponentProps<\"label\">, \"children\"> & {\n  label?: string;\n  children: ReactNode;\n  /** Minimum width of the label in px, to line several fields up. */\n  minLabel?: number;\n}) {\n  return (\n    <label data-slot=\"field\" className={cn(\"field\", className)} {...rest}>\n      {label ? <span className=\"small\" style={minLabel ? { minWidth: minLabel } : undefined}>{label}</span> : null}\n      {children}\n    </label>\n  );\n}\n\n/** Wrapper for several fields that sit on one row. */\nexport function FieldRow({ className, ...rest }: ComponentProps<\"div\">) { return <div data-slot=\"field-row\" className={cn(\"field\", className)} {...rest} />; }\n\n/** Text input. Size classes: `inp--sm`, `inp--code`, `inp--fill`, `inp--mono`. Always give it a label (a `Field` around it, or `aria-label`). */\nexport function Input({ className, ...rest }: ComponentProps<\"input\">) { return <input data-slot=\"input\" className={cn(\"inp\", className)} {...rest} />; }\n\n/** Multi-line text input. Same size classes as `Input`. */\nexport function Textarea({ className, ...rest }: ComponentProps<\"textarea\">) { return <textarea data-slot=\"textarea\" className={cn(\"inp\", className)} {...rest} />; }\n"
+    },
+    {
+      "path": "ui/fields.css",
+      "type": "registry:style",
+      "content": "/* Form fields: Field, Input, Textarea, Select. Moved out of globals.css; contextual overrides (.hero .btn, .pg3 .dt) stay with the screens that need them. */\n.sel,.inp{min-height:40px;border-radius:12px;border:1.5px solid var(--line);background:var(--tile);padding:0 12px;min-width:0;max-width:100%}\ntextarea.inp{height:auto;padding:10px 12px;width:100%;resize:vertical}\n.sel:focus,.inp:focus{outline:2px solid var(--sage);outline-offset:1px}\n.field{display:flex;flex-wrap:wrap;gap:10px;align-items:center;max-width:100%;min-width:0}\n.inp--sm{width:84px}\n.inp--code{width:140px}\n.inp--fill{width:100%}\n.inp--mono{font:0.8125rem var(--f-mono);min-width:0}\n.time-field{min-width:116px;font-variant-numeric:tabular-nums}\n@media(pointer:coarse){.inp,.sel{min-height:44px}}\n"
+    }
+  ],
+  "meta": {
+    "category": "Inputs",
+    "status": "stable",
+    "exports": [
+      "Input",
+      "Textarea",
+      "Field",
+      "FieldRow"
+    ]
+  }
+}

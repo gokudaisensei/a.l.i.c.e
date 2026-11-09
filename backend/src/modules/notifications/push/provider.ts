@@ -1,4 +1,4 @@
-import type { pushSubscriptions } from "@/core/database/schema";
+import type { pushSubscriptions } from "../../../core/database/schema";
 
 export type PushSubscription = typeof pushSubscriptions.$inferSelect;
 

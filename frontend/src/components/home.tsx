@@ -1,13 +1,15 @@
 "use client";
-import { Icon, Notice, Select, Button, IconButton, StepButton, Pill, Chip, Switch, Bar, Avatar, Empty, Safe, Html, Tile, TileHeader, resetTileOrder, Sparkline, DeviceTile, AddTile, ModeButton, SceneCard, LockTile } from "@/ui";
+import { Icon, Notice, Select, Button, IconButton, StepButton, Pill, Chip, Switch, Bar, Avatar, Empty, Safe, Html, Tile, TileHeader, Sparkline, DeviceTile, AddTile, ModeButton, SceneCard, LockTile, haptic } from "@/ui";
 import { LockButton, DevSlider } from "./device-controls";
 import type { ReactNode } from "react";
 import {
   A, S, useS, usePhone, useMounted, tod, status, me, vis, mainClimate, isOn, icn, rname, dateStr, clock, totalW, watts,
-  SCENES, primaryScene, personal, suggestion, alerts, backupState, dstate, openSheet, buzz, go, bump, type StatusChip,
+  SCENES, primaryScene, personal, suggestion, alerts, backupState, dstate, openSheet, go, bump, type StatusChip,
 } from "@/lib/store";
 import { MODES, type Dev } from "@/lib/data";
 import { linkPerson } from "@/lib/admin";
+import { lampTint } from "./device-controls";
+import { learned, useHint } from "@/lib/hints";
 
 const GREET = { morning: "Good morning", day: "Good afternoon", evening: "Good evening", night: "Quiet night" };
 
@@ -27,7 +29,7 @@ export function DevRow({ d }: { d: Dev }) {
       {d.t === "lock" && (d.locked ? " · locked" : " · unlocked")}
     </>
   );
-  const ctl = d.t === "lock" ? <LockButton d={d} /> : d.t === "contact" || d.t === "camera" ? null : <Switch checked={!!d.on} label={d.n} onChange={() => A.tog(d.id)} />;
+  const ctl = d.t === "lock" ? <LockButton d={d} /> : d.t === "cover" ? <Button size="sm" onClick={() => A.dtap(d.id)}>{d.mv ? "Stop" : d.open ? "Close" : "Open"}</Button> : d.t === "contact" || d.t === "camera" ? null : <Switch checked={!!d.on} label={d.n} onChange={() => A.tog(d.id)} />;
   return (
     <div className={`row ${on ? "is-on" : ""}`}>
       <span className="dico"><Icon n={icn(d)} /></span>
@@ -112,7 +114,7 @@ function TClimate() {
         <div className="big">{a.cur!.toFixed(1)}°<small>now</small></div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <StepButton onClick={() => A.tgt(a.id, -1)} aria-label="Lower target"><Icon n="minus" /></StepButton>
-          <div style={{ textAlign: "center", minWidth: 48 }}><b className="num" style={{ fontSize: 20 }}>{a.tgt}°</b><div className="small">target</div></div>
+          <div style={{ textAlign: "center", minWidth: 48 }}><b className="num" style={{ fontSize: "1.25rem" }}>{a.tgt}°</b><div className="small">target</div></div>
           <StepButton onClick={() => A.tgt(a.id, 1)} aria-label="Raise target"><Icon n="plus" /></StepButton>
         </div>
       </div>
@@ -169,7 +171,7 @@ function TPeople() {
     <Tile id="people" cols={4} rows={2} colsTablet={3} colsMobile={6}>
       <TileHeader title="Who is home" right={<span className={`pill ${home ? "info" : ""}`}>{home} home</span>} />
       <div className="list">{S.people.map((p) => (
-        <button key={p.id} className="row" style={{ textAlign: "left" }} onClick={() => A.person()} aria-label={`${p.n} is ${p.home ? "home" : "away"}. It follows their phone.`}>
+        <button key={p.id} className="row" style={{ textAlign: "left" }} onClick={() => { haptic("light"); A.person(); }} aria-label={`${p.n} is ${p.home ? "home" : "away"}. It follows their phone.`}>
           <Avatar initial={p.n[0]} tone={p.c} away={!p.home} />
           <div><b>{p.n}</b><small>{p.role === "guest" ? `Guest until ${p.until}` : p.role === "admin" ? "Admin" : "Member"}</small></div>
           <span className={`pill ${p.home ? "ok" : ""}`}>{p.home ? "Home" : "Away"}</span>
@@ -191,7 +193,7 @@ function TEnergy() {
         <div><Sparkline values={series(kw)} /></div>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>{top.map((x) => (
-        <div key={x.n} style={{ display: "grid", gridTemplateColumns: "120px minmax(0,1fr) 62px", gap: 10, alignItems: "center", fontSize: 13 }}>
+        <div key={x.n} style={{ display: "grid", gridTemplateColumns: "120px minmax(0,1fr) 62px", gap: 10, alignItems: "center", fontSize: "0.8125rem" }}>
           <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.n}</span>
           <Bar percent={Math.round((x.w / mx) * 100)} warn={x.w / mx > 0.9 && x.n === "Water heater"} />
           <span className="num" style={{ textAlign: "right", color: "var(--ink2)" }}>{x.w.toLocaleString()} W</span>
@@ -273,11 +275,23 @@ function TAccess() {
 
 /* ---------------- phone ---------------- */
 export function DTile({ d, hideRoom }: { d: Dev; hideRoom?: boolean }) {
+  const fan = d.t === "fan" && d.pct !== undefined, dim = d.t === "dim", cov = d.t === "cover" && !!d.ops?.includes("set_position");
   return (
-    <DeviceTile icon={icn(d)} name={d.n} on={isOn(d)} warn={d.t === "lock" && !d.locked} fill={d.t === "dim" && d.on ? d.v : undefined}
-      label={`${d.n}, ${dstate(d)}. Tap to ${d.t === "lock" ? (d.locked ? "unlock" : "lock") : "toggle"}. Hold for more.`}
+    <DeviceTile icon={icn(d)} name={d.n} on={isOn(d)} warn={d.t === "lock" && !d.locked} fill={dim && d.on ? d.v : cov ? d.pos : fan && d.on ? d.pct : undefined}
+      tint={dim && d.on ? lampTint(d) : d.t === "climate" && d.on ? (d.hm === "heat" ? "rgb(255 150 60)" : d.hm === "cool" ? "rgb(90 160 255)" : undefined) : undefined} spin={fan && d.on && d.pct ? Math.max(0.35, 2.4 - d.pct / 50) : undefined} dragValue={dim ? (d.on ? d.v : 0) : cov ? d.pos : fan ? (d.on ? d.pct : 0) : undefined} onDragCommit={dim ? (v) => { learned("drag"); A.drag(d.id, v); } : cov ? (v) => { learned("drag"); A.pos(d.id, v); } : fan ? (v) => { learned("drag"); A.fanPct(d.id, v); } : undefined}
+      hint={`Tap to ${d.t === "lock" ? (d.locked ? "unlock" : "lock") : "toggle"}. Hold for more.`}
       detail={<><span>{dstate(d)}</span>{hideRoom ? "" : " · " + rname(d.r)}</>}
-      onTap={() => A.dtap(d.id)} onHold={() => { buzz(18); openSheet(d.id); }} onMore={() => openSheet(d.id)} moreLabel={`More controls for ${d.n}`} />
+      onTap={() => A.dtap(d.id)} onHold={() => { learned("hold"); openSheet(d.id); }} onMore={() => { learned("hold"); openSheet(d.id); }} moreLabel={`More controls for ${d.n}`} />
+  );
+}
+/** A one-time tip about the tile gestures. It goes once the person has dragged a tile or opened its controls. */
+function GestureTip({ show }: { show: boolean }) {
+  const drag = useHint("drag"), hold = useHint("hold");
+  if (!show || (!drag && !hold)) return null;
+  return (
+    <Notice action={<IconButton aria-label="Dismiss tip" onClick={() => { learned("drag"); learned("hold"); }}><Icon n="x" c="sm" /></IconButton>}>
+      Drag a lamp, fan or blind sideways to set it. Hold any tile for more controls.
+    </Notice>
   );
 }
 const plain = (h: string) => h.replace(/<[^>]+>/g, "");
@@ -313,13 +327,14 @@ function HomePhone() {
         ) : null}
       </Tile>
       <div className="sh2"><h2>Favourites</h2><small>Tap · hold for more</small></div>
+      <GestureTip show={favs.some((d) => d.t === "dim" || d.t === "fan" || (d.t === "cover" && !!d.ops?.includes("set_position")))} />
       {favs.length ? (
         <div className="pg3">{favs.map((d) => <DTile key={d.id} d={d} />)}
           {favs.length % 3 ? <AddTile onClick={() => go("rooms")} hint="Pin your most-used device">Add favourite</AddTile> : null}</div>
       ) : <Empty style={{ gridColumn: "span 2" }}>Star a device in Rooms to pin it here.</Empty>}
       <Tile id="locks" className="pt s2 t-deep deep dstrip" bare>
         <div className="lkpair">{l.map((d) => (
-          <LockTile key={d.id} icon={icn(d)} name={d.n} status={d.locked ? "Locked" : "Open · tap to lock"} locked={d.locked!} label={`${d.n} is ${d.locked ? "locked. Tap to unlock" : "unlocked. Tap to lock"}`} onClick={() => (d.locked ? A.unlock(d.id) : A.lock(d.id))} />
+          <LockTile key={d.id} icon={icn(d)} name={d.n} status={d.locked ? "Locked" : "Open · tap to lock"} locked={d.locked!} hint={d.locked ? "Tap to unlock." : "Tap to lock."} onClick={() => (d.locked ? A.unlock(d.id) : A.lock(d.id))} />
         ))}</div>
       </Tile>
       <Tile id="scenes" className="pt s2" bare style={{ padding: "8px 10px" }}>
@@ -330,7 +345,7 @@ function HomePhone() {
       {ac ? <Tile id="climate" className="pt t-clay" bare>
         <div className="th" style={{ minHeight: 24 }}><span className="eyebrow">{ac.n}</span><Switch checked={!!ac.on} label={ac.n} onChange={() => A.tog(ac.id)} /></div>
         <div className="mini-big">{ac.cur!.toFixed(1)}°</div>
-        <div className="temp"><StepButton onClick={() => A.tgt(ac.id, -1)} aria-label="Lower target"><Icon n="minus" /></StepButton><b className="num" style={{ fontSize: 17 }}>{ac.tgt}° <small style={{ fontWeight: 500 }}>target</small></b><StepButton onClick={() => A.tgt(ac.id, 1)} aria-label="Raise target"><Icon n="plus" /></StepButton></div>
+        <div className="temp"><StepButton onClick={() => A.tgt(ac.id, -1)} aria-label="Lower target"><Icon n="minus" /></StepButton><b className="num" style={{ fontSize: "1.0625rem" }}>{ac.tgt}° <small style={{ fontWeight: 500 }}>target</small></b><StepButton onClick={() => A.tgt(ac.id, 1)} aria-label="Raise target"><Icon n="plus" /></StepButton></div>
       </Tile> : null}
       <Tile id="energy" className="pt" bare>
         <div className="th" style={{ minHeight: 24 }}><span className="eyebrow">Energy now</span></div>
@@ -338,7 +353,7 @@ function HomePhone() {
         <Sparkline values={series(kw)} width={160} height={40} /><small>Today {todayText()}</small>
       </Tile>
       <Tile id="activity" className="pt s2" bare>
-        <button className="accrow" onClick={() => { S.exp.act = !S.exp.act; bump(); }} aria-expanded={!!S.exp.act}>
+        <button className="accrow" onClick={() => { haptic("light"); S.exp.act = !S.exp.act; bump(); }} aria-expanded={!!S.exp.act}>
           <span className="ei"><Icon n={nw ? "clock" : "check"} /></span>
           <span className="grow"><b>{nw ? nw + " new since you were away" : "Caught up"}</b><small>{S.activity[0] ? plain(S.activity[0].t) : "Nothing yet"}</small></span>
           <Icon n="chev" c="sm accv" />
@@ -352,7 +367,7 @@ function HomePhone() {
       </Tile>
       <Tile id="people" className="pt s2" bare>
         <div className="avrow">{S.people.map((p) => (
-          <button key={p.id} className="avp" onClick={() => A.person()} aria-label={`${p.n} is ${p.home ? "home" : "away"}. It follows their phone.`}>
+          <button key={p.id} className="avp" onClick={() => { haptic("light"); A.person(); }} aria-label={`${p.n} is ${p.home ? "home" : "away"}. It follows their phone.`}>
             <Avatar initial={p.n[0]} tone={p.c} away={!p.home} />{p.n}<small>{p.home ? "Home" : "Away"}</small>
           </button>
         ))}</div>
@@ -375,7 +390,6 @@ export function HomeView() {
   useS();
   const phone = usePhone(), mounted = useMounted();
   if (!mounted) return null;
-  resetTileOrder();
   if (phone && S.role !== "guest") return <HomePhone />;
   if (S.role === "guest") return <div className="grid"><TGuestHero /><TNotes /><TGuestDevices /><TAccess /></div>;
   return (

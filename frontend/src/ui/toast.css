@@ -8,6 +8,8 @@
 .toast[data-placement=inline][data-show=false]{display:none}
 @media (max-width:900px){.toast{--toast-bottom:96px}}
 
+.toast{translate:var(--sx,0px) var(--sy,0px);touch-action:none}
+.toast[data-swiping]{transition:none}
 .toast-i{flex:none;display:grid;place-items:center;width:22px;height:22px;margin-top:1px;border-radius:50%;background:color-mix(in srgb,var(--tile) 18%,transparent)}
 .toast[data-tone=warn] .toast-i{background:var(--clay);color:#fff}
 .toast[data-tone=ok] .toast-i{background:var(--ok);color:#fff}
@@ -15,7 +17,7 @@
 .toast-h{font-weight:700}
 .toast-t{margin:0;overflow-wrap:anywhere;word-break:break-word;line-height:1.4}
 .toast-t.clamp{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:var(--lines,5);overflow:hidden}
-.toast-more{align-self:flex-start;margin-top:2px;font-size:12.5px;font-weight:700;opacity:.8;text-decoration:underline;text-underline-offset:3px}
+.toast-more{align-self:flex-start;margin-top:2px;font-size:0.7812rem;font-weight:700;opacity:.8;text-decoration:underline;text-underline-offset:3px}
 .toast-a{flex:none;display:flex;align-items:center;gap:2px;margin-top:-2px}
 .toast-undo{min-height:36px;padding:0 10px;font-weight:700;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
 .toast-x{width:36px;height:36px;color:inherit;opacity:.7;background:transparent}

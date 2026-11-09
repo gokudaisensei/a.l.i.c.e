@@ -1,14 +1,14 @@
 /* ModeButton and SceneCard. */
 .mode{display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:16px;background:var(--over);text-align:left;min-height:84px;transition:transform .12s,background .2s}
-.mode b{font:650 16px var(--f-display);font-stretch:92%}
+.mode b{font:650 1rem var(--f-display);font-stretch:92%}
 .mode small{line-height:1.25}
 .mode[aria-pressed=true]{background:var(--sage);color:var(--on-sage)}
-.mode[aria-pressed=true] small{color:inherit;opacity:.85}
-.scene{display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:18px;background:var(--tile2);text-align:left;transition:transform .12s,background .2s;min-height:112px}
+.mode[aria-pressed=true] small{color:inherit;opacity:.92}
+.scene{display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:18px;background:var(--tile2);text-align:left;transition:transform .12s,background .2s;min-height:112px;min-width:0;overflow-wrap:anywhere;max-width:100%}
 @media(hover:hover){
   .scene:hover{background:var(--sage-soft)}
 }
-.scene b{font:650 16px var(--f-display);font-stretch:92%}
+.scene b{font:650 1rem var(--f-display);font-stretch:92%}
 .scene .ic{color:var(--sage)}
 .scene.rec{outline:2px solid var(--sage);outline-offset:-2px}
 @media (max-width:620px){

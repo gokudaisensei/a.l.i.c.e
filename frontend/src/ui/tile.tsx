@@ -1,26 +1,29 @@
 "use client";
-import { createContext, useContext, type CSSProperties, type ReactNode } from "react";
+import { createContext, useContext, type ComponentProps, type CSSProperties, type ReactNode } from "react";
 import { Icon } from "./icon";
 import { cn } from "./cn";
+import { haptic } from "./haptics";
 
 /**
  * Phone-only accordion for tiles. Provide this above a grid and every `Tile` inside
  * becomes collapsible. The library holds no state: `isOpen` and `toggle` are yours.
  */
 export interface AccordionApi { scope: string; isOpen: (key: string, fallback: boolean) => boolean; toggle: (key: string, nextOpen: boolean) => void }
+/** Provide this above a grid to make its tiles collapsible on a phone. */
 export const AccordionContext = createContext<AccordionApi | null>(null);
 const TileKey = createContext<{ key: string; open: boolean; api: AccordionApi } | null>(null);
-
-let counter = 0;
-/** Reset the stagger counter at the top of each view so tiles animate in order. */
-export const resetTileOrder = () => { counter = 0; };
 
 type Vars = CSSProperties & Record<`--${string}`, string | number>;
 
 export interface TileProps {
+  /** A stable name for the tile: becomes its element id and its accordion key. */
   id: string;
-  /** Column span on desktop, tablet and phone-wide grids. */
-  cols?: number; colsTablet?: number; colsMobile?: number;
+  /** Column span on desktop. */
+  cols?: number;
+  /** Column span on a tablet. */
+  colsTablet?: number;
+  /** Column span on a phone. */
+  colsMobile?: number;
   /** Row span. */
   rows?: number;
   /** Colour treatment: sage, clay, glow, deep, or hero. */
@@ -28,18 +31,19 @@ export interface TileProps {
   className?: string;
   /** Skip the card chrome. Used for phone layouts that style themselves. */
   bare?: boolean;
+  /** Inline styles, including `--custom` properties. */
   style?: Vars;
   /** Start expanded when inside an accordion. */
   defaultOpen?: boolean;
   children: ReactNode;
 }
 
+/** A card on the home grid: sized in columns and rows, tinted with `tone`, and (on a phone, inside an `AccordionContext`) collapsible. */
 export function Tile({ id, cols = 4, colsTablet = 3, colsMobile = 6, rows = 2, tone, className, bare, style, defaultOpen, children }: TileProps) {
   const api = useContext(AccordionContext);
   const cls = cn(tone && (tone === "hero" ? "hero" : `t-${tone}`), tone === "deep" && "deep", className);
   if (bare) return <section className={cls} id={`t-${id}`} style={style}>{children}</section>;
-  const order = counter++;
-  const vars: Vars = { "--c": cols, "--r": rows, "--ct": colsTablet, "--cm": colsMobile, "--i": order, ...style };
+  const vars: Vars = { "--c": cols, "--r": rows, "--ct": colsTablet, "--cm": colsMobile, ...style };
   const key = api ? `${api.scope}:t-${id}` : null;
   const open = key && api ? api.isOpen(key, !!defaultOpen) : false;
   return (
@@ -50,9 +54,16 @@ export function Tile({ id, cols = 4, colsTablet = 3, colsMobile = 6, rows = 2, t
 }
 
 /** Tile header: title, optional eyebrow above it, optional trailing control. */
-export function TileHeader({ title, eyebrow, right }: { title?: ReactNode; eyebrow?: ReactNode; right?: ReactNode }) {
+export function TileHeader({ title, eyebrow, right }: {
+  /** The tile's heading. */
+  title?: ReactNode;
+  /** Small label above the title. */
+  eyebrow?: ReactNode;
+  /** A control at the end of the header. */
+  right?: ReactNode;
+}) {
   const acc = useContext(TileKey);
-  const toggle = () => acc?.api.toggle(acc.key, !acc.open);
+  const toggle = () => { haptic("select"); acc?.api.toggle(acc.key, !acc.open); };
   return (
     <div className="th" {...(acc ? { role: "button", tabIndex: 0, onClick: toggle, onKeyDown: (e: React.KeyboardEvent) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } } } : {})}>
       <div>
@@ -66,4 +77,4 @@ export function TileHeader({ title, eyebrow, right }: { title?: ReactNode; eyebr
 }
 
 /** Auto-fitting 12-column bento grid. */
-export function Grid({ children }: { children: ReactNode }) { return <div className="grid">{children}</div>; }
+export function Grid({ className, ...rest }: ComponentProps<"div">) { return <div data-slot="grid" className={cn("grid", className)} {...rest} />; }

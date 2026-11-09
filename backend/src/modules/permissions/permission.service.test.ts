@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import pino from "pino";
-import { createTestDb } from "@/core/database/client";
-import { auditLog, sensitiveOperationRules, users } from "@/core/database/schema";
-import type { AppEvent } from "@/core/events/app-events";
-import { InMemoryEventBus } from "@/core/events/event-bus";
+import { createTestDb } from "../../core/database/client";
+import { auditLog, sensitiveOperationRules, users } from "../../core/database/schema";
+import type { AppEvent } from "../../core/events/app-events";
+import { InMemoryEventBus } from "../../core/events/event-bus";
 import { CommandExecutor } from "../devices/commands/command-executor";
 import { DrizzleCommandStore } from "../devices/commands/drizzle-command-store";
 import { ConnectionManager } from "../home-assistant";

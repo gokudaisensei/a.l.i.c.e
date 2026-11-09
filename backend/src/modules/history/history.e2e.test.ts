@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { createWorld, homeWithHa, type World } from "@/testing/world";
+import { createWorld, homeWithHa, type World } from "../../testing/world";
 import { downsample, parseRange } from "./history.service";
 
 describe("thinning a long history", () => {

@@ -1,8 +1,8 @@
 /** Runs against the mock HA (bun run ha:up && bun run ha:bootstrap). Skipped when HA_TOKEN is not set. */
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import pino from "pino";
-import type { AppEvent } from "@/core/events/app-events";
-import { InMemoryEventBus } from "@/core/events/event-bus";
+import type { AppEvent } from "../../core/events/app-events";
+import { InMemoryEventBus } from "../../core/events/event-bus";
 import { HaWebSocketGateway } from "./clients/ha-ws-gateway";
 import { ConnectionManager } from "./connections/connection-manager";
 import { resolveOperation } from "./capabilities/capability-detector";

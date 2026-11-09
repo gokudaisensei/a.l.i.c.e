@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import { eq } from "drizzle-orm";
-import { auditLog } from "@/core/database/schema";
-import { FakeSocket } from "@/testing/fake-socket";
-import type { Browser } from "@/testing/http";
-import { createWorld, homeWithHa, type World } from "@/testing/world";
+import { auditLog } from "../../core/database/schema";
+import { FakeSocket } from "../../testing/fake-socket";
+import type { Browser } from "../../testing/http";
+import { createWorld, homeWithHa, type World } from "../../testing/world";
 
 let w: World;
 let h: Awaited<ReturnType<typeof homeWithHa>>;

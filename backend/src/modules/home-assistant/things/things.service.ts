@@ -1,11 +1,11 @@
 import { and, eq } from "drizzle-orm";
-import type { Db } from "@/core/database/client";
-import type { AppEvent } from "@/core/events/app-events";
-import type { EventBus } from "@/core/events/event-bus";
-import { entityOverrides, thingLinks, thingOverrides } from "@/core/database/schema";
-import { AppError, notFound } from "@/core/errors/errors";
-import { newId } from "@/core/ids";
-import { writeAudit } from "@/core/security/audit";
+import type { Db } from "../../../core/database/client";
+import type { AppEvent } from "../../../core/events/app-events";
+import type { EventBus } from "../../../core/events/event-bus";
+import { entityOverrides, thingLinks, thingOverrides } from "../../../core/database/schema";
+import { AppError, notFound } from "../../../core/errors/errors";
+import { newId } from "../../../core/ids";
+import { writeAudit } from "../../../core/security/audit";
 import type { ConnectionManager, ManagedConnection } from "..";
 import { buildThings } from "./thing-builder";
 import type { EntityRole, Thing, ThingOverrides } from "./types";

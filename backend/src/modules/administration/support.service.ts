@@ -1,9 +1,9 @@
 import { and, desc, eq, isNull, like, or } from "drizzle-orm";
-import type { Db } from "@/core/database/client";
-import { auditLog, supportSessions, users } from "@/core/database/schema";
-import { AppError, notFound } from "@/core/errors/errors";
-import { newId } from "@/core/ids";
-import { writeAudit } from "@/core/security/audit";
+import type { Db } from "../../core/database/client";
+import { auditLog, supportSessions, users } from "../../core/database/schema";
+import { AppError, notFound } from "../../core/errors/errors";
+import { newId } from "../../core/ids";
+import { writeAudit } from "../../core/security/audit";
 import type { NotificationsService } from "../notifications/notifications.service";
 
 type Row = typeof supportSessions.$inferSelect;

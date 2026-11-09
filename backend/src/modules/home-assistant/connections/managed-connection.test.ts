@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import pino from "pino";
-import type { AppEvent } from "@/core/events/app-events";
-import { InMemoryEventBus } from "@/core/events/event-bus";
+import type { AppEvent } from "../../../core/events/app-events";
+import { InMemoryEventBus } from "../../../core/events/event-bus";
 import { HaAuthError } from "../clients/ha-ws-gateway";
 import { FakeGateway, state } from "../testing";
 import { Backoff } from "./backoff";

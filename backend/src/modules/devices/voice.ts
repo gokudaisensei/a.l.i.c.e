@@ -1,6 +1,6 @@
 import { and, eq, inArray } from "drizzle-orm";
-import type { Db } from "@/core/database/client";
-import { entitySettings } from "@/core/database/schema";
+import type { Db } from "../../core/database/client";
+import { entitySettings } from "../../core/database/schema";
 import type { ConfigJob, ConfigJobService } from "../home-assistant/config-jobs.service";
 import type { HaSyncService } from "../home-assistant/sync.service";
 

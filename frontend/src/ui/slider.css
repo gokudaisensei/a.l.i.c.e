@@ -15,3 +15,6 @@
 .rng[data-size=xl][data-dragging] .rng-th{scale:1.12 1.04}
 .rng[data-disabled]{opacity:.5}
 @media (prefers-reduced-motion:reduce){.rng-i,.rng-th{transition:none}.rng[data-dragging] .rng-th{scale:1}}
+.rng-row{display:flex;align-items:center;gap:12px}
+.rng-row .rng{flex:1;min-width:0}
+.rng-v{min-width:3.2ch;text-align:right;font-size:.875rem;color:var(--ink2)}

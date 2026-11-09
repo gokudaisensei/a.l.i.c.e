@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
-import type { Db } from "@/core/database/client";
-import { userPreferences, users } from "@/core/database/schema";
-import { AppError, notFound } from "@/core/errors/errors";
+import type { Db } from "../../core/database/client";
+import { userPreferences, users } from "../../core/database/schema";
+import { AppError, notFound } from "../../core/errors/errors";
 
 export class UserService {
   constructor(private readonly db: Db) {}

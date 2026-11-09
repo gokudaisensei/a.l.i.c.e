@@ -15,6 +15,9 @@
     "ha:seed": "bun dev/ha/seed-home.ts",
     "ha:down": "docker compose -f dev/ha/docker-compose.yml down -v",
     "ha:logs": "docker compose -f dev/ha/docker-compose.yml logs -f",
+    "demo": "bun scripts/demo.ts",
+    "demo:ha:up": "docker compose -f dev/ha/demo/docker-compose.yml up -d",
+    "demo:ha:down": "docker compose -f dev/ha/demo/docker-compose.yml down -v",
     "worker": "bun src/worker/index.ts",
     "keys:generate": "bun scripts/generate-keys.ts"
   },
@@ -33,5 +36,8 @@
     "@types/web-push": "^3.6.4",
     "drizzle-kit": "^0.31.11",
     "typescript": "^5.9.3"
+  },
+  "exports": {
+    "./app": "./src/app.ts"
   }
 }

@@ -1,15 +1,15 @@
 import { asc, eq } from "drizzle-orm";
-import type { Db } from "@/core/database/client";
-import { type ActionSpec, scenes } from "@/core/database/schema";
-import { AppError, notFound } from "@/core/errors/errors";
-import { newId } from "@/core/ids";
-import { writeAudit } from "@/core/security/audit";
+import type { Db } from "../../core/database/client";
+import { type ActionSpec, scenes } from "../../core/database/schema";
+import { AppError, notFound } from "../../core/errors/errors";
+import { newId } from "../../core/ids";
+import { writeAudit } from "../../core/security/audit";
 import type { ActionService, SkippedAction } from "../devices/actions";
 import type { DeviceCommand } from "../devices/commands/command-types";
 import type { Caller } from "../devices/devices.service";
 import { type HaScriptView, type HaSyncService, scriptView } from "../home-assistant/sync.service";
-import type { AppEvent } from "@/core/events/app-events";
-import type { EventBus } from "@/core/events/event-bus";
+import type { AppEvent } from "../../core/events/app-events";
+import type { EventBus } from "../../core/events/event-bus";
 
 export const MAX_SCENE_ACTIONS = 50;
 

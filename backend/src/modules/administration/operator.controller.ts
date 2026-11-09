@@ -1,7 +1,7 @@
 import { Elysia, t } from "elysia";
-import { AppError } from "@/core/errors/errors";
-import { clientIp, enforce } from "@/core/http/rate-limit";
-import type { Services } from "@/services";
+import { AppError } from "../../core/errors/errors";
+import { clientIp, enforce } from "../../core/http/rate-limit";
+import type { Services } from "../../services";
 
 /** What support staff can reach. Authenticated by an operator token, never by a household session. */
 export const operatorController = ({ operators, limits }: Services) =>

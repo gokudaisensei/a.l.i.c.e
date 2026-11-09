@@ -1,0 +1,30 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "loading",
+  "type": "registry:ui",
+  "title": "Loading",
+  "description": "A calm waiting state: a softly breathing mark and a short line. Use it instead of a bare “Loading…”.",
+  "dependencies": [],
+  "registryDependencies": [
+    "utilities"
+  ],
+  "files": [
+    {
+      "path": "ui/loading.tsx",
+      "type": "registry:ui",
+      "content": "import type { ComponentProps } from \"react\";\nimport { cn } from \"./cn\";\n\n/** Calm waiting state: a softly breathing mark and a short line. Use instead of bare \"Loading…\" text. */\nexport function Loading({ label = \"Loading…\", className, ...rest }: Omit<ComponentProps<\"div\">, \"children\"> & {\n  /** What is being waited for, in a few words. */\n  label?: string;\n}) {\n  return (\n    <div data-slot=\"loading\" role=\"status\" className={cn(\"loading\", className)} {...rest}>\n      <span className=\"loading-mark\" aria-hidden=\"true\"><i /></span>\n      <span>{label}</span>\n    </div>\n  );\n}\n"
+    },
+    {
+      "path": "ui/loading.css",
+      "type": "registry:style",
+      "content": ".loading{display:flex;flex-direction:column;align-items:center;gap:14px;padding:18px 0;color:var(--ink2);font-weight:600}\n.loading-mark{width:46px;height:46px;border-radius:50%;background:var(--sage-soft);display:grid;place-items:center;animation:pulse 1.8s ease-in-out infinite}\n.loading-mark i{width:12px;height:12px;border-radius:50%;background:var(--sage)}\n@media (prefers-reduced-motion:reduce){.loading-mark{animation:none}}\n"
+    }
+  ],
+  "meta": {
+    "category": "Feedback",
+    "status": "stable",
+    "exports": [
+      "Loading"
+    ]
+  }
+}

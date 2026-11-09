@@ -1,14 +1,14 @@
 import { eq } from "drizzle-orm";
 import type { Logger } from "pino";
-import type { Db } from "@/core/database/client";
-import { haConnections } from "@/core/database/schema";
-import { AppError, notFound } from "@/core/errors/errors";
-import type { AppEvent } from "@/core/events/app-events";
-import type { EventBus } from "@/core/events/event-bus";
-import { newId } from "@/core/ids";
-import { writeAudit } from "@/core/security/audit";
-import { decryptSecret, encryptSecret } from "@/core/security/secrets";
-import { seal } from "@/core/security/sealed";
+import type { Db } from "../../core/database/client";
+import { haConnections } from "../../core/database/schema";
+import { AppError, notFound } from "../../core/errors/errors";
+import type { AppEvent } from "../../core/events/app-events";
+import type { EventBus } from "../../core/events/event-bus";
+import { newId } from "../../core/ids";
+import { writeAudit } from "../../core/security/audit";
+import { decryptSecret, encryptSecret } from "../../core/security/secrets";
+import { seal } from "../../core/security/sealed";
 import { HaAuthError } from "./clients/ha-ws-gateway";
 import type { ConnectionManager, GatewayFactory } from "./connections/connection-manager";
 

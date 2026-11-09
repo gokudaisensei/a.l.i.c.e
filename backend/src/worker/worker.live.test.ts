@@ -6,13 +6,13 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { createConnection, createLongLivedTokenAuth } from "home-assistant-js-websocket";
 import pino from "pino";
-import { buildApp } from "@/app";
-import { createTestDb } from "@/core/database/client";
-import type { AppEvent } from "@/core/events/app-events";
-import { InMemoryEventBus } from "@/core/events/event-bus";
-import { createServices } from "@/services";
-import { Browser } from "@/testing/http";
-import { SEAL_KEYS, SECRETS_KEY, TEST_AUTH } from "@/testing/world";
+import { buildApp } from "../app";
+import { createTestDb } from "../core/database/client";
+import type { AppEvent } from "../core/events/app-events";
+import { InMemoryEventBus } from "../core/events/event-bus";
+import { createServices } from "../services";
+import { Browser } from "../testing/http";
+import { SEAL_KEYS, SECRETS_KEY, TEST_AUTH } from "../testing/world";
 import { ConfigWorker } from "./config-worker";
 import { HaAdminApi } from "./ha-admin-api";
 

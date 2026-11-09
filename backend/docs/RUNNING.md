@@ -7,6 +7,10 @@ Two processes share one SQLite file (`DATABASE_URL`) on the same machine.
 | Server | `bun run start` (or `bun run dev`) | The operational Home Assistant token (encrypted with `SECRETS_KEY`), the **public** half of the admin-token seal |
 | Config-worker | `bun run worker` | The **private** half of the admin-token seal, and with it the only ability to read the Home Assistant admin token |
 
+## One workspace
+
+The repository is a Bun workspace (`package.json` at the root lists `backend` and `frontend`): run `bun install` once at the root. The frontend talks to the backend through Eden Treaty, typed from the backend's own routes (`import type { App } from "alice-backend/app"`, used in `frontend/src/lib/api.ts`), so a changed route, request body or response shows up as a compile error in the frontend (`bunx tsc --noEmit` in `frontend/`). Backend files import each other by relative path (no `@/` alias), because the frontend type-checks them too.
+
 ## First-time setup
 
 1. Generate keys: `bun run keys:generate`. It prints `SECRETS_KEY`, `ADMIN_SEAL_PUBLIC_KEY` and `ADMIN_SEAL_PRIVATE_KEY`.
@@ -52,9 +56,17 @@ Without it everything in Alice still works, but nothing is written to Home Assis
 
 Backend (`backend/`), each in its own terminal: `bun run ha:up`, `bun run ha:bootstrap`, `bun run ha:seed` (once), then `bun run dev` and `bun run worker`. Put keys in `backend/.env` (`bun run keys:generate`; the worker also needs `ADMIN_SEAL_PRIVATE_KEY`). Frontend (`frontend/`): set `BACKEND_URL` and `NEXT_PUBLIC_WS_URL` in `.env.local`, then `bun run dev`. The backend's `WEBAUTHN_ORIGIN` must be the address you open the frontend at (for example `http://localhost:3001`), and the backend must not use the frontend's port.
 
+## Running a demo over the internet
+
+`cd backend && bun run demo` starts everything and opens a temporary Cloudflare tunnel (needs Docker, Bun and `cloudflared`). It prints an `https://<random>.trycloudflare.com` address and, for the first-run setup, the demo Home Assistant's address and token. The demo Home Assistant is its own container on port 8124 with 8 rooms and about 55 devices; `--reseed` puts it back to the seeded state, `--build` rebuilds the app (it also rebuilds by itself when the front end's source is newer than the last build), `bun run demo:ha:down` deletes it, and `rm backend/data/demo.db*` starts Alice itself over. The address changes every run and passkeys belong to it, so a database used on one run cannot be signed into on the next (L102). To feel the haptics and gestures, open the printed address on an Android phone in Chrome: the app's account menu has a Haptics switch, and `/library` (no sign-in) has Foundations, Haptics and Gestures pages. `frontend/e2e/phone-haptics.mjs` measures them on a USB-connected phone against Android's own vibration log (steps in its header). To check a running demo end to end: `DEMO_URL=<address> node frontend/e2e/demo-check.mjs` (it uses up a fresh database's first-user setup).
+
 ## Trying it on a phone
 
 Plug in an Android phone with USB debugging, then (ports as in your `.env` files): `adb reverse tcp:3001 tcp:3001`, `adb reverse tcp:3002 tcp:3002` and open `http://localhost:3001` in Chrome on the phone; localhost counts as a secure page, so passkeys and push are allowed. `adb forward tcp:9333 localabstract:chrome_devtools_remote` lets `INVITE=<code> node frontend/e2e/phone-debug.mjs` drive Chrome on the phone (with the software passkey, see L40 and L99). A real passkey store may refuse `http://localhost`; use an HTTPS domain for that.
+
+### A separate copy of the product for phone and screen testing
+
+`node frontend/dev/phone-stack.mjs` starts a backend (with its worker) on a fresh database and the front end in dev mode on their own ports (app 3020, backend 3022), so your own dev servers and data are left alone. It uses the mock Home Assistant (`bun run ha:up`). With the phone on USB: `adb reverse tcp:3020 tcp:3020`, `adb reverse tcp:3022 tcp:3022`, `adb forward tcp:9333 localabstract:chrome_devtools_remote`, then `node frontend/e2e/phone-tiers.mjs <out-dir>` sets up a household on it (software passkey), makes the home busy (`e2e/rich.mjs`: long names, covers left open, a long automation) and checks every screen at five text sizes on the phone's own Chrome, saving screenshots. It does not change any phone setting. Stop it with Ctrl-C; remove the ports with `adb reverse --remove` and `adb forward --remove`. `sh frontend/e2e/compare-with-head.sh [ref]` compares the screens pixel by pixel against another commit.
 
 ## End-to-end tests
 

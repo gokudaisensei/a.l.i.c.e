@@ -1,6 +1,6 @@
-import { auditLog } from "@/core/database/schema";
-import type { DbLike } from "@/core/database/types";
-import { newId } from "@/core/ids";
+import { auditLog } from "../database/schema";
+import type { DbLike } from "../database/types";
+import { newId } from "../ids";
 
 export interface AuditEntry {
   householdId?: string | null;

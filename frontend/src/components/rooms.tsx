@@ -1,22 +1,14 @@
 "use client";
 import { useEffect, useRef } from "react";
-import { Icon, Button, IconButton, StepButton, Tooltip, Pill, FilterChip, Switch, Segmented, Bar, Empty, PageHeader, resetTileOrder } from "@/ui";
+import { Icon, Button, IconButton, StepButton, Tooltip, Pill, FilterChip, Switch, Segmented, Bar, Empty, PageHeader, haptic } from "@/ui";
 import { LockButton, DevSlider } from "./device-controls";
 import { DTile } from "./home";
-import { A, S, useS, usePhone, useMounted, vis, isOn, icn, rname, nowS, bump } from "@/lib/store";
+import { Cam } from "./camera";
+import { A, S, useS, usePhone, useMounted, vis, isOn, icn, dstate, rname, bump } from "@/lib/store";
 import { ROOMS, type Dev } from "@/lib/data";
 import { loadHidden, setHidden } from "@/lib/live";
 
 const CAN = ["dim", "light", "plug", "fan", "climate", "other"];
-
-export function Cam({ d }: { d: Dev }) {
-  return (
-    <div className="cam">
-      <svg viewBox="0 0 160 90" preserveAspectRatio="none" aria-hidden="true"><path d="M0 62 L40 46 L84 58 L120 40 L160 54 V90 H0Z" fill="#fff" /></svg>
-      <span className="rec"><i />LIVE</span><span className="tag">{d.n} · {nowS()}</span>
-    </div>
-  );
-}
 
 function DCard({ d }: { d: Dev }) {
   const on = isOn(d), wide = d.t === "camera";
@@ -36,7 +28,7 @@ function DCard({ d }: { d: Dev }) {
   );
   else if (d.t === "climate") body = (
     <div className="temp">
-      <div><b className="num" style={{ fontSize: 26 }}>{d.cur!.toFixed(1)}°</b><div className="small">now</div></div>
+      <div><b className="num" style={{ fontSize: "1.625rem" }}>{d.cur!.toFixed(1)}°</b><div className="small">now</div></div>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <StepButton style={{ background: "var(--tile2)" }} onClick={() => A.tgt(d.id, -1)} aria-label="Lower target"><Icon n="minus" /></StepButton>
         <b className="num" style={{ minWidth: 34, textAlign: "center" }}>{d.tgt}°</b>
@@ -50,6 +42,7 @@ function DCard({ d }: { d: Dev }) {
     </div>
   );
   else if (d.t === "camera") body = <><Cam d={d} /><div className="btns"><Button size="sm" onClick={() => A.live(d.id)}><Icon n="eye" c="sm" />Open live view</Button></div></>;
+  else if (d.t === "cover") body = <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}><span className={`pill ${d.open ? "warn" : "ok"}`}>{dstate(d)}</span><Button size="sm" onClick={() => A.dtap(d.id)}>{d.mv ? "Stop" : d.open ? "Close" : "Open"}</Button></div>;
   else if (d.t === "contact") body = <div><span className={`pill ${d.open ? "warn" : "ok"}`}><Icon n={d.open ? "alert" : "check"} c="sm" />{d.open ? "Open" : "Closed"}</span> <span className="small">Changed 2 h ago</span></div>;
 
   let foot: React.ReactNode;
@@ -57,7 +50,7 @@ function DCard({ d }: { d: Dev }) {
     const can = CAN.includes(d.t);
     foot = d.t === "lock"
       ? <span className="voice" title="Locks are never exposed to voice assistants"><Icon n="lock" c="sm" />Never by voice</span>
-      : can ? <button className="voice" aria-pressed={!!d.voice} onClick={() => A.voice(d.id)}><Icon n="mic" c="sm" />{d.voice ? "Alexa · Google" : "Voice off"}</button>
+      : can ? <button className="voice" aria-pressed={!!d.voice} onClick={() => { haptic(d.voice ? "toggleOff" : "toggleOn"); A.voice(d.id); }}><Icon n="mic" c="sm" />{d.voice ? "Alexa · Google" : "Voice off"}</button>
         : <span />;
   } else foot = <span />;
 
@@ -72,7 +65,7 @@ function DCard({ d }: { d: Dev }) {
       <div className="dc-f">
         {foot}
         {S.role !== "guest" ? <Tooltip label="Rename or hide"><IconButton aria-label={`Rename or hide ${d.n}`} onClick={() => A.editDev(d.id)}><Icon n="note" /></IconButton></Tooltip> : null}
-        <Tooltip label={`${d.fav ? "Remove from" : "Add to"} favourites`}><button className={`icon-btn ${d.fav ? "on" : ""}`} aria-pressed={!!d.fav} aria-label={`${d.fav ? "Remove from" : "Add to"} favourites`} onClick={() => A.fav(d.id)}><Icon n="star" /></button></Tooltip>
+        <Tooltip label={`${d.fav ? "Remove from" : "Add to"} favourites`}><IconButton active={!!d.fav} haptic={d.fav ? "toggleOff" : "toggleOn"} aria-pressed={!!d.fav} aria-label={`${d.fav ? "Remove from" : "Add to"} favourites`} onClick={() => A.fav(d.id)}><Icon n="star" /></IconButton></Tooltip>
       </div>
     </div>
   );
@@ -115,7 +108,6 @@ export function RoomsView() {
   useEffect(() => { if (S.role === "admin") void loadHidden(); }, []);
   const phone = usePhone(), mounted = useMounted();
   if (!mounted) return null;
-  resetTileOrder();
   const all = vis(), rs = ROOMS.filter((r) => all.some((d) => d.r === r.id)), vc = all.filter((d) => d.voice).length;
 
   /**

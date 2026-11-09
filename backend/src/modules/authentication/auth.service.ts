@@ -8,13 +8,13 @@ import {
   type RegistrationResponseJSON,
 } from "@simplewebauthn/server";
 import { and, asc, desc, eq, gt, isNull } from "drizzle-orm";
-import type { Db } from "@/core/database/client";
-import { passkeys, recoveryCodes, sessions, userPreferences, users, webauthnChallenges } from "@/core/database/schema";
-import type { DbLike } from "@/core/database/types";
-import { AppError, conflict, notFound } from "@/core/errors/errors";
-import { newId } from "@/core/ids";
-import { writeAudit } from "@/core/security/audit";
-import { normalizeCode, randomToken, recoveryCode, sha256 } from "@/core/security/tokens";
+import type { Db } from "../../core/database/client";
+import { passkeys, recoveryCodes, sessions, userPreferences, users, webauthnChallenges } from "../../core/database/schema";
+import type { DbLike } from "../../core/database/types";
+import { AppError, conflict, notFound } from "../../core/errors/errors";
+import { newId } from "../../core/ids";
+import { writeAudit } from "../../core/security/audit";
+import { normalizeCode, randomToken, recoveryCode, sha256 } from "../../core/security/tokens";
 import type { HouseholdService } from "../households/household.service";
 
 export interface AuthConfig {
@@ -51,6 +51,9 @@ const HOUR = 3_600_000;
 const unauthorized = (msg = "Authentication failed") => new AppError(401, "invalid_credentials", msg);
 const b64ToBytes = (s: string) => new Uint8Array(Buffer.from(s, "base64url"));
 const bytesToB64 = (b: Uint8Array) => Buffer.from(b).toString("base64url");
+
+/** How long the browser waits for a passkey. The default (60 s) is too short for "use your phone": scanning, unlocking and approving takes longer. Matches the server's challenge lifetime. */
+const PROMPT_TIMEOUT_MS = 5 * 60_000;
 
 export class AuthService {
   private readonly stepUpTtl: number;
@@ -103,6 +106,7 @@ export class AuthService {
       rpName: this.cfg.rpName, rpID: this.cfg.rpId, userName: displayName, userDisplayName: displayName,
       userID: new TextEncoder().encode(userId), attestationType: "none",
       authenticatorSelection: { residentKey: "required", userVerification: "preferred" },
+      timeout: PROMPT_TIMEOUT_MS,
     });
     const challengeId = this.saveChallenge("register", options.challenge, userId, { displayName, inviteCode: input.inviteCode ?? null });
     return { challengeId, options };
@@ -151,7 +155,7 @@ export class AuthService {
   // ---- login ----
 
   async loginOptions() {
-    const options = await generateAuthenticationOptions({ rpID: this.cfg.rpId, userVerification: "preferred" });
+    const options = await generateAuthenticationOptions({ rpID: this.cfg.rpId, userVerification: "preferred", timeout: PROMPT_TIMEOUT_MS });
     return { challengeId: this.saveChallenge("login", options.challenge, null, null), options };
   }
 
@@ -183,7 +187,7 @@ export class AuthService {
   async stepUpOptions(s: SessionContext) {
     const mine = this.db.select().from(passkeys).where(eq(passkeys.userId, s.userId)).all();
     const options = await generateAuthenticationOptions({
-      rpID: this.cfg.rpId, userVerification: "required",
+      rpID: this.cfg.rpId, userVerification: "required", timeout: PROMPT_TIMEOUT_MS,
       allowCredentials: mine.map((p) => ({ id: p.id, transports: (p.transports ?? undefined) as AuthenticatorTransport[] | undefined })),
     });
     return { challengeId: this.saveChallenge("step_up", options.challenge, s.userId, { sessionId: s.sessionId }), options };
@@ -211,6 +215,7 @@ export class AuthService {
       userID: new TextEncoder().encode(user.id), attestationType: "none",
       excludeCredentials: existing.map((p) => ({ id: p.id })),
       authenticatorSelection: { residentKey: "required", userVerification: "preferred" },
+      timeout: PROMPT_TIMEOUT_MS,
     });
     return { challengeId: this.saveChallenge("add_passkey", options.challenge, s.userId, { sessionId: s.sessionId }), options };
   }

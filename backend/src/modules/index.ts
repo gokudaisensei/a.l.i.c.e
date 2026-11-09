@@ -1,5 +1,5 @@
 import { Elysia } from "elysia";
-import type { Services } from "@/services";
+import type { Services } from "../services";
 import { authController } from "./authentication";
 import { usersController } from "./users";
 import { householdsController } from "./households";

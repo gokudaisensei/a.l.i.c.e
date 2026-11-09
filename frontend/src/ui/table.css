@@ -1,0 +1,6 @@
+/* Table. */
+.table{width:100%;border-collapse:collapse;font-size:0.8438rem}
+.table th{font:500 0.6562rem var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);text-align:left;padding:6px 10px 8px 0}
+.table td{padding:10px 10px 10px 0;border-top:1px solid var(--line);vertical-align:middle}
+.tscroll{overflow-x:auto}
+.table.mono{font-size:.75rem}

@@ -1,0 +1,106 @@
+/* Material: the control layer. A translucent, softly blurred surface for the things that float above content (tab bar, top bar,
+   Ask button, sheets, popovers, toasts, and a control while it is being held). Content stays solid. One idea, used sparingly:
+   Apple's "functional layer", made with a web material (backdrop blur, a light edge, a soft shadow).
+   Opacities are high on purpose: text sits on these, so the colour behind must never pull it below 4.5:1.
+   Every glass rule is written as :root .x so it wins over the screen rules whatever the load order. */
+:root{
+  --glass-bar:color-mix(in srgb,var(--tile) 80%,transparent);     /* tab bar, top bar, Ask button */
+  --glass-sheet:color-mix(in srgb,var(--tile) 90%,transparent);   /* sheets and popovers: more text, so more solid */
+  --glass-dark:color-mix(in srgb,var(--ink) 84%,transparent);     /* toast: an inverse card */
+  --glass-hi:color-mix(in srgb,#fff 72%,transparent);             /* the selected item inside glass */
+  --glass-blur:20px; --glass-sat:1.5;
+  --glass-edge:inset 0 1px 0 rgba(255,255,255,.75),inset 0 0 0 1px rgba(255,255,255,.4);
+  --glass-shadow:0 14px 34px -14px rgba(44,38,24,.5);
+  --r-bar:26px;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --glass-hi:rgba(255,255,255,.13);
+    --glass-edge:inset 0 1px 0 rgba(255,255,255,.12),inset 0 0 0 1px rgba(255,255,255,.06);
+    --glass-shadow:0 14px 34px -14px rgba(0,0,0,.75);
+  }
+}
+:root[data-theme="dark"]{
+  --glass-hi:rgba(255,255,255,.13);
+  --glass-edge:inset 0 1px 0 rgba(255,255,255,.12),inset 0 0 0 1px rgba(255,255,255,.06);
+  --glass-shadow:0 14px 34px -14px rgba(0,0,0,.75);
+}
+/* People who ask for less transparency or more contrast, and browsers without backdrop blur, get solid surfaces. */
+@media (prefers-reduced-transparency:reduce),(prefers-contrast:more){
+  :root{--glass-bar:var(--tile);--glass-sheet:var(--tile);--glass-dark:var(--ink);--glass-hi:var(--tile2);--glass-blur:0px;--glass-sat:1;
+    --glass-edge:inset 0 0 0 1px var(--line)}
+}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  :root{--glass-bar:var(--tile);--glass-sheet:var(--tile);--glass-dark:var(--ink);--glass-hi:var(--tile2)}
+}
+.glass{background:var(--glass-bar);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));box-shadow:var(--glass-edge),var(--glass-shadow)}
+
+/* ---- phone chrome: a floating tab bar, a top bar that fades into the page, an Ask button that matches ---- */
+@media (max-width:900px){
+  :root .rail{left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));bottom:calc(10px + env(safe-area-inset-bottom,0px));
+    padding:6px;border:0;border-radius:var(--r-bar);background:var(--glass-bar);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));
+    box-shadow:var(--glass-edge),var(--glass-shadow)}
+  :root .nav a{border-radius:calc(var(--r-bar) - 6px)}   /* concentric: the bar's radius minus its padding */
+  :root .nav a[aria-current=page]{background:var(--glass-hi);box-shadow:var(--glass-edge)}
+  :root .fab{background:var(--glass-bar);color:var(--ink);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));
+    box-shadow:var(--glass-edge),var(--glass-shadow);bottom:calc(88px + env(safe-area-inset-bottom,0px))}
+  /* soft scroll edge under the tab bar: content melts into the page instead of ending on a line */
+  body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:calc(110px + env(safe-area-inset-bottom,0px));z-index:39;pointer-events:none;
+    background:linear-gradient(to top,var(--bg) 30%,color-mix(in srgb,var(--bg) 0%,transparent))}
+  /* the top bar stays put and fades into the page; its box is unchanged, so nothing moves */
+  :root .top{position:sticky;top:0;z-index:35;isolation:isolate}
+  :root .top::before{content:"";position:absolute;inset:-12px -16px -30px;z-index:-1;pointer-events:none;
+    background:linear-gradient(to bottom,var(--bg) 72%,color-mix(in srgb,var(--bg) 0%,transparent));
+    -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+    -webkit-mask-image:linear-gradient(to bottom,#000 72%,transparent);mask-image:linear-gradient(to bottom,#000 72%,transparent)}
+}
+
+/* ---- sheets, popovers, toasts: floating surfaces over content ---- */
+:root .sheet{background:var(--glass-sheet);-webkit-backdrop-filter:blur(28px) saturate(var(--glass-sat));backdrop-filter:blur(28px) saturate(var(--glass-sat));
+  box-shadow:var(--glass-edge),0 30px 80px -20px rgba(0,0,0,.5)}
+:root .float{background:var(--glass-sheet);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));
+  box-shadow:var(--glass-edge),0 18px 50px -14px rgba(0,0,0,.45),0 0 0 1px var(--line)}
+:root .toast{background:var(--glass-dark);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))}
+
+/* ---- a control while it is held: it lifts and picks up the material (a stand-in for Apple's glass that flexes under a finger) ---- */
+:root .rng[data-dragging] .rng-th{background:var(--glass-bar);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:var(--glass-edge),0 6px 16px rgba(0,0,0,.32)}
+:root .dial:active .dial-k,:root .cwheel:active .cthumb,:root .wstrip:active .wthumb{box-shadow:var(--glass-edge),0 6px 16px rgba(0,0,0,.4)}
+:root .dt.dragging{box-shadow:var(--glass-edge),0 18px 36px -12px rgba(0,0,0,.45)}
+:root .pg3 .dico{border-radius:8px}   /* concentric: the tile's 18 px radius minus its 10 px padding */
+
+/* ---- the selected tab is solid (filled icon, set in shell.tsx); the other tabs stay outlines ---- */
+:root .ic.filled{fill:currentColor}
+:root .nav a[aria-current=page] .ic{color:var(--ink)}
+
+/* ---- phone: the tab bar shrinks while you read downward (labels fold away, the selected one stays) and returns on the way up.
+   It does not shrink at large text sizes, where the labels are needed (Apple keeps them too). ---- */
+@media (max-width:900px){
+  :root .nav a>span:not(.badge){display:block;max-height:2.2em;transition:max-height .35s var(--ease-ios),opacity .2s var(--ease-out)}
+  :root:not([data-text=xl]):not([data-text=ax]) body.bar-min .rail{padding:3px;transition:padding .35s var(--ease-ios)}
+  :root:not([data-text=xl]):not([data-text=ax]) body.bar-min .nav a{min-height:44px;gap:0}
+  :root:not([data-text=xl]):not([data-text=ax]) body.bar-min .nav a:not([aria-current=page])>span:not(.badge){max-height:0;opacity:0;overflow:hidden}
+  :root:not([data-text=xl]):not([data-text=ax]) body.bar-min .nav a[aria-current=page]>span:not(.badge){max-height:2.2em}
+}
+@media (prefers-reduced-motion:reduce){
+  :root .nav a>span:not(.badge){transition:none}
+  :root body.bar-min .rail{transition:none}
+}
+
+/* ---- desktop: the side rail is a floating glass panel too, so the chrome is one family ---- */
+@media (min-width:901px){
+  :root .rail{padding:14px 10px;border-radius:calc(var(--r-bar) + 2px);background:var(--glass-bar);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));
+    box-shadow:var(--glass-edge),var(--glass-shadow)}
+  :root .nav a{border-radius:18px}
+  :root .nav a[aria-current=page]{background:var(--glass-hi);box-shadow:var(--glass-edge)}
+}
+
+/* ---- lensing: Chromium only (the script in components/lens.tsx sets data-lens). The surface bends what is behind it a little at
+   its edges, with less blur so the bend can be seen. Everyone else, and anyone who asks for less transparency or more contrast, keeps the plain glass. ---- */
+@media (max-width:900px){
+  :root[data-lens] .rail{-webkit-backdrop-filter:url(#alice-lens) blur(5px) saturate(var(--glass-sat));backdrop-filter:url(#alice-lens) blur(5px) saturate(var(--glass-sat))}
+  :root[data-lens] .fab{-webkit-backdrop-filter:url(#alice-lens) blur(5px) saturate(var(--glass-sat));backdrop-filter:url(#alice-lens) blur(5px) saturate(var(--glass-sat))}
+}
+:root[data-lens] .toast{-webkit-backdrop-filter:url(#alice-lens) blur(6px) saturate(var(--glass-sat));backdrop-filter:url(#alice-lens) blur(6px) saturate(var(--glass-sat))}
+@media (prefers-reduced-transparency:reduce),(prefers-contrast:more){
+  :root[data-lens] .rail,:root[data-lens] .fab,:root[data-lens] .toast{-webkit-backdrop-filter:none;backdrop-filter:none}
+}

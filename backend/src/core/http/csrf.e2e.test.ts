@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import { eq } from "drizzle-orm";
-import { sessions } from "@/core/database/schema";
-import { createWorld, MIN, type World } from "@/testing/world";
+import { sessions } from "../database/schema";
+import { createWorld, MIN, type World } from "../../testing/world";
 import { checkSocketOrigin } from "./csrf";
 
 let w: World;

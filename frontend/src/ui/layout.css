@@ -1,0 +1,13 @@
+/* Layout pieces that wrap by default. Reach for these before writing a one-off flex or grid.
+   Fixed pixel widths and heights are for icons, tracks and dials only; a row of text never gets nowrap
+   unless it truncates on purpose (text-overflow:ellipsis) and says so in a comment. */
+.stack{display:flex;flex-direction:column;gap:var(--gap,12px);min-width:0}
+.cluster{display:flex;flex-wrap:wrap;align-items:center;gap:var(--gap,8px);min-width:0}
+.cluster>*{min-width:0}
+/* Columns of at least --min that fill the width; one column when there is not room for two. */
+.autogrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,var(--min,9rem)),1fr));gap:var(--gap,10px);min-width:0}
+.autogrid>*{min-width:0}
+/* A line of text that truncates on purpose. */
+.clip{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+/* Text that may break anywhere rather than push a layout wider. */
+.breaks{overflow-wrap:anywhere;min-width:0}

@@ -1,0 +1,20 @@
+/* Text styles. All sizes are rem (they follow the person's text size). Nothing else should set a font size:
+   use these, or a rem value for something specific. Names follow Apple's text styles. */
+:root{
+  --fs-largetitle:2.125rem; --fs-title1:1.75rem; --fs-title2:1.375rem; --fs-title3:1.1875rem;
+  --fs-headline:1.0625rem; --fs-body:.9375rem; --fs-callout:.875rem; --fs-subhead:.8125rem; --fs-footnote:.78rem; --fs-caption:.6875rem;
+  /* Bounded sizes for chrome (tab bar, top bar): they grow with text but stop, as Apple's tab bar does. */
+  --fs-chrome:min(.7188rem,14px);
+  /* Icons and touch targets grow with text, to a cap, and never go below 44 px for targets. */
+  --hit:max(44px,min(2.75rem,64px)); --icon:min(1.25rem,30px);
+}
+.ts-largetitle{font:800 var(--fs-largetitle)/1.1 var(--f-display);font-stretch:78%;letter-spacing:-.03em}
+.ts-title1{font:760 var(--fs-title1)/1.15 var(--f-display);font-stretch:85%;letter-spacing:-.02em}
+.ts-title2{font:700 var(--fs-title2)/1.2 var(--f-display);font-stretch:90%}
+.ts-title3{font:650 var(--fs-title3)/1.25 var(--f-display)}
+.ts-headline{font:650 var(--fs-headline)/1.3 var(--f-body)}
+.ts-body{font:400 var(--fs-body)/1.45 var(--f-body)}
+.ts-callout{font:500 var(--fs-callout)/1.4 var(--f-body)}
+.ts-subhead{font:500 var(--fs-subhead)/1.35 var(--f-body)}
+.ts-footnote{font:500 var(--fs-footnote)/1.35 var(--f-body)}
+.ts-caption{font:500 var(--fs-caption)/1.3 var(--f-mono)}

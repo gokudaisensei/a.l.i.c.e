@@ -1,0 +1,33 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "lists",
+  "type": "registry:ui",
+  "title": "Lists",
+  "description": "Three small list patterns: KeyValue for facts, Steps for a job with stages, and Safe for a checklist of reassurances.",
+  "dependencies": [],
+  "registryDependencies": [
+    "icon",
+    "utilities"
+  ],
+  "files": [
+    {
+      "path": "ui/lists.tsx",
+      "type": "registry:ui",
+      "content": "import type { ComponentProps, ReactNode } from \"react\";\nimport { Icon } from \"./icon\";\nimport { cn } from \"./cn\";\n\n/** Checklist-style list of reassurances. `muted` rows use a cross. */\nexport function Safe({ items, className, ...rest }: Omit<ComponentProps<\"div\">, \"children\"> & {\n  /** Each line, as plain text or `{ text, muted, icon }`. `muted` shows a cross: something Alice does not do. */\n  items: (string | { text: string; muted?: boolean; icon?: string })[];\n}) {\n  return (\n    <div data-slot=\"safe\" className={cn(\"safe\", className)} {...rest}>{items.map((it) => {\n      const o = typeof it === \"string\" ? { text: it, muted: false } : { muted: false, ...it };\n      return <div key={o.text} className={o.muted ? \"muted\" : undefined}><Icon n={o.icon ?? (o.muted ? \"x\" : \"check\")} /><span>{o.text}</span></div>;\n    })}</div>\n  );\n}\n\n/** Key and value rows. */\nexport function KeyValue({ rows, className, ...rest }: Omit<ComponentProps<\"div\">, \"children\"> & {\n  /** `[key, value]` pairs, in order. */\n  rows: [ReactNode, ReactNode][];\n}) {\n  return <div data-slot=\"key-value\" className={cn(\"kv\", className)} {...rest}>{rows.map(([k, v], i) => <div key={i}><span>{k}</span><span>{v}</span></div>)}</div>;\n}\n\n/** Step list for multi-stage jobs. `current` is the active step index. */\nexport function Steps({ steps, current, className, ...rest }: Omit<ComponentProps<\"div\">, \"children\"> & {\n  /** The names of the steps, in order. */\n  steps: string[];\n  /** Index of the step in progress: earlier ones are done, later ones wait. */\n  current: number;\n}) {\n  return (\n    <div data-slot=\"steps\" className={cn(\"steps\", className)} {...rest}>{steps.map((s, i) => (\n      <div key={s} className={cn(\"stp\", i < current ? \"done\" : i === current && \"on\")} aria-current={i === current ? \"step\" : undefined}>\n        <Icon n={i < current ? \"check\" : i === current ? \"refresh\" : \"clock\"} c={i === current ? \"spin\" : \"\"} />{s}\n      </div>\n    ))}</div>\n  );\n}\n"
+    },
+    {
+      "path": "ui/lists.css",
+      "type": "registry:style",
+      "content": "/* Safe, KeyValue and Steps. */\n.safe{display:flex;flex-direction:column;gap:8px}\n.safe div{display:flex;gap:10px;align-items:flex-start;font-size:0.8438rem;color:var(--ink2)}\n.safe .ic{color:var(--ok);margin-top:1px}\n.kv{display:flex;flex-direction:column}\n.kv>div{display:flex;justify-content:space-between;gap:14px;padding:10px 0;align-items:center}\n.kv>div+div{border-top:1px solid var(--line)}\n.kv span:first-child{color:var(--ink2)}\n.kv span:last-child{font-weight:600;text-align:right;min-width:0;overflow-wrap:anywhere}\n.steps{display:flex;flex-direction:column;gap:8px}\n.stp{display:flex;align-items:center;gap:10px;color:var(--ink3);font-size:0.875rem}\n.stp.on{color:var(--ink);font-weight:600}\n.stp.done{color:var(--ok)}\n.stp .ic{width:18px;height:18px}\n.safe .muted{color:var(--ink3)}\n.safe .muted .ic{color:var(--ink3)}\n"
+    }
+  ],
+  "meta": {
+    "category": "Display",
+    "status": "stable",
+    "exports": [
+      "KeyValue",
+      "Steps",
+      "Safe"
+    ]
+  }
+}

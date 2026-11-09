@@ -1,4 +1,4 @@
-import { env } from "@/core/config/env";
+import { env } from "../config/env";
 import { createDb, runMigrations } from "./client";
 
 runMigrations(createDb(env.databaseUrl));

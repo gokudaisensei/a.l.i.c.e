@@ -1,0 +1,35 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "tile",
+  "type": "registry:ui",
+  "title": "Tile",
+  "description": "A card on the home grid, sized in columns and rows and tinted by tone. On a phone, inside an AccordionContext, tiles collapse to a header.",
+  "dependencies": [],
+  "registryDependencies": [
+    "haptics",
+    "icon",
+    "utilities"
+  ],
+  "files": [
+    {
+      "path": "ui/tile.tsx",
+      "type": "registry:ui",
+      "content": "\"use client\";\nimport { createContext, useContext, type ComponentProps, type CSSProperties, type ReactNode } from \"react\";\nimport { Icon } from \"./icon\";\nimport { cn } from \"./cn\";\nimport { haptic } from \"./haptics\";\n\n/**\n * Phone-only accordion for tiles. Provide this above a grid and every `Tile` inside\n * becomes collapsible. The library holds no state: `isOpen` and `toggle` are yours.\n */\nexport interface AccordionApi { scope: string; isOpen: (key: string, fallback: boolean) => boolean; toggle: (key: string, nextOpen: boolean) => void }\n/** Provide this above a grid to make its tiles collapsible on a phone. */\nexport const AccordionContext = createContext<AccordionApi | null>(null);\nconst TileKey = createContext<{ key: string; open: boolean; api: AccordionApi } | null>(null);\n\ntype Vars = CSSProperties & Record<`--${string}`, string | number>;\n\nexport interface TileProps {\n  /** A stable name for the tile: becomes its element id and its accordion key. */\n  id: string;\n  /** Column span on desktop. */\n  cols?: number;\n  /** Column span on a tablet. */\n  colsTablet?: number;\n  /** Column span on a phone. */\n  colsMobile?: number;\n  /** Row span. */\n  rows?: number;\n  /** Colour treatment: sage, clay, glow, deep, or hero. */\n  tone?: string;\n  className?: string;\n  /** Skip the card chrome. Used for phone layouts that style themselves. */\n  bare?: boolean;\n  /** Inline styles, including `--custom` properties. */\n  style?: Vars;\n  /** Start expanded when inside an accordion. */\n  defaultOpen?: boolean;\n  children: ReactNode;\n}\n\n/** A card on the home grid: sized in columns and rows, tinted with `tone`, and (on a phone, inside an `AccordionContext`) collapsible. */\nexport function Tile({ id, cols = 4, colsTablet = 3, colsMobile = 6, rows = 2, tone, className, bare, style, defaultOpen, children }: TileProps) {\n  const api = useContext(AccordionContext);\n  const cls = cn(tone && (tone === \"hero\" ? \"hero\" : `t-${tone}`), tone === \"deep\" && \"deep\", className);\n  if (bare) return <section className={cls} id={`t-${id}`} style={style}>{children}</section>;\n  const vars: Vars = { \"--c\": cols, \"--r\": rows, \"--ct\": colsTablet, \"--cm\": colsMobile, ...style };\n  const key = api ? `${api.scope}:t-${id}` : null;\n  const open = key && api ? api.isOpen(key, !!defaultOpen) : false;\n  return (\n    <TileKey.Provider value={key && api ? { key, open, api } : null}>\n      <section data-slot=\"tile\" className={cn(\"tile\", cls, key && \"aacc\", key && open && \"open\")} id={`t-${id}`} style={vars}>{children}</section>\n    </TileKey.Provider>\n  );\n}\n\n/** Tile header: title, optional eyebrow above it, optional trailing control. */\nexport function TileHeader({ title, eyebrow, right }: {\n  /** The tile's heading. */\n  title?: ReactNode;\n  /** Small label above the title. */\n  eyebrow?: ReactNode;\n  /** A control at the end of the header. */\n  right?: ReactNode;\n}) {\n  const acc = useContext(TileKey);\n  const toggle = () => { haptic(\"select\"); acc?.api.toggle(acc.key, !acc.open); };\n  return (\n    <div className=\"th\" {...(acc ? { role: \"button\", tabIndex: 0, onClick: toggle, onKeyDown: (e: React.KeyboardEvent) => { if (e.key === \"Enter\" || e.key === \" \") { e.preventDefault(); toggle(); } } } : {})}>\n      <div>\n        {eyebrow ? <div className=\"eyebrow\">{eyebrow}</div> : null}\n        <h3>{title}</h3>\n      </div>\n      {right}\n      {acc ? <Icon n=\"chev\" c=\"sm accv\" /> : null}\n    </div>\n  );\n}\n\n/** Auto-fitting 12-column bento grid. */\nexport function Grid({ className, ...rest }: ComponentProps<\"div\">) { return <div data-slot=\"grid\" className={cn(\"grid\", className)} {...rest} />; }\n"
+    },
+    {
+      "path": "ui/tile.css",
+      "type": "registry:style",
+      "content": "/* Tile, TileHeader, Grid and the tone classes. Moved out of globals.css; contextual overrides (.hero .btn, .pg3 .dt) stay with the screens that need them. */\n.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));grid-auto-rows:minmax(86px,auto);gap:14px;grid-auto-flow:dense}\n.tile{grid-column:span var(--c,4);grid-row:span var(--r,2);background:var(--tile);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);position:relative;min-width:0;display:flex;flex-direction:column;gap:12px;scroll-margin-top:90px}\n.tile.flash{animation:flash 1.3s ease}\n.th{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:28px}\n.th h3,.tt{font:650 1.125rem/1.2 var(--f-display);font-stretch:92%;letter-spacing:-.01em}\n.th .eyebrow{display:flex;align-items:center;gap:7px}\n.t-deep{background:var(--deep);color:var(--deep-ink)}\n.t-deep .eyebrow,.t-deep small,.t-deep .muted{color:var(--deep-ink2)}\n.t-deep .btn{background:rgba(241,236,223,.12);color:var(--deep-ink)}\n.t-deep .btn--p{background:var(--deep-ink);color:var(--deep)}\n.t-clay,.t-glow,.t-sage{--tile2:var(--over)}\n.t-clay{background:var(--clay-soft)}\n.t-glow{background:var(--glow-soft)}\n.t-sage{background:var(--sage-soft)}\n.t-deep .pill{background:rgba(241,236,223,.12);color:var(--deep-ink)}\n.t-deep .pill.warn{background:rgba(242,188,94,.18);color:var(--deep-warn)}\n.t-deep .row+.row{border-top-color:var(--deep-line)}\n.t-glow .is-on .dico{background:var(--over)}\n@media (max-width:1100px){\n  .grid{grid-template-columns:repeat(6,minmax(0,1fr))}\n  .tile{grid-column:span var(--ct,3);grid-row:auto}\n}\n@media (max-width:620px){\n  .tile{grid-column:span var(--cm,6);padding:16px}\n}\n@media (max-width:700px){\n  .grid{grid-auto-rows:auto;gap:10px}\n  .tile{gap:10px}\n  .th .accv{margin-left:8px}\n  .grid .tile[id^=\"t-h\"] .th{flex-wrap:wrap}\n  .grid .tile[id^=\"t-h\"] .pill{white-space:normal}\n}\n"
+    }
+  ],
+  "meta": {
+    "category": "Navigation and layout",
+    "status": "stable",
+    "exports": [
+      "Tile",
+      "TileHeader",
+      "Grid",
+      "AccordionContext"
+    ]
+  }
+}

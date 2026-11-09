@@ -1,7 +1,7 @@
 import { eq, lte } from "drizzle-orm";
-import type { Db } from "@/core/database/client";
-import { rateLimits } from "@/core/database/schema";
-import { AppError } from "@/core/errors/errors";
+import type { Db } from "../database/client";
+import { rateLimits } from "../database/schema";
+import { AppError } from "../errors/errors";
 
 export interface RateLimitOptions {
   limit: number;

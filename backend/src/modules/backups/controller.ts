@@ -1,8 +1,8 @@
 import { Elysia, t } from "elysia";
-import { AppError } from "@/core/errors/errors";
-import { requirePermission, requireStepUp } from "@/core/http/guards";
-import { sessionPlugin } from "@/core/http/session-plugin";
-import type { Services } from "@/services";
+import { AppError } from "../../core/errors/errors";
+import { requirePermission, requireStepUp } from "../../core/http/guards";
+import { sessionPlugin } from "../../core/http/session-plugin";
+import type { Services } from "../../services";
 
 const id = t.Object({ id: t.String({ minLength: 4, maxLength: 60 }) });
 
@@ -62,5 +62,5 @@ export const backupsController = ({ auth, households, backups }: Services) =>
       const { membership, session } = requirePermission(ctx, "backup.manage");
       requireStepUp(session);
       const f = await backups.download(membership.householdId, ctx.params.id, session.userId);
-      return new Response(f.bytes, { headers: { "content-type": "application/octet-stream", "content-disposition": `attachment; filename="${f.name}"`, "cache-control": "no-store" } });
+      return new Response(new Uint8Array(f.bytes), { headers: { "content-type": "application/octet-stream", "content-disposition": `attachment; filename="${f.name}"`, "cache-control": "no-store" } });
     }, { params: id, detail: { summary: "Download one of Alice's own backups. Needs a passkey confirmation; the file is encrypted when a backup key is set" } });

@@ -1,8 +1,8 @@
 import { and, desc, eq, inArray, isNull } from "drizzle-orm";
-import type { Db } from "@/core/database/client";
-import { configJobs, configWorkerHeartbeat, haConnections } from "@/core/database/schema";
-import { AppError } from "@/core/errors/errors";
-import { newId } from "@/core/ids";
+import type { Db } from "../../core/database/client";
+import { configJobs, configWorkerHeartbeat, haConnections } from "../../core/database/schema";
+import { AppError } from "../../core/errors/errors";
+import { newId } from "../../core/ids";
 import { type ConfigOperation, toJob, validateOperation } from "./config-ops";
 
 export interface ConfigJob {

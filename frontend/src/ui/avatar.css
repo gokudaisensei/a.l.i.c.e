@@ -1,0 +1,9 @@
+/* Avatar and IconTile. */
+.dico{width:40px;height:40px;border-radius:13px;background:var(--tile2);display:grid;place-items:center;color:var(--ink2);flex:none}
+.av{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font:700 1rem var(--f-display);color:#fff;flex:none;position:relative}
+.av.a1{background:#4E7258}
+.av.a2{background:#B25A37}
+.av.a3{background:#6C6A9E}
+.av.a4{background:#8A6B2E}
+.av.away{filter:saturate(.2) brightness(1.1);opacity:.7}
+.av.sm{width:32px;height:32px;font-size:0.8125rem}

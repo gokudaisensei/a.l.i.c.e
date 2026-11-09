@@ -1,7 +1,7 @@
-import { AppError } from "@/core/errors/errors";
-import type { Membership } from "@/modules/households/household.service";
-import type { SessionContext } from "@/modules/authentication/auth.service";
-import { can, type Permission } from "@/modules/permissions/permissions";
+import { AppError } from "../errors/errors";
+import type { Membership } from "../../modules/households/household.service";
+import type { SessionContext } from "../../modules/authentication/auth.service";
+import { can, type Permission } from "../../modules/permissions/permissions";
 
 export type RequestAuth = {
   session: SessionContext | null;

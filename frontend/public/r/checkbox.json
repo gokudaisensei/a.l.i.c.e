@@ -1,0 +1,34 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "checkbox",
+  "type": "registry:ui",
+  "title": "Checkbox",
+  "description": "A tick box for choosing any number of options. With a label it becomes a full-width tappable row.",
+  "dependencies": [
+    "@base-ui/react"
+  ],
+  "registryDependencies": [
+    "haptics",
+    "icon",
+    "utilities"
+  ],
+  "files": [
+    {
+      "path": "ui/checkbox.tsx",
+      "type": "registry:ui",
+      "content": "\"use client\";\nimport type { ComponentProps, ReactNode } from \"react\";\nimport { Checkbox as BaseCheckbox } from \"@base-ui/react/checkbox\";\nimport { Icon } from \"./icon\";\nimport { haptic } from \"./haptics\";\nimport { cn } from \"./cn\";\n\nexport interface CheckboxProps extends Omit<ComponentProps<typeof BaseCheckbox.Root>, \"checked\" | \"defaultChecked\" | \"onCheckedChange\" | \"className\" | \"children\" | \"aria-label\" | \"disabled\" | \"indeterminate\"> {\n  checked: boolean;\n  onChange: (next: boolean) => void;\n  /** Visible label. Without it, pass `label` for screen readers. */\n  children?: ReactNode;\n  label?: string;\n  /** Shows a dash instead of a tick: some, but not all, of what it covers is selected. */\n  indeterminate?: boolean;\n  disabled?: boolean;\n  className?: string;\n}\n\n/** Tick box. With children it renders a tappable row, so the whole label toggles it. */\nexport function Checkbox({ checked, onChange, children, label, indeterminate, disabled, className, ...rest }: CheckboxProps) {\n  const box = (\n    <BaseCheckbox.Root data-slot=\"checkbox\" {...rest} className={cn(\"cbx\", !children && className)} checked={checked} indeterminate={indeterminate} disabled={disabled} aria-label={children ? undefined : label} onCheckedChange={(v) => { haptic(v ? \"toggleOn\" : \"toggleOff\"); onChange(v); }}>\n      <BaseCheckbox.Indicator className=\"cbx-i\" keepMounted><Icon n={indeterminate ? \"minus\" : \"check\"} c=\"sm\" /></BaseCheckbox.Indicator>\n    </BaseCheckbox.Root>\n  );\n  return children ? <label className={cn(\"cbx-row\", className)}>{box}<span>{children}</span></label> : box;\n}\n"
+    },
+    {
+      "path": "ui/checkbox.css",
+      "type": "registry:style",
+      "content": ".cbx{position:relative;display:inline-grid;place-items:center;flex:none;width:22px;height:22px;border-radius:7px;background:var(--tile);box-shadow:inset 0 0 0 1.5px var(--ink3);color:var(--tile);cursor:pointer;\n  -webkit-tap-highlight-color:transparent;transition:background-color .2s var(--ease-out),box-shadow .2s var(--ease-out)}\n.cbx::before{content:\"\";position:absolute;inset:-11px} /* 44px target */\n.cbx[data-checked],.cbx[data-indeterminate]{background:var(--ink);box-shadow:none}\n.cbx-i{display:grid;place-items:center;scale:.4;opacity:0;transition:scale .35s var(--spring),opacity .12s}\n.cbx[data-checked] .cbx-i,.cbx[data-indeterminate] .cbx-i{scale:1;opacity:1}\n.cbx[data-disabled]{opacity:.5;cursor:not-allowed}\n.cbx-row{display:inline-flex;align-items:center;gap:10px;min-height:44px;font-weight:600;cursor:pointer;max-width:100%;min-width:0}\n.cbx-row>span:not(.cbx){min-width:0;overflow-wrap:anywhere}\n@media (prefers-reduced-motion:reduce){.cbx-i{transition:none}}\n"
+    }
+  ],
+  "meta": {
+    "category": "Inputs",
+    "status": "stable",
+    "exports": [
+      "Checkbox"
+    ]
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "table",
+  "type": "registry:ui",
+  "title": "Table",
+  "description": "A simple table that scrolls sideways when the screen is narrow, instead of squeezing its columns.",
+  "dependencies": [],
+  "registryDependencies": [
+    "utilities"
+  ],
+  "files": [
+    {
+      "path": "ui/table.tsx",
+      "type": "registry:ui",
+      "content": "import type { ComponentProps, ReactNode } from \"react\";\nimport { cn } from \"./cn\";\n\n/** A simple table that scrolls sideways on a narrow screen. `mono` sets it in the code font. */\nexport function Table({ head, rows, mono, className, ...rest }: Omit<ComponentProps<\"table\">, \"children\"> & {\n  /** Column headings. */\n  head: string[];\n  /** One array of cells per row. */\n  rows: ReactNode[][];\n  /** Sets the table in the code font, smaller. */\n  mono?: boolean;\n}) {\n  return (\n    <div className=\"tscroll\"><table data-slot=\"table\" className={cn(\"table\", mono && \"mono\", className)} {...rest}>\n      <thead><tr>{head.map((h) => <th key={h}>{h}</th>)}</tr></thead>\n      <tbody>{rows.map((r, i) => <tr key={i}>{r.map((c, j) => <td key={j}>{c}</td>)}</tr>)}</tbody>\n    </table></div>\n  );\n}\n"
+    },
+    {
+      "path": "ui/table.css",
+      "type": "registry:style",
+      "content": "/* Table. */\n.table{width:100%;border-collapse:collapse;font-size:0.8438rem}\n.table th{font:500 0.6562rem var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);text-align:left;padding:6px 10px 8px 0}\n.table td{padding:10px 10px 10px 0;border-top:1px solid var(--line);vertical-align:middle}\n.tscroll{overflow-x:auto}\n.table.mono{font-size:.75rem}\n"
+    }
+  ],
+  "meta": {
+    "category": "Display",
+    "status": "stable",
+    "exports": [
+      "Table"
+    ]
+  }
+}

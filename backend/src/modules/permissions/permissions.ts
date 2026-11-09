@@ -1,4 +1,4 @@
-import type { Role } from "@/core/database/schema";
+import type { Role } from "../../core/database/schema";
 
 /** Application permissions. Roles map to a fixed set; device-level policies refine device access. */
 export const PERMISSIONS = [

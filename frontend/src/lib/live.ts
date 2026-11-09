@@ -3,8 +3,8 @@
  * Connects the app's store to the Alice backend: loads the household into `S`, keeps it current from `/ws`,
  * and turns taps into commands. The screens keep reading `S`; only where it comes from has changed.
  */
-import { ApiError, api, del, get, patch, post, put } from "./api";
-import { ROOMS, type Builder, type Activity, type Dev, type DevType, type Person, type Role } from "./data";
+import { ApiError, ok, v1 } from "./api";
+import { ROOMS, asRole, type Builder, type Activity, type Dev, type DevType, type Person, type Role } from "./data";
 import { S, SCENES, bump, toast, type SceneItem } from "./store";
 import { loadAdminSummary, loadPreferences } from "./admin";
 
@@ -13,7 +13,7 @@ interface Cap { name: string; operations?: string[]; metadata?: Record<string, u
 interface Entity { entityId: string; name: string; domain: string; availability: string; values: Record<string, unknown>; capabilities: Cap[] }
 export interface Thing {
   id: string; name: string; areaId: string | null; hidden: boolean; manufacturer: string | null; available: boolean;
-  primary: Entity | null; favorite: boolean; settings?: { powerLimitW: number | null; voiceExposed: boolean };
+  primary: Entity | null; favorite?: boolean; settings?: { powerLimitW: number | null; voiceExposed: boolean };
 }
 const num = (v: unknown): number | undefined => (typeof v === "number" && Number.isFinite(v) ? v : undefined);
 
@@ -34,7 +34,7 @@ function tileType(e: Entity): DevType | null {
     case "fan": return "fan";
     case "climate": return "climate";
     case "lock": return "lock";
-    case "cover": return "contact";
+    case "cover": return "cover";
     case "camera": return "camera";
     case "binary_sensor": return CONTACT_CLASSES.has(String(e.values.device_class)) ? "contact" : null;
     default: return OTHER[e.domain] && e.capabilities.some((c) => c.name === "power" && c.operations?.includes("turn_on")) ? "other" : null;
@@ -49,6 +49,19 @@ export function toDev(t: Thing): Dev | null {
   if (!type) return null;
   const d: Dev = { id: t.id, n: t.name, r: t.areaId ?? "none", t: type, hw: t.manufacturer ?? "Home Assistant", ent: e.entityId, ops: e.capabilities.flatMap((c) => c.operations ?? []), fav: t.favorite ? 1 : 0, voice: t.settings?.voiceExposed ? 1 : 0, g: 1 };
   if (type === "other") { d.ic = OTHER[e.domain]![0]; d.kind = OTHER[e.domain]![1]; }
+  if (type === "fan") {
+    const m = (n: string) => e.capabilities.find((c) => c.name === n)?.metadata as { presets?: string[]; step?: number } | undefined;
+    d.fpresets = m("fan_preset")?.presets ?? []; d.fstep = m("fan_speed")?.step ?? undefined;
+  }
+  if (type === "climate") {
+    const m = (n: string) => e.capabilities.find((c) => c.name === n)?.metadata as { modes?: string[]; min?: number; max?: number; step?: number } | undefined;
+    d.hmodes = m("hvac_mode")?.modes ?? []; const t = m("target_temperature");
+    d.tmin = t?.min ?? 16; d.tmax = t?.max ?? 30; d.tstep = t?.step ?? 0.5;
+  }
+  if (type === "dim") {
+    const ct = e.capabilities.find((c) => c.name === "color_temperature")?.metadata as { minKelvin?: number; maxKelvin?: number } | undefined;
+    if (ct) { d.kmin = ct.minKelvin ?? 2000; d.kmax = ct.maxKelvin ?? 6500; }
+  }
   if (t.settings?.powerLimitW) d.limit = t.settings.powerLimitW;
   apply(d, e);
   return d;
@@ -58,18 +71,28 @@ export function toDev(t: Thing): Dev | null {
 function apply(d: Dev, e: Pick<Entity, "values" | "availability">) {
   const v = e.values;
   switch (d.t) {
-    case "dim": d.on = v.power === true; d.v = num(v.brightness) ?? d.v ?? 100; break;
+    case "dim": {
+      d.on = v.power === true; d.v = num(v.brightness) ?? d.v ?? 100;
+      const rgb = (v.color as { rgb?: number[] | null } | null)?.rgb;
+      d.rgb = rgb && rgb.length === 3 ? rgb : d.rgb; d.k = num(v.color_temperature) ?? d.k;
+      d.cm = v.color_mode === "color_temp" ? "white" : typeof v.color_mode === "string" ? "color" : d.cm;
+      break;
+    }
     case "light": case "other": d.on = v.power === true; break;
     case "plug": d.on = v.power === true; d.w = num(v.power_w) ?? d.w ?? 0; break;
-    case "fan": d.on = v.power === true; d.sp = Math.min(3, Math.max(1, Math.ceil((num(v.fan_speed) ?? 33) / 33.4))); break;
-    case "climate": d.on = v.power !== false && v.hvac_mode !== "off"; d.tgt = num(v.target_temperature) ?? num(v.temperature) ?? d.tgt ?? 24; d.cur = num(v.temperature) ?? d.cur ?? d.tgt; break;
+    case "fan": d.on = v.power === true; d.pct = num(v.fan_speed) ?? d.pct; d.osc = typeof v.oscillation === "boolean" ? v.oscillation : d.osc; d.fp = typeof v.fan_preset === "string" ? v.fan_preset : undefined; d.sp = Math.min(3, Math.max(1, Math.ceil((num(v.fan_speed) ?? 33) / 33.4))); break;
+    case "climate": d.hm = typeof v.hvac_mode === "string" ? v.hvac_mode : d.hm; d.on = v.power !== false && v.hvac_mode !== "off"; d.tgt = num(v.target_temperature) ?? num(v.temperature) ?? d.tgt ?? 24; d.cur = num(v.temperature) ?? d.cur ?? d.tgt; break;
     case "lock": d.locked = v.lock === "locked"; break;
+    case "cover": {
+      const st = String(v.cover ?? "closed"); d.open = st !== "closed"; d.mv = st === "opening" || st === "closing" ? st : undefined;
+      d.pos = num(v.position) ?? (st === "closed" ? 0 : 100); break;
+    }
     case "contact": d.open = v.cover !== undefined ? v.cover !== "closed" : v.binary_sensor === true; break;
   }
 }
 
 /* ---------- scenes and routines ---------- */
-interface SceneDto { id: string; name: string; icon: string | null; description: string | null }
+interface SceneDto { id: string; name: string; icon: string | null; description?: string | null }
 const ICONS = new Set(["sun", "exit", "play", "moon", "home", "bolt", "lock", "unlock", "layers", "bag", "user"]);
 /** Which of the design's suggested slots a scene fills, judging by its name. */
 const keyFor = (name: string): string | undefined => {
@@ -83,15 +106,15 @@ function toScene(x: SceneDto, kind: "scene" | "routine"): SceneItem {
 /** Scenes and routines the person may see, into the store. */
 export async function loadScenes(role: Role = S.role) {
   const [scenes, routines] = await Promise.all([
-    get<{ scenes: SceneDto[] }>("/scenes").catch(() => ({ scenes: [] as SceneDto[] })),
-    role === "guest" ? Promise.resolve({ routines: [] as SceneDto[] }) : get<{ routines: SceneDto[] }>("/routines").catch(() => ({ routines: [] as SceneDto[] })),
+    ok(v1.scenes.get()).catch(() => ({ scenes: [] as SceneDto[] })),
+    role === "guest" ? Promise.resolve({ routines: [] as SceneDto[] }) : ok(v1.routines.get()).catch(() => ({ routines: [] as SceneDto[] })),
   ]);
   SCENES.splice(0, SCENES.length, ...scenes.scenes.map((x) => toScene(x, "scene")), ...routines.routines.map((x) => toScene(x, "routine")));
   bump();
 }
 export async function deleteScene(s: SceneItem) {
   const [kind, id] = s.id.split(":");
-  try { await del(`/${kind}s/${id}`); await loadScenes(); toast(`${s.n} removed, and taken out of Home Assistant`); } catch (e) { toast(e instanceof ApiError ? e.message : "It could not be removed"); }
+  try { await ok(kind === "scene" ? v1.scenes({ id: id! }).delete() : v1.routines({ id: id! }).delete()); await loadScenes(); toast(`${s.n} removed, and taken out of Home Assistant`); } catch (e) { toast(e instanceof ApiError ? e.message : "It could not be removed"); }
 }
 
 /** Runs a scene or routine as the signed-in person and says how it went. */
@@ -99,10 +122,10 @@ export async function runScene(s: SceneItem) {
   const [kind, id] = s.id.split(":") as ["scene" | "routine", string];
   try {
     if (kind === "scene") {
-      const r = await post<{ commands: unknown[]; skipped: unknown[] }>(`/scenes/${id}/activate`);
+      const r = await ok(v1.scenes({ id }).activate.post({}));
       toast(r.skipped.length ? `${s.n} done. ${r.skipped.length} ${r.skipped.length === 1 ? "device was" : "devices were"} skipped` : `${s.n} done`);
     } else {
-      await post(`/routines/${id}/execute`);
+      await ok(v1.routines({ id }).execute.post({}));
       toast(`${s.n} started`);
     }
   } catch (e) { toast(e instanceof ApiError ? e.message : `${s.n} didn't run`); }
@@ -115,7 +138,7 @@ function toAuto(a: AutomationDto) {
   return { id: a.id, n: a.name, s: a.summary, on: a.enabled, last: a.lastTriggeredAt ? `Last run: ${clockOf(a.lastTriggeredAt)}` : "Never run", sync: SYNC_TEXT[a.haAutomation?.status ?? ""] ?? "" };
 }
 export async function loadAutomations() {
-  const r = await get<{ automations: AutomationDto[] }>("/automations").catch(() => null);
+  const r = await ok(v1.automations.get()).catch(() => null);
   S.autos = r ? r.automations.map(toAuto) : [];
   bump();
   // Home Assistant is told by a separate process; check back until it has caught up.
@@ -124,23 +147,38 @@ export async function loadAutomations() {
 }
 let waits = 0;
 
-const MODE_KEY = (m: string) => m.toLowerCase();
+type Mode = "home" | "away" | "night" | "vacation";
+const MODE_KEY = (m: string): Mode => { const k = m.toLowerCase(); return k === "away" || k === "night" || k === "vacation" ? k : "home"; };
 const ent = (id: string) => S.devices.find((d) => d.id === id)?.ent ?? id;
+// The request bodies are the backend's own types (read from its routes), so a builder that makes something the backend would refuse does not compile.
+type AutomationBody = Parameters<typeof v1.automations.post>[0];
+type SceneBody = Parameters<typeof v1.scenes.post>[0];
+type RoutineBody = Parameters<typeof v1.routines.post>[0];
+type Trigger = AutomationBody["definition"]["trigger"];
+type Condition = AutomationBody["definition"]["conditions"][number];
+type AutoAction = AutomationBody["definition"]["actions"][number];
+
 /** The builder's choices as the backend's automation definition. */
-export function buildDefinition(b: Builder) {
+export function buildDefinition(b: Builder): AutomationBody {
   const p = b.trig.p as string;
-  const trigger = ({
-    arrive: () => (p === "anyone" ? { type: "arrive", person: "anyone" } : { type: "arrive", userId: p }),
-    leave: () => ({ type: "leave" }), time: () => ({ type: "time", at: p }), sunset: () => ({ type: "sunset" }),
-    door: () => ({ type: "door_opens", entityId: ent(p) }), motion: () => ({ type: "motion", entityId: ent(p) }), power: () => ({ type: "power_over_limit", entityId: ent(p) }),
-  } as Record<string, () => object>)[b.trig.k]!();
-  const conditions: object[] = [];
+  const trigger = ((): Trigger => {
+    switch (b.trig.k) {
+      case "leave": return { type: "leave" };
+      case "time": return { type: "time", at: p };
+      case "sunset": return { type: "sunset" };
+      case "door": return { type: "door_opens", entityId: ent(p) };
+      case "motion": return { type: "motion", entityId: ent(p) };
+      case "power": return { type: "power_over_limit", entityId: ent(p) };
+      default: return p === "anyone" ? { type: "arrive", person: "anyone" } : { type: "arrive", userId: p };
+    }
+  })();
+  const conditions: Condition[] = [];
   if (b.conds.dark) conditions.push({ type: "dark" });
   if (b.conds.home) conditions.push({ type: "someone_home" });
-  if (b.conds.days !== "any") conditions.push({ type: "days", days: b.conds.days });
-  if (b.conds.mode !== "any") conditions.push({ type: "mode", mode: MODE_KEY(b.conds.mode) });
+  if (b.conds.days !== "any") conditions.push({ type: "days", days: b.conds.days as "weekdays" | "weekends" });
+  if (b.conds.mode !== "any") conditions.push({ type: "mode", mode: [MODE_KEY(b.conds.mode)] });
   const name = b.name.trim() || "Untitled automation";
-  const actions = b.acts.map((a): object => {
+  const actions = b.acts.map((a): AutoAction => {
     switch (a.v) {
       case "on": return { type: "device", entityId: ent(a.t), action: "turn_on" };
       case "off": return { type: "device", entityId: ent(a.t), action: "turn_off" };
@@ -155,28 +193,31 @@ export function buildDefinition(b: Builder) {
 }
 
 /** A scene: device actions only. A routine: device actions, scenes, a mode, and waits, in order. */
-export function buildSceneOrRoutine(b: Builder) {
-  const name = b.name.trim() || (b.kind === "routine" ? "Untitled routine" : "Untitled scene");
-  const device = (a: Builder["acts"][number]) => ({ entityId: ent(a.t), action: ({ on: "turn_on", off: "turn_off", dim: "set_brightness", temp: "set_temperature", lock: "lock" } as Record<string, string>)[a.v]!, ...(a.v === "dim" ? { parameters: { brightness_pct: a.n } } : a.v === "temp" ? { parameters: { temperature: a.n } } : {}) });
-  if (b.kind === "scene") return { name, actions: b.acts.map(device) };
+export function buildSceneOrRoutine(b: Builder, kind: "scene"): SceneBody;
+export function buildSceneOrRoutine(b: Builder, kind: "routine"): RoutineBody;
+export function buildSceneOrRoutine(b: Builder, kind: "scene" | "routine"): SceneBody | RoutineBody {
+  const name = b.name.trim() || (kind === "routine" ? "Untitled routine" : "Untitled scene");
+  const ACTION = { on: "turn_on", off: "turn_off", dim: "set_brightness", temp: "set_temperature", lock: "lock" } as Record<string, string>;
+  const device = (a: Builder["acts"][number]) => ({ entityId: ent(a.t), action: ACTION[a.v]!, ...(a.v === "dim" ? { parameters: { brightness_pct: a.n } } : a.v === "temp" ? { parameters: { temperature: a.n } } : {}) });
+  if (kind === "scene") return { name, actions: b.acts.map(device) };
   return {
     name, onFailure: "continue",
-    steps: b.acts.map((a) => a.v === "wait" ? { type: "delay", seconds: a.n } : a.v === "mode" ? { type: "mode", mode: a.t.toLowerCase() } : a.v === "scene" ? { type: "scene", sceneId: a.t.replace(/^scene:/, "") } : { type: "device", ...device(a) }),
+    steps: b.acts.map((a): RoutineBody["steps"][number] => a.v === "wait" ? { type: "delay", seconds: a.n ?? 0 } : a.v === "mode" ? { type: "mode", mode: MODE_KEY(a.t) } : a.v === "scene" ? { type: "scene", sceneId: a.t.replace(/^scene:/, "") } : { type: "device", ...device(a) }),
   };
 }
 
 /** Puts something already saved back into the builder to change it. */
 export async function editAutomation(id: string) {
   try {
-    const a = await get<{ id: string; name: string; definition: { trigger: any; conditions: any[]; actions: any[] } }>(`/automations/${id}`);
+    const a = await ok(v1.automations({ id }).get());
     const d = a.definition, t = d.trigger;
     const devId = (entityId: string) => S.devices.find((x) => x.ent === entityId)?.id ?? entityId;
-    const trig = t.type === "arrive" ? { k: "arrive", p: t.userId ?? t.person ?? "anyone" } : t.type === "leave" ? { k: "leave", p: null } : t.type === "time" ? { k: "time", p: t.at }
+    const trig = t.type === "arrive" ? { k: "arrive", p: "userId" in t ? t.userId : t.person } : t.type === "leave" ? { k: "leave", p: null } : t.type === "time" ? { k: "time", p: t.at }
       : t.type === "sunset" ? { k: "sunset", p: null } : t.type === "door_opens" ? { k: "door", p: devId(t.entityId) } : t.type === "power_over_limit" ? { k: "power", p: devId(t.entityId) } : { k: "arrive", p: "anyone" };
     const conds = { dark: false, home: false, days: "any", mode: "any" } as Builder["conds"];
     for (const c of d.conditions) { if (c.type === "dark") conds.dark = true; else if (c.type === "someone_home") conds.home = true; else if (c.type === "days") conds.days = c.days; else if (c.type === "mode") conds.mode = c.mode[0].toUpperCase() + c.mode.slice(1); }
     const verbs: Record<string, string> = { turn_on: "on", turn_off: "off", set_brightness: "dim", set_temperature: "temp", lock: "lock" };
-    const acts = d.actions.flatMap((x): Builder["acts"] => x.type === "device" && verbs[x.action] ? [{ v: verbs[x.action]!, t: devId(x.entityId), n: x.parameters?.brightness_pct ?? x.parameters?.temperature }]
+    const acts = d.actions.flatMap((x): Builder["acts"] => x.type === "device" && verbs[x.action] ? [{ v: verbs[x.action]!, t: devId(x.entityId), n: (x.parameters as { brightness_pct?: number; temperature?: number } | undefined)?.brightness_pct ?? (x.parameters as { temperature?: number } | undefined)?.temperature }]
       : x.type === "notify" ? [{ v: "notify", t: x.userIds?.[0] ?? S.meId }] : x.type === "scene" ? [{ v: "scene", t: `scene:${x.sceneId}` }] : []);
     S.b = { kind: "automation", editId: id, name: a.name, trig, conds, acts };
     bump(); toast(`Editing “${a.name}”. Save to change it in Home Assistant`);
@@ -185,15 +226,16 @@ export async function editAutomation(id: string) {
 
 export async function previewAutomation(b: Builder) {
   try {
-    const r = await post<{ summary: string; warnings: string[] }>("/automations/preview", buildDefinition(b));
+    const r = await ok(v1.automations.preview.post(buildDefinition(b)));
     toast(r.warnings.length ? `${r.summary} ${r.warnings[0]}` : `Dry run: ${r.summary} Nothing changed`);
   } catch (e) { toast(e instanceof ApiError ? e.message : "The dry run failed"); }
 }
 export async function saveBuilder(b: Builder, stepUp: () => Promise<void>) {
   const kind = b.kind ?? "automation";
-  const send = () => b.editId && kind === "automation" ? patch(`/automations/${b.editId}`, buildDefinition(b))
-    : kind === "automation" ? post("/automations", buildDefinition(b))
-    : post(kind === "scene" ? "/scenes" : "/routines", buildSceneOrRoutine(b));
+  const send = () => b.editId && kind === "automation" ? ok(v1.automations({ id: b.editId }).patch(buildDefinition(b)))
+    : kind === "automation" ? ok(v1.automations.post(buildDefinition(b)))
+    : kind === "scene" ? ok(v1.scenes.post(buildSceneOrRoutine(b, "scene")))
+    : ok(v1.routines.post(buildSceneOrRoutine(b, "routine")));
   try {
     try { await send(); } catch (e) { if (e instanceof ApiError && e.code === "step_up_required") { await stepUp(); await send(); } else throw e; }
     if (kind === "automation") await loadAutomations(); else await loadScenes();
@@ -205,11 +247,11 @@ export async function saveBuilder(b: Builder, stepUp: () => Promise<void>) {
 export async function toggleAutomation(id: string, on: boolean) {
   const a = S.autos.find((x) => x.id === id);
   if (a) { a.on = on; bump(); }
-  try { await post(`/automations/${id}/${on ? "enable" : "disable"}`); toast(a ? (on ? `${a.n} is on` : `${a.n} is paused`) : "Done"); }
+  try { await ok(on ? v1.automations({ id }).enable.post({}) : v1.automations({ id }).disable.post({})); toast(a ? (on ? `${a.n} is on` : `${a.n} is paused`) : "Done"); }
   catch (e) { if (a) { a.on = !on; bump(); } toast(e instanceof ApiError ? e.message : "That didn't change"); }
 }
 export async function deleteAutomation(id: string) {
-  try { await del(`/automations/${id}`); S.autos = S.autos.filter((x) => x.id !== id); bump(); toast("Automation removed, and taken out of Home Assistant"); }
+  try { await ok(v1.automations({ id }).delete()); S.autos = S.autos.filter((x) => x.id !== id); bump(); toast("Automation removed, and taken out of Home Assistant"); }
   catch (e) { toast(e instanceof ApiError ? e.message : "It could not be removed"); }
 }
 
@@ -228,20 +270,20 @@ export const clockOf = (at: number) => {
 function toActivity(a: ActivityDto): Activity {
   return { ic: KIND_ICON[a.kind] ?? "bolt", t: a.actor ? `<b>${esc(a.actor.name)}</b> ${esc(a.summary)}` : esc(a.summary), time: clockOf(a.at), nw: a.new, tone: a.tone === "warn" ? "warn" : undefined };
 }
-export async function markSeen() { await post("/activity/seen").catch(() => {}); }
+export async function markSeen() { await ok(v1.activity.seen.post({})).catch(() => {}); }
 
 async function loadActivity() {
-  const r = await get<{ items: ActivityDto[] }>("/activity?limit=30").catch(() => null);
+  const r = await ok(v1.activity.get({ query: { limit: 30 } })).catch(() => null);
   if (r) S.activity = r.items.map(toActivity);
 }
 
 export async function loadEnergy() {
   const to = Date.now();
   const [sum, hist, devs, pat] = await Promise.all([
-    get<{ nowWatts: number | null; todayKwh: number | null }>("/energy/summary").catch(() => null),
-    get<{ series: { kwh: number }[] }>(`/energy/history?from=${to - 24 * 3_600_000}&to=${to}&resolution=hour`).catch(() => null),
-    get<{ devices: { name: string; watts: number | null }[] }>("/energy/devices").catch(() => null),
-    get<{ pattern: { sentence: string } | null }>("/energy/pattern").catch(() => null),
+    ok(v1.energy.summary.get()).catch(() => null),
+    ok(v1.energy.history.get({ query: { from: String(to - 24 * 3_600_000), to: String(to), resolution: "hour" } })).catch(() => null),
+    ok(v1.energy.devices.get()).catch(() => null),
+    ok(v1.energy.pattern.get()).catch(() => null),
   ]);
   if (!sum) { S.energyLive = null; return; }
   S.energyLive = {
@@ -252,13 +294,13 @@ export async function loadEnergy() {
 }
 
 /* ---------- who is home ---------- */
-interface PeopleDto { people: { userId: string; displayName: string; role: Role; home: boolean | null; personEntityId: string | null }[]; unlinkedPersons?: { entityId: string; name: string }[] }
+interface PeopleDto { people: { userId: string; displayName: string; role: string; home: boolean | null; personEntityId: string | null }[]; unlinkedPersons?: { entityId: string; name: string }[] }
 function applyPeople(r: PeopleDto) {
-  S.people = r.people.map((p, i): Person => ({ id: p.userId, n: p.displayName, role: p.role, home: p.home === true, c: (i % 6) + 1, linked: !!p.personEntityId }));
+  S.people = r.people.map((p, i): Person => ({ id: p.userId, n: p.displayName, role: asRole(p.role), home: p.home === true, c: (i % 6) + 1, linked: !!p.personEntityId }));
   S.persons = r.unlinkedPersons ?? [];
 }
 export async function refreshPeople() {
-  const r = await get<PeopleDto>("/household/people").catch(() => null);
+  const r = await ok(v1.household.people.get()).catch(() => null);
   if (r) { applyPeople(r); bump(); }
 }
 
@@ -272,10 +314,10 @@ export function resetLoaded() { loaded = false; S.devices = []; S.people = []; S
 /** The household, as the signed-in person may see it. */
 export async function loadHome(role: Role, userId: string) {
   const [dev, areas, mode, people] = await Promise.all([
-    get<{ devices: Thing[] }>("/devices"),
-    get<{ areas: { id: string; name: string }[] }>("/areas").catch(() => ({ areas: [] })),
-    get<{ mode: string }>("/household/mode").catch(() => null),
-    role === "guest" ? Promise.resolve(null) : get<PeopleDto>("/household/people").catch(() => null),
+    ok(v1.devices.get()),
+    ok(v1.areas.get()).catch(() => ({ areas: [] })),
+    ok(v1.household.mode.get()).catch(() => null),
+    role === "guest" ? Promise.resolve(null) : ok(v1.household.people.get()).catch(() => null),
   ]);
   const devices = dev.devices.map(toDev).filter((d): d is Dev => !!d);
   const rooms = areas.areas.filter((a) => devices.some((d) => d.r === a.id)).map((a) => ({ id: a.id, n: a.name }));
@@ -299,7 +341,9 @@ export async function loadHome(role: Role, userId: string) {
 }
 
 /* ---------- realtime ---------- */
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL ?? "ws://localhost:3002/ws";
+/** Where the realtime socket lives. "same-origin" (the demo build, behind one tunnel) means `/ws` on the address the page was opened from. */
+const WS_SETTING = process.env.NEXT_PUBLIC_WS_URL ?? "ws://localhost:3002/ws";
+const wsUrl = () => (WS_SETTING === "same-origin" ? `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws` : WS_SETTING);
 let ws: WebSocket | null = null;
 let retry = 0;
 let closing = false;
@@ -329,7 +373,7 @@ export function startRealtime() {
   closing = false;
   if (ws) return;
   const open = () => {
-    const sock = new WebSocket(WS_URL);
+    const sock = new WebSocket(wsUrl());
     ws = sock;
     sock.onopen = () => {
       retry = 0;
@@ -349,7 +393,7 @@ export function stopRealtime() { closing = true; ws?.close(); ws = null; }
 
 export async function refetchDevices() {
   try {
-    const dev = await get<{ devices: Thing[] }>("/devices");
+    const dev = await ok(v1.devices.get());
     S.devices = dev.devices.map(toDev).filter((d): d is Dev => !!d);
     S.sync = Date.now(); bump();
   } catch { /* the next event or reconnect retries */ }
@@ -358,20 +402,20 @@ export async function refetchDevices() {
 /* ---------- rename, hide ---------- */
 /** A device's own name, or null to go back to the name Home Assistant gives it. */
 export async function renameDevice(id: string, name: string | null) {
-  try { await patch(`/devices/${id}/name`, { name }); await refetchDevices(); toast(name ? "Renamed" : "Name reset"); } catch (e) { toast(e instanceof ApiError ? e.message : "That didn't save"); }
+  try { await ok(v1.devices({ id }).name.patch({ name })); await refetchDevices(); toast(name ? "Renamed" : "Name reset"); } catch (e) { toast(e instanceof ApiError ? e.message : "That didn't save"); }
 }
 export async function setHidden(id: string, hidden: boolean) {
-  try { await post(`/devices/${id}/${hidden ? "hide" : "unhide"}`); await refetchDevices(); await loadHidden(); toast(hidden ? "Hidden. You can show it again at the bottom of Rooms" : "Showing again"); } catch (e) { toast(e instanceof ApiError ? e.message : "That didn't save"); }
+  try { await ok(hidden ? v1.devices({ id }).hide.post({}) : v1.devices({ id }).unhide.post({})); await refetchDevices(); await loadHidden(); toast(hidden ? "Hidden. You can show it again at the bottom of Rooms" : "Showing again"); } catch (e) { toast(e instanceof ApiError ? e.message : "That didn't save"); }
 }
 export async function loadHidden() {
-  const r = await get<{ devices: Thing[] }>("/devices?includeHidden=true").catch(() => null);
+  const r = await ok(v1.devices.get({ query: { includeHidden: "true" } })).catch(() => null);
   S.hiddenDevs = r ? r.devices.filter((t) => t.hidden).map((t) => ({ id: t.id, n: t.name })) : [];
   bump();
 }
 
 /* ---------- Alice's suggestions ---------- */
 export async function loadInsights() {
-  const r = await get<{ insights: { id: string; title: string; reason: string; action: { type: string; mode: string } }[] }>("/insights").catch(() => null);
+  const r = await ok(v1.insights.get()).catch(() => null);
   if (!r) return;
   const i = r.insights.find((x) => x.action.type === "set_mode");
   S.insight = i ? { id: i.id, to: i.action.mode[0]!.toUpperCase() + i.action.mode.slice(1), why: i.reason } : null;
@@ -379,24 +423,23 @@ export async function loadInsights() {
 }
 export async function dismissInsight(id: string) {
   S.insight = null; bump();
-  try { await post(`/insights/${encodeURIComponent(id)}/dismiss`); toast("Okay, Alice will not ask again for now"); } catch (e) { toast(e instanceof ApiError ? e.message : "That didn't save"); await loadInsights(); }
+  try { await ok(v1.insights({ id }).dismiss.post({})); toast("Okay, Alice will not ask again for now"); } catch (e) { toast(e instanceof ApiError ? e.message : "That didn't save"); await loadInsights(); }
 }
 
 /* ---------- alerts ---------- */
-interface AlertDto { id: string; kind: string; title: string; detail: string; ackedAt: number | null }
 export async function loadAlerts() {
-  const r = await get<{ alerts: AlertDto[] }>("/alerts").catch(() => null);
+  const r = await ok(v1.alerts.get()).catch(() => null);
   if (r) { S.alertsLive = r.alerts.filter((a) => !a.ackedAt).map((a) => ({ id: a.id, t: a.title, d: a.detail, ic: a.kind === "left_open" ? "door" : "bolt" })); bump(); }
 }
 export async function ackAlert(id: string) {
   S.alertsLive = (S.alertsLive ?? []).filter((a) => a.id !== id); bump();
-  try { await post(`/alerts/${id}/ack`); toast("Alert cleared. Alice will tell you if it happens again"); } catch (e) { toast(e instanceof ApiError ? e.message : "That didn't save"); await loadAlerts(); }
+  try { await ok(v1.alerts({ id }).ack.post({})); toast("Alert cleared. Alice will tell you if it happens again"); } catch (e) { toast(e instanceof ApiError ? e.message : "That didn't save"); await loadAlerts(); }
 }
 
 /* ---------- Ask Alice ---------- */
 export interface Suggestion { kind: "commands" | "scene" | "routine" | "mode" | "device"; label: string; detail: string; icon: string; sensitive: boolean; plan: any }
 export async function interpretText(text: string): Promise<Suggestion[]> {
-  try { return (await post<{ items: Suggestion[] }>("/ai/interpret", { text })).items; } catch { return []; }
+  try { return (await ok(v1.ai.interpret.post({ text }))).items; } catch { return []; }
 }
 /** What a command does to the tile straight away, before Home Assistant confirms. */
 function optimisticFor(action: string, p?: Record<string, unknown>): (d: Dev) => void {
@@ -430,7 +473,7 @@ export async function toggleFavourite(id: string) {
   const was = d.fav ?? 0;
   d.fav = was ? 0 : 1; bump();
   try {
-    await put("/favorites", { thingIds: S.devices.filter((x) => x.fav).map((x) => x.id) });
+    await ok(v1.favorites.put({ thingIds: S.devices.filter((x) => x.fav).map((x) => x.id) }));
     toast(d.fav ? `${d.n} added to Favourites` : `${d.n} removed from Favourites`);
   } catch (e) { d.fav = was; bump(); toast(e instanceof ApiError ? e.message : "That didn't save"); }
 }
@@ -441,7 +484,7 @@ export async function toggleVoice(id: string) {
   const was = d.voice ?? 0;
   d.voice = was ? 0 : 1; bump();
   try {
-    await patch(`/devices/${id}/settings`, { voiceExposed: !!d.voice });
+    await ok(v1.devices({ id }).settings.patch({ voiceExposed: !!d.voice }));
     toast(d.voice ? `${d.n} shared with Alexa and Google` : `${d.n} no longer shared`);
   } catch (e) { d.voice = was; bump(); toast(e instanceof ApiError ? e.message : "That didn't save"); }
 }
@@ -469,7 +512,7 @@ export async function sendCommand(id: string, action: string, parameters: Record
   optimistic(d); S.sync = Date.now(); bump();
   // One key per tap: if the request is repeated (a retry, a double delivery) the backend runs it once.
   const key = crypto.randomUUID();
-  const send = () => api<{ id: string; state: string }>("POST", `/devices/${id}/commands`, { action, parameters }, { "idempotency-key": key });
+  const send = () => ok(v1.devices({ id }).commands.post({ action, parameters }, { headers: { "idempotency-key": key } }));
   try {
     let c: { id: string };
     try { c = await send(); }
@@ -486,5 +529,5 @@ export async function sendCommand(id: string, action: string, parameters: Record
 
 /** Puts back what a finished command changed (the backend works out the opposite and checks it is still allowed). */
 export async function undoCommand(commandId: string) {
-  try { await post(`/commands/${commandId}/undo`); toast("Put back"); } catch (e) { toast(e instanceof ApiError ? e.message : "That couldn't be put back"); }
+  try { await ok(v1.commands({ id: commandId }).undo.post({})); toast("Put back"); } catch (e) { toast(e instanceof ApiError ? e.message : "That couldn't be put back"); }
 }

@@ -1,4 +1,4 @@
-import type { AppEvent, Availability } from "@/core/events/app-events";
+import type { AppEvent, Availability } from "../../../core/events/app-events";
 import { normalizeState } from "../capabilities/state-normalizer";
 import type { HaRawEvent, HaStateChangedEvent } from "../types";
 

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "lock-tile",
+  "type": "registry:ui",
+  "title": "Lock tile",
+  "description": "A door tile for a dark surface. It turns amber when the door is unlocked. Unlocking is a sensitive action and asks for a passkey first.",
+  "dependencies": [],
+  "registryDependencies": [
+    "icon",
+    "utilities"
+  ],
+  "files": [
+    {
+      "path": "ui/lock-tile.tsx",
+      "type": "registry:ui",
+      "content": "import type { ComponentProps } from \"react\";\nimport { Icon } from \"./icon\";\nimport { cn } from \"./cn\";\n\n/** Door tile for a dark surface. Amber when the door is open. */\nexport function LockTile({ icon, name, status, locked, hint, className, ...rest }: Omit<ComponentProps<\"button\">, \"children\" | \"type\"> & {\n  icon: string;\n  /** The door's name. */\n  name: string;\n  /** What state it is in, in words: \"Locked\", \"Open · tap to lock\". */\n  status: string;\n  /** Whether the door is locked. Unlocked shows amber. */\n  locked: boolean;\n  /** What a tap does, read after the name and state (hidden from sight): \"Tap to unlock.\" */\n  hint?: string;\n}) {\n  return (\n    <button type=\"button\" data-slot=\"lock-tile\" data-locked={locked ? \"\" : undefined} className={cn(\"lkb\", !locked && \"open\", className)} {...rest}>\n      <span className=\"lk\"><Icon n={icon} /></span><span><b>{name}</b><small>{status}</small></span>\n      {hint ? <span className=\"sr\">{hint}</span> : null}\n    </button>\n  );\n}\n"
+    },
+    {
+      "path": "ui/lock-tile.css",
+      "type": "registry:style",
+      "content": "/* LockTile. */\n.lkb{display:flex;flex-direction:column;gap:12px;padding:14px;border-radius:18px;background:rgba(241,236,223,.1);min-height:104px;text-align:left;width:100%;min-width:0;overflow-wrap:anywhere;transition:transform .12s,background .2s}\n.lkb b{display:block;font-weight:650}\n.lkb small{color:var(--deep-ink2)}\n.lkb.open{background:var(--deep-warn);color:#2B1D00}\n.lkb.open small{color:#5B3F00}\n.lkb .lk{background:rgba(241,236,223,.12)}\n.lkb.open .lk{background:rgba(43,29,0,.14)}\n"
+    }
+  ],
+  "meta": {
+    "category": "Device controls",
+    "status": "stable",
+    "exports": [
+      "LockTile"
+    ]
+  }
+}

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import type { Browser } from "@/testing/http";
-import { changeState, createWorld, homeWithHa, type World } from "@/testing/world";
-import { FakeSocket } from "@/testing/fake-socket";
+import type { Browser } from "../testing/http";
+import { changeState, createWorld, homeWithHa, type World } from "../testing/world";
+import { FakeSocket } from "../testing/fake-socket";
 import { WS_LIMITS } from "./hub";
 
 let w: World;

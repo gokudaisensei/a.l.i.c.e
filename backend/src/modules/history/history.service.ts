@@ -1,4 +1,4 @@
-import { AppError, notFound } from "@/core/errors/errors";
+import { AppError, notFound } from "../../core/errors/errors";
 import type { Caller, DevicesService } from "../devices/devices.service";
 import { normalizeState, type NormalizedState } from "../home-assistant/capabilities/state-normalizer";
 import { availabilityOf } from "../home-assistant/events/normalizer";

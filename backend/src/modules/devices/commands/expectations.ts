@@ -1,4 +1,4 @@
-import type { NormalizedState } from "@/modules/home-assistant";
+import type { NormalizedState } from "../../home-assistant";
 
 /** What we expect to observe once an operation has taken effect, in application-level values. */
 export interface Expectation {

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "mode-and-scene",
+  "type": "registry:ui",
+  "title": "Mode and scene",
+  "description": "ModeButton picks the household mode (Home, Away, Night). SceneCard runs a scene or routine, and can be outlined when Alice suggests it.",
+  "dependencies": [],
+  "registryDependencies": [
+    "icon",
+    "utilities"
+  ],
+  "files": [
+    {
+      "path": "ui/choice.tsx",
+      "type": "registry:ui",
+      "content": "import type { ComponentProps, ReactNode } from \"react\";\nimport { Icon } from \"./icon\";\nimport { cn } from \"./cn\";\n\n/** One option in a household-mode picker. `pressed` marks the active mode. */\nexport function ModeButton({ icon, label, description, pressed, className, ...rest }: Omit<ComponentProps<\"button\">, \"children\" | \"type\"> & {\n  icon: string;\n  /** The mode's name. */\n  label: string;\n  /** A short line under the label. */\n  description?: ReactNode;\n  pressed: boolean;\n}) {\n  return (\n    <button type=\"button\" data-slot=\"mode-button\" className={cn(\"mode\", className)} aria-pressed={pressed} {...rest}>\n      <Icon n={icon} /><b>{label}</b>{description ? <small>{description}</small> : null}\n    </button>\n  );\n}\n\n/** Scene or routine card. `suggested` outlines it in sage. */\nexport function SceneCard({ icon, name, description, tag, suggested, className, ...rest }: Omit<ComponentProps<\"button\">, \"children\" | \"type\"> & {\n  icon: string;\n  /** The scene's name. */\n  name: string;\n  /** What it does, in a short line. */\n  description?: ReactNode;\n  /** A small label at the bottom: \"Routine\", \"Suggested\". */\n  tag?: ReactNode;\n  /** Outlines the card: Alice suggests it for now. */\n  suggested?: boolean;\n}) {\n  return (\n    <button type=\"button\" data-slot=\"scene-card\" data-suggested={suggested ? \"\" : undefined} className={cn(\"scene\", suggested && \"rec\", className)} {...rest}>\n      <Icon n={icon} /><b>{name}</b>{description ? <small>{description}</small> : null}{tag ? <span className=\"eyebrow\">{tag}</span> : null}\n    </button>\n  );\n}\n"
+    },
+    {
+      "path": "ui/choice.css",
+      "type": "registry:style",
+      "content": "/* ModeButton and SceneCard. */\n.mode{display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:16px;background:var(--over);text-align:left;min-height:84px;transition:transform .12s,background .2s}\n.mode b{font:650 1rem var(--f-display);font-stretch:92%}\n.mode small{line-height:1.25}\n.mode[aria-pressed=true]{background:var(--sage);color:var(--on-sage)}\n.mode[aria-pressed=true] small{color:inherit;opacity:.92}\n.scene{display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:18px;background:var(--tile2);text-align:left;transition:transform .12s,background .2s;min-height:112px;min-width:0;overflow-wrap:anywhere;max-width:100%}\n@media(hover:hover){\n  .scene:hover{background:var(--sage-soft)}\n}\n.scene b{font:650 1rem var(--f-display);font-stretch:92%}\n.scene .ic{color:var(--sage)}\n.scene.rec{outline:2px solid var(--sage);outline-offset:-2px}\n@media (max-width:620px){\n  .scene:last-child:nth-child(odd){grid-column:span 2}\n}\n"
+    }
+  ],
+  "meta": {
+    "category": "Device controls",
+    "status": "stable",
+    "exports": [
+      "ModeButton",
+      "SceneCard"
+    ]
+  }
+}

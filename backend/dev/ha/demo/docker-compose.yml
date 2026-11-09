@@ -1,0 +1,26 @@
+# The Home Assistant used for demos, served on 8124 (the test one stays on 8123). Own volume, so tests never touch it.
+# Reset to a clean instance: docker compose -f dev/ha/demo/docker-compose.yml down -v
+name: alice-ha-demo
+services:
+  init:
+    image: ghcr.io/home-assistant/home-assistant:2026.10.4
+    entrypoint: ["sh", "-c", "touch /config/scripts.yaml /config/automations.yaml"]
+    volumes:
+      - ha-data:/config
+  homeassistant:
+    depends_on:
+      init:
+        condition: service_completed_successfully
+    image: ghcr.io/home-assistant/home-assistant:2026.10.4
+    container_name: alice-ha-demo
+    ports:
+      - "127.0.0.1:8124:8123"
+    volumes:
+      - ha-data:/config
+      - ./configuration.yaml:/config/configuration.yaml:ro
+      - ./pack.yaml:/config/pack.yaml:ro
+    environment:
+      TZ: Asia/Kolkata
+    restart: unless-stopped
+volumes:
+  ha-data:

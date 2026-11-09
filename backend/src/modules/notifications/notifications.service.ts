@@ -1,10 +1,10 @@
 import { and, desc, eq, isNull, lt } from "drizzle-orm";
-import type { Db } from "@/core/database/client";
-import { notifications } from "@/core/database/schema";
-import { notFound } from "@/core/errors/errors";
-import type { AppEvent } from "@/core/events/app-events";
-import type { EventBus, Unsubscribe } from "@/core/events/event-bus";
-import { newId } from "@/core/ids";
+import type { Db } from "../../core/database/client";
+import { notifications } from "../../core/database/schema";
+import { notFound } from "../../core/errors/errors";
+import type { AppEvent } from "../../core/events/app-events";
+import type { EventBus, Unsubscribe } from "../../core/events/event-bus";
+import { newId } from "../../core/ids";
 import type { HouseholdService } from "../households/household.service";
 import { can } from "../permissions/permissions";
 

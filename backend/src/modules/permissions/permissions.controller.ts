@@ -1,7 +1,7 @@
 import { Elysia, t } from "elysia";
-import { requireMember, requirePermission, requireStepUp } from "@/core/http/guards";
-import { sessionPlugin } from "@/core/http/session-plugin";
-import type { Services } from "@/services";
+import { requireMember, requirePermission, requireStepUp } from "../../core/http/guards";
+import { sessionPlugin } from "../../core/http/session-plugin";
+import type { Services } from "../../services";
 import { ROLE_PERMISSIONS } from "./permissions";
 
 export const permissionsController = ({ auth, households, permissions }: Services) =>

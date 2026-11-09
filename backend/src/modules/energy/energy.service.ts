@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
-import type { Db } from "@/core/database/client";
-import { households } from "@/core/database/schema";
-import { AppError } from "@/core/errors/errors";
+import type { Db } from "../../core/database/client";
+import { households } from "../../core/database/schema";
+import { AppError } from "../../core/errors/errors";
 import type { Caller, DevicesService } from "../devices/devices.service";
 import { powerLimitOf } from "../devices/settings";
 import type { ThingView } from "../home-assistant/things/presentation";

@@ -1,9 +1,9 @@
 import { asc, eq } from "drizzle-orm";
-import type { Db } from "@/core/database/client";
-import { groupMembers, groups } from "@/core/database/schema";
-import { AppError, notFound } from "@/core/errors/errors";
-import { newId } from "@/core/ids";
-import { writeAudit } from "@/core/security/audit";
+import type { Db } from "../../core/database/client";
+import { groupMembers, groups } from "../../core/database/schema";
+import { AppError, notFound } from "../../core/errors/errors";
+import { newId } from "../../core/ids";
+import { writeAudit } from "../../core/security/audit";
 import { supportsOperation } from "../home-assistant";
 import type { ThingView } from "../home-assistant/things/presentation";
 import type { ThingsService } from "../home-assistant/things/things.service";

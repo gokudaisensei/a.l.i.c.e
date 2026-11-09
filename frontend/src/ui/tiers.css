@@ -1,0 +1,56 @@
+/* What changes when text is large. <html data-text> is set from the root font size (lib/text-tier.ts):
+   std · lg (115 to 150 %) · xl (150 to 200 %) · ax (200 % and up).
+   Rules here say how a layout restacks, not how big anything is (rem already does that).
+   They sit behind :root[data-text] so they win over the screen rules in globals.css whatever the load order. */
+
+/* ---- lg and up: three small columns become two ---- */
+:root:is([data-text=lg],[data-text=xl],[data-text=ax]) .pg3{grid-template-columns:repeat(2,minmax(0,1fr))}
+:root:is([data-text=lg],[data-text=xl],[data-text=ax]) .pmodes{grid-template-columns:repeat(2,minmax(0,1fr))}
+:root:is([data-text=lg],[data-text=xl],[data-text=ax]) .presets{grid-template-columns:repeat(2,minmax(0,1fr))}
+
+/* ---- xl and up: rows restack, buttons wrap, chrome shrinks to what it must show ---- */
+:root:is([data-text=xl],[data-text=ax]) .btn{white-space:normal;padding-block:.5rem;text-align:center}
+:root:is([data-text=lg],[data-text=xl],[data-text=ax]) .lkpair{grid-template-columns:minmax(0,1fr)}
+:root:is([data-text=xl],[data-text=ax]) .pill{white-space:normal}
+/* the "Live · synced" words leave the top bar (the dot stays, the words stay for screen readers) */
+:root:is([data-text=xl],[data-text=ax]) .live .lt{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+:root:is([data-text=xl],[data-text=ax]) .hrow{flex-wrap:wrap}
+:root:is([data-text=xl],[data-text=ax]) .hrow>.btn{flex:1 1 auto}
+:root:is([data-text=xl],[data-text=ax]) .sfoot .btn{flex:1 1 100%}
+:root:is([data-text=xl],[data-text=ax]) .hs .scene{width:min(11rem,70vw)}
+:root:is([data-text=xl],[data-text=ax]) .pev{grid-template-columns:30px minmax(0,1fr)}
+:root:is([data-text=xl],[data-text=ax]) .pev time{grid-column:2}
+:root:is([data-text=xl],[data-text=ax]) .row{grid-template-columns:auto minmax(0,1fr)}
+:root:is([data-text=xl],[data-text=ax]) .row>:last-child:not(:first-child):not(.sl){grid-column:2}
+:root:is([data-text=xl],[data-text=ax]) .nudge small{display:none}
+
+/* ---- ax: one column of device tiles, chips wrap instead of scrolling ---- */
+:root[data-text=ax] .pg3{grid-template-columns:minmax(0,1fr)}
+:root[data-text=ax] .pg{grid-template-columns:minmax(0,1fr)}
+/* one column means every child fills it: a child that still asks to span two (the section headings, the tile grid) would make a second, implicit column and squeeze the rest */
+:root[data-text=ax] .pg>*{grid-column:1/-1 !important} /* !important: some children set grid-column inline */
+:root[data-text=ax] .phero .chips{flex-wrap:wrap;overflow:visible;margin:0;padding:0}
+:root[data-text=ax] .pmodes{grid-template-columns:minmax(0,1fr)}
+:root[data-text=ax] .scenes{grid-template-columns:minmax(0,1fr)}
+
+/* ---- xl and up: a segmented control wraps (its thumb gives way to a plain highlight), as Apple's turn into lists ---- */
+:root:is([data-text=xl],[data-text=ax]) .seg{flex-wrap:wrap;border-radius:18px}
+:root:is([data-text=xl],[data-text=ax]) .seg-ind{display:none}
+:root:is([data-text=xl],[data-text=ax]) .seg button{white-space:normal;border-radius:14px}
+:root:is([data-text=xl],[data-text=ax]) .seg [aria-checked=true]{background:var(--tile);box-shadow:0 1px 3px rgba(0,0,0,.14)}
+:root:is([data-text=xl],[data-text=ax]) .tile>.th{flex-wrap:wrap}
+
+/* ---- chrome is bounded at every size: it grows with text, then stops (Apple's tab bar does the same) ---- */
+:root .top .brand{font-size:min(1.875rem,34px)}
+:root .nav .badge{font-size:min(.6875rem,13px)}
+:root .av{font-size:min(1rem,16px)}
+:root .av.sm{font-size:min(.8125rem,13px)}
+:root:is([data-text=xl],[data-text=ax]) .acc .sh{flex-wrap:wrap}
+:root:is([data-text=xl],[data-text=ax]) .acc .sh>*{min-width:0}
+:root:is([data-text=xl],[data-text=ax]) .acc .echo{flex:1 1 100%}
+
+/* ---- xl and up: nothing is cut short (Apple: show as much text at accessibility sizes as at the largest standard size) ---- */
+:root:is([data-text=xl],[data-text=ax]) .abn b{display:block;-webkit-line-clamp:unset;overflow:visible}
+/* a chip with a long name (an alert about a long-named device) wraps instead of pushing out */
+:root:is([data-text=xl],[data-text=ax]) .chip{white-space:normal;max-width:100%;text-align:left}
+:root:is([data-text=xl],[data-text=ax]) .chip-t{white-space:normal;overflow:visible;text-overflow:clip}

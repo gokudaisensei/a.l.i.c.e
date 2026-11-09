@@ -1,22 +1,22 @@
 import type { Logger } from "pino";
-import type { Role } from "@/core/database/schema";
-import type { AppEvent } from "@/core/events/app-events";
-import type { EventBus, Unsubscribe } from "@/core/events/event-bus";
-import { RateLimiter } from "@/core/http/rate-limit";
-import type { AuthService, SessionContext } from "@/modules/authentication/auth.service";
-import { toPublicCommand } from "@/modules/devices/commands/public-command";
-import type { Caller, DevicesService } from "@/modules/devices/devices.service";
-import type { ActivityService } from "@/modules/activity/activity.service";
-import type { AlertsService } from "@/modules/notifications/alerts.service";
-import type { NotificationsService } from "@/modules/notifications/notifications.service";
-import type { ManagedConnection } from "@/modules/home-assistant";
-import { describeThingFacets } from "@/modules/home-assistant/things/facet-values";
-import type { ThingsService } from "@/modules/home-assistant/things/things.service";
-import type { Thing, ThingOverrides } from "@/modules/home-assistant/things/types";
-import type { HouseholdService, Membership } from "@/modules/households/household.service";
-import { evaluateDeviceAccess, type DevicePolicyRow } from "@/modules/permissions/device-access";
-import type { PermissionService } from "@/modules/permissions/permission.service";
-import { can } from "@/modules/permissions/permissions";
+import type { Role } from "../core/database/schema";
+import type { AppEvent } from "../core/events/app-events";
+import type { EventBus, Unsubscribe } from "../core/events/event-bus";
+import { RateLimiter } from "../core/http/rate-limit";
+import type { AuthService, SessionContext } from "../modules/authentication/auth.service";
+import { toPublicCommand } from "../modules/devices/commands/public-command";
+import type { Caller, DevicesService } from "../modules/devices/devices.service";
+import type { ActivityService } from "../modules/activity/activity.service";
+import type { AlertsService } from "../modules/notifications/alerts.service";
+import type { NotificationsService } from "../modules/notifications/notifications.service";
+import type { ManagedConnection } from "../modules/home-assistant";
+import { describeThingFacets } from "../modules/home-assistant/things/facet-values";
+import type { ThingsService } from "../modules/home-assistant/things/things.service";
+import type { Thing, ThingOverrides } from "../modules/home-assistant/things/types";
+import type { HouseholdService, Membership } from "../modules/households/household.service";
+import { evaluateDeviceAccess, type DevicePolicyRow } from "../modules/permissions/device-access";
+import type { PermissionService } from "../modules/permissions/permission.service";
+import { can } from "../modules/permissions/permissions";
 
 /** What the hub needs from a socket. The Elysia adapter and test fakes both implement it. */
 export interface ClientSocket {

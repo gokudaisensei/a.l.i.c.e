@@ -1,6 +1,6 @@
 import { and, desc, eq, sql } from "drizzle-orm";
-import type { Db } from "@/core/database/client";
-import { commands } from "@/core/database/schema";
+import type { Db } from "../../../core/database/client";
+import { commands } from "../../../core/database/schema";
 import type { CommandStore } from "./command-store";
 import type { DeviceCommand } from "./command-types";
 

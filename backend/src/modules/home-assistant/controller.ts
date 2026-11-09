@@ -1,7 +1,7 @@
 import { Elysia, t } from "elysia";
-import { requirePermission, requireStepUp } from "@/core/http/guards";
-import { sessionPlugin } from "@/core/http/session-plugin";
-import type { Services } from "@/services";
+import { requirePermission, requireStepUp } from "../../core/http/guards";
+import { sessionPlugin } from "../../core/http/session-plugin";
+import type { Services } from "../../services";
 
 export const homeAssistantController = ({ auth, households, ha }: Services) =>
   new Elysia({ name: "module.home-assistant", prefix: "/ha", tags: ["home-assistant"] })

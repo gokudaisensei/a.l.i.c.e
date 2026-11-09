@@ -1,4 +1,4 @@
-import { AppError } from "@/core/errors/errors";
+import { AppError } from "../errors/errors";
 import { COOKIE } from "./guards";
 
 const SAFE = new Set(["GET", "HEAD", "OPTIONS"]);

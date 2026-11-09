@@ -1,0 +1,37 @@
+// Drives the running demo through its tunnel: set up, connect Home Assistant, switch a light, check live updates.
+// Usage: DEMO_URL=https://<tunnel> node e2e/demo-check.mjs   (needs bun run demo; reads backend/.env.demo for the HA token)
+import { chromium } from "@playwright/test";
+import { readFileSync } from "node:fs";
+const URL_ = process.env.DEMO_URL; if (!URL_) throw new Error("set DEMO_URL");
+const env = Object.fromEntries(readFileSync(new URL("../../backend/.env.demo", import.meta.url), "utf8").split("\n").filter(Boolean).map((l) => [l.slice(0, l.indexOf("=")), l.slice(l.indexOf("=") + 1)]));
+const ha = (p, o = {}) => fetch(env.HA_URL + p, { ...o, headers: { authorization: `Bearer ${env.HA_TOKEN}`, "content-type": "application/json" } }).then((r) => r.json());
+const browser = await chromium.launch({ channel: "chrome" });
+const ctx = await browser.newContext(); const page = await ctx.newPage();
+const cdp = await ctx.newCDPSession(page);
+await cdp.send("WebAuthn.enable");
+await cdp.send("WebAuthn.addVirtualAuthenticator", { options: { protocol: "ctap2", transport: "internal", hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true } });
+const ok = (m) => console.log("ok  ", m);
+await page.goto(URL_);
+await page.getByLabel("Your name").fill("Demo Admin");
+await page.getByRole("button", { name: "Create passkey and continue" }).click();
+await page.getByText(/saved them somewhere safe/).click();
+await page.getByRole("button", { name: "Continue" }).click();
+await page.getByLabel("Address").fill(env.HA_URL);
+await page.getByLabel("Access token").fill(env.HA_TOKEN);
+await page.getByRole("button", { name: "Connect" }).click();
+await page.getByText("Household mode").waitFor({ timeout: 60000 }); ok("set up and connected over the tunnel");
+await page.getByRole("link", { name: "Rooms" }).first().click();
+await page.getByRole("heading", { name: "Kitchen" }).waitFor();
+const names = await page.getByRole("switch").evaluateAll((els) => els.map((e) => e.getAttribute("aria-label")));
+ok(`${names.length} switches on Rooms: ${names.join(", ")}`);
+const sw = page.getByRole("switch", { name: "Island lights", exact: true }); await sw.click();
+for (let i = 0; i < 40 && (await ha("/api/states/light.island_lights")).state !== "on"; i++) await new Promise((r) => setTimeout(r, 400));
+if ((await ha("/api/states/light.island_lights")).state !== "on") throw new Error("light did not turn on in HA"); ok("Island lights switched on in Home Assistant");
+await ha("/api/services/light/turn_off", { method: "POST", body: JSON.stringify({ entity_id: "light.island_lights" }) });
+await page.getByRole("switch", { name: "Island lights", exact: true }).waitFor();
+await page.waitForFunction(() => document.querySelector('[role=switch][aria-label="Island lights"]')?.getAttribute("aria-checked") === "false", null, { timeout: 15000 }); ok("a change made in Home Assistant showed up live (websocket through the tunnel)");
+for (const r of ["Living Room", "Kitchen", "Bedroom", "Arjun's room", "Bathroom", "Guest room", "Hall", "Garden"]) if (!(await page.getByRole("heading", { name: r }).count())) console.log("MISSING room heading", r);
+await page.screenshot({ path: process.env.SHOT ?? "/tmp/demo-rooms.png", fullPage: true });
+await page.getByRole("link", { name: "Home" }).first().click(); await page.waitForTimeout(1500);
+await page.screenshot({ path: (process.env.SHOT ?? "/tmp/demo-rooms.png").replace("rooms", "home") });
+await browser.close();

@@ -1,10 +1,10 @@
 import { and, eq } from "drizzle-orm";
-import type { Db } from "@/core/database/client";
-import { personLinks } from "@/core/database/schema";
-import { AppError } from "@/core/errors/errors";
-import type { AppEvent } from "@/core/events/app-events";
-import type { EventBus, Unsubscribe } from "@/core/events/event-bus";
-import { writeAudit } from "@/core/security/audit";
+import type { Db } from "../../core/database/client";
+import { personLinks } from "../../core/database/schema";
+import { AppError } from "../../core/errors/errors";
+import type { AppEvent } from "../../core/events/app-events";
+import type { EventBus, Unsubscribe } from "../../core/events/event-bus";
+import { writeAudit } from "../../core/security/audit";
 import type { ThingsService } from "../home-assistant/things/things.service";
 import type { HouseholdService } from "./household.service";
 

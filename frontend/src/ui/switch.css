@@ -1,5 +1,5 @@
 .sw{position:relative;display:inline-flex;align-items:center;flex:none;width:46px;height:28px;padding:3px;border-radius:99px;background:var(--tile2);
-  box-shadow:inset 0 0 0 1.5px var(--line);cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+  box-shadow:inset 0 0 0 1.5px var(--line);cursor:pointer;touch-action:pan-y; /* a finger drag sideways is ours (the thumb), not a page pan: found on a real phone */-webkit-tap-highlight-color:transparent;
   transition:background-color .28s var(--ease-out),box-shadow .28s var(--ease-out)}
 .sw::before{content:"";position:absolute;inset:-8px -4px} /* 44px touch target around a 28px control */
 .sw[data-checked]{background:var(--glow);box-shadow:none}
@@ -9,4 +9,11 @@
 .sw:active .sw-t{width:28px}
 .sw[data-checked]:active .sw-t{translate:12px 0}
 .sw[data-disabled]{opacity:.5;cursor:not-allowed}
-@media (prefers-reduced-motion:reduce){.sw-t{transition:background-color .2s}.sw:active .sw-t{width:22px}.sw[data-checked]:active .sw-t{translate:18px 0}}
+/* dragged: the thumb follows the finger exactly, and the track already shows where it would land */
+.sw[data-dragging]{touch-action:none}
+.sw[data-dragging] .sw-t{translate:calc(var(--sw-pos,0) * 18px) 0;width:28px;transition:none}
+.sw[data-dragging]:not([data-drag-on]){background:var(--tile2);box-shadow:inset 0 0 0 1.5px var(--line)}
+.sw[data-dragging][data-drag-on]{background:var(--glow);box-shadow:none}
+.sw[data-dragging]:not([data-drag-on]) .sw-t{background:var(--ink3)}
+.sw[data-dragging][data-drag-on] .sw-t{background:var(--tile)}
+@media (prefers-reduced-motion:reduce){.sw[data-dragging] .sw-t{width:22px}.sw-t{transition:background-color .2s}.sw:active .sw-t{width:22px}.sw[data-checked]:active .sw-t{translate:18px 0}}

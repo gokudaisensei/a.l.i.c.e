@@ -1,4 +1,4 @@
-import { logger } from "@/core/logging/logger";
+import { logger } from "../logging/logger";
 import type { AppEvent } from "./app-events";
 import { InMemoryEventBus } from "./event-bus";
 

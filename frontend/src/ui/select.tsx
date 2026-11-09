@@ -1,9 +1,11 @@
 "use client";
+import type { ComponentProps } from "react";
 import { Select as BaseSelect } from "@base-ui/react/select";
 import { Icon } from "./icon";
+import { haptic } from "./haptics";
 import { cn } from "./cn";
 
-export interface SelectProps {
+export interface SelectProps extends Omit<ComponentProps<typeof BaseSelect.Trigger>, "value" | "onChange" | "className" | "children" | "aria-label" | "disabled" | "placeholder"> {
   value: string;
   onChange: (value: string) => void;
   /** `[value, label]` pairs. */
@@ -19,11 +21,11 @@ export interface SelectProps {
  * Drop-down list. A real popup instead of the browser's native one, so it matches the rest of the UI,
  * opens and closes with a spring, and supports type-ahead and arrow keys. Touch opens it below the field.
  */
-export function Select({ value, onChange, options, label, placeholder, disabled, className }: SelectProps) {
+export function Select({ value, onChange, options, label, placeholder, disabled, className, ...rest }: SelectProps) {
   const items = options.map(([v, l]) => ({ value: v, label: l }));
   return (
-    <BaseSelect.Root items={items} value={value} disabled={disabled} onValueChange={(v) => { if (typeof v === "string") onChange(v); }}>
-      <BaseSelect.Trigger data-slot="select" className={cn("sel sel-t", className)} aria-label={label}>
+    <BaseSelect.Root items={items} value={value} disabled={disabled} onValueChange={(v) => { if (typeof v === "string") { if (v !== value) haptic("select"); onChange(v); } }}>
+      <BaseSelect.Trigger data-slot="select" className={cn("sel sel-t", className)} aria-label={label} {...rest}>
         <BaseSelect.Value placeholder={placeholder} />
         <BaseSelect.Icon className="sel-i"><Icon n="chev" c="sm" /></BaseSelect.Icon>
       </BaseSelect.Trigger>

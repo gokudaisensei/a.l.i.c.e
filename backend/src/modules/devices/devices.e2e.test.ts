@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import { randomBytes } from "node:crypto";
-import { buildApp } from "@/app";
-import { createTestDb } from "@/core/database/client";
-import { haConnections } from "@/core/database/schema";
+import { buildApp } from "../../app";
+import { createTestDb } from "../../core/database/client";
+import { haConnections } from "../../core/database/schema";
 import { HaAuthError } from "../home-assistant/clients/ha-ws-gateway";
 import { FakeGateway, state } from "../home-assistant/testing";
-import { createServices } from "@/services";
-import { Browser } from "@/testing/http";
-import { fakeHa, SEAL_KEYS } from "@/testing/world";
+import { createServices } from "../../services";
+import { Browser } from "../../testing/http";
+import { fakeHa, SEAL_KEYS } from "../../testing/world";
 
 const KEY = randomBytes(32).toString("base64");
 const TOKEN = "fake-long-lived-token-1234567890";

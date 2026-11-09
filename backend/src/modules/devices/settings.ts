@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
-import type { Db } from "@/core/database/client";
-import { entitySettings } from "@/core/database/schema";
+import type { Db } from "../../core/database/client";
+import { entitySettings } from "../../core/database/schema";
 import type { ManagedConnection } from "../home-assistant";
 import type { Thing } from "../home-assistant/things/types";
 

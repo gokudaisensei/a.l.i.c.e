@@ -1,6 +1,6 @@
 import { and, eq, inArray } from "drizzle-orm";
-import type { Db } from "@/core/database/client";
-import { automations, haConnections, routines, scenes, type SyncStatus } from "@/core/database/schema";
+import type { Db } from "../../core/database/client";
+import { automations, haConnections, routines, scenes, type SyncStatus } from "../../core/database/schema";
 import { compileRoutine, compileScene, ownerOfScript, routineObjectId, sceneObjectId } from "./compile";
 import type { AutomationConfig, DriftItem, ScriptConfig } from "./config-ops";
 import type { ConfigJob, ConfigJobService } from "./config-jobs.service";

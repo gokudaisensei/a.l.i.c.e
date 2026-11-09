@@ -1,0 +1,33 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "slider",
+  "type": "registry:ui",
+  "title": "Slider",
+  "description": "A filled bar for a value along a range, like brightness. The fill glides when the value jumps, and the thumb lifts while it is held.",
+  "dependencies": [
+    "@base-ui/react"
+  ],
+  "registryDependencies": [
+    "haptics",
+    "utilities"
+  ],
+  "files": [
+    {
+      "path": "ui/slider.tsx",
+      "type": "registry:ui",
+      "content": "\"use client\";\nimport { useRef, type ComponentProps } from \"react\";\nimport { Slider as BaseSlider } from \"@base-ui/react/slider\";\nimport { cn } from \"./cn\";\nimport { haptic } from \"./haptics\";\nimport { useDoubleTap } from \"./use-double-tap\";\n\nexport interface SliderProps extends Omit<ComponentProps<typeof BaseSlider.Root>, \"value\" | \"defaultValue\" | \"onChange\" | \"onValueChange\" | \"onValueCommitted\" | \"min\" | \"max\" | \"disabled\" | \"className\" | \"children\" | \"aria-label\"> {\n  value: number;\n  onChange: (value: number) => void;\n  label: string;\n  min?: number;\n  max?: number;\n  /** `md` is the thin bar; `xl` is the tall full-width bar for sheets. */\n  size?: \"md\" | \"xl\";\n  disabled?: boolean;\n  className?: string;\n  /** Words for a value, for screen readers and for `showValue`: `(v) => `${v}%``. Defaults to the bare number. */\n  valueText?: (value: number) => string;\n  /** Shows the value beside the bar as live feedback while it is dragged. */\n  showValue?: boolean;\n  /** Double-tap the bar to return to this value (a default, such as full brightness). Leave it out for no reset. */\n  resetValue?: number;\n}\n\n/**\n * Filled slider built from real elements, so the fill glides when a value jumps (a preset tap)\n * and the thumb lifts while it is dragged. It opts out of the bottom sheet's swipe-to-dismiss.\n */\nexport function Slider({ value, onChange, label, min = 1, max = 100, size = \"md\", disabled, className, valueText, showValue, resetValue, ...rest }: SliderProps) {\n  const last = useRef(value);\n  const reset = useDoubleTap(() => { if (resetValue !== undefined) { haptic(\"medium\"); onChange(resetValue); } });\n  // what dragging feels like: a tick every twentieth, a click at each quarter, a bump at either end\n  const feel = (n: number) => {\n    const prev = last.current; last.current = n;\n    if (n === prev) return;\n    if (n <= min || n >= max) { if (prev > min && prev < max) haptic(\"boundary\"); return; }\n    const zone = (x: number, parts: number) => Math.floor(((x - min) / (max - min)) * parts);\n    if (zone(n, 4) !== zone(prev, 4)) haptic(\"detent\"); else if (zone(n, 20) !== zone(prev, 20)) haptic(\"tick\");\n  };\n  const bar = (\n    <BaseSlider.Root data-slot=\"slider\" data-size={size} data-base-ui-swipe-ignore className={cn(\"rng\", className)} value={value} min={min} max={max} disabled={disabled}\n      onValueChange={(v) => { const n = Array.isArray(v) ? v[0] : v; feel(n); onChange(n); }} {...(resetValue !== undefined ? reset : {})} {...rest}>\n      <BaseSlider.Control className=\"rng-c\">\n        <BaseSlider.Track className=\"rng-t\">\n          <BaseSlider.Indicator className=\"rng-i\" />\n          <BaseSlider.Thumb className=\"rng-th\" aria-label={label} getAriaValueText={valueText ? (_, v) => valueText(v) : undefined} />\n        </BaseSlider.Track>\n      </BaseSlider.Control>\n    </BaseSlider.Root>\n  );\n  if (!showValue) return bar;\n  return <div data-slot=\"slider-field\" className=\"rng-row\">{bar}<output className=\"rng-v num\" aria-hidden=\"true\">{valueText ? valueText(value) : value}</output></div>;\n}\n"
+    },
+    {
+      "path": "ui/slider.css",
+      "type": "registry:style",
+      "content": ".rng{display:block;width:100%;touch-action:none}\n.rng-c{display:flex;align-items:center;height:28px;cursor:pointer;-webkit-tap-highlight-color:transparent}\n.rng-t{position:relative;width:100%;height:8px;border-radius:99px;background:var(--tile2);box-shadow:inset 0 0 0 1px var(--line)}\n.rng-i{height:100%;border-radius:inherit;background:var(--glow);transition:width .35s var(--ease-ios)}\n.rng-th{width:22px;height:22px;border-radius:50%;background:var(--tile);border:2px solid var(--glow);box-shadow:0 1px 5px rgba(0,0,0,.25);\n  transition:scale .3s var(--spring),inset-inline-start .35s var(--ease-ios),box-shadow .2s}\n.rng-th::before{content:\"\";position:absolute;inset:-12px}\n.rng-th:focus-visible{outline:2px solid var(--ink);outline-offset:2px}\n.rng[data-dragging] .rng-i,.rng[data-dragging] .rng-th{transition-property:scale,box-shadow}\n.rng[data-dragging] .rng-th{scale:1.18;box-shadow:0 3px 10px rgba(0,0,0,.32)}\n/* extra large: the full-width brightness bar in the device sheet */\n.rng[data-size=xl] .rng-c{height:60px}\n.rng[data-size=xl] .rng-t{height:60px;border-radius:22px;overflow:hidden}\n.rng[data-size=xl] .rng-th{width:10px;height:40px;border-radius:6px;border:0;background:var(--ink);box-shadow:none}\n.rng[data-size=xl][data-dragging] .rng-th{scale:1.12 1.04}\n.rng[data-disabled]{opacity:.5}\n@media (prefers-reduced-motion:reduce){.rng-i,.rng-th{transition:none}.rng[data-dragging] .rng-th{scale:1}}\n.rng-row{display:flex;align-items:center;gap:12px}\n.rng-row .rng{flex:1;min-width:0}\n.rng-v{min-width:3.2ch;text-align:right;font-size:.875rem;color:var(--ink2)}\n"
+    }
+  ],
+  "meta": {
+    "category": "Inputs",
+    "status": "stable",
+    "exports": [
+      "Slider"
+    ]
+  }
+}

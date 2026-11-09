@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { FakeSocket } from "@/testing/fake-socket";
-import type { Browser } from "@/testing/http";
-import { changeState, createWorld, homeWithHa, type World } from "@/testing/world";
+import { FakeSocket } from "../../testing/fake-socket";
+import type { Browser } from "../../testing/http";
+import { changeState, createWorld, homeWithHa, type World } from "../../testing/world";
 
 let w: World;
 let h: Awaited<ReturnType<typeof homeWithHa>>;

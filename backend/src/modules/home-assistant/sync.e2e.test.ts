@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { httpError } from "@/testing/fake-config-api";
-import { createWorld, homeWithHa, type World } from "@/testing/world";
+import { httpError } from "../../testing/fake-config-api";
+import { createWorld, homeWithHa, type World } from "../../testing/world";
 
 let w: World;
 let h: Awaited<ReturnType<typeof homeWithHa>>;
@@ -17,7 +17,7 @@ describe("scenes and routines also live in Home Assistant", () => {
   test("without an admin token the scene still works in Alice and says what is missing; nothing is queued", async () => {
     const res = await h.admin.call("POST", "/scenes", scene());
     expect(res.json.haScript).toMatchObject({ status: "not_synced", error: expect.stringMatching(/admin token/) });
-    expect(w.services.configJobs.status(w.db.select().from((await import("@/core/database/schema")).households).get()!.id).pendingJobs).toBe(0);
+    expect(w.services.configJobs.status(w.db.select().from((await import("../../core/database/schema")).households).get()!.id).pendingJobs).toBe(0);
     const act = await h.admin.call("POST", `/scenes/${res.json.id}/activate`);
     expect(act.status).toBe(202); // Alice's own runner still works
     await Promise.all(act.json.commands.map((c: any) => w.services.commands.done(c.id)));
@@ -57,7 +57,7 @@ describe("scenes and routines also live in Home Assistant", () => {
     await h.withAdminToken();
     const s = (await h.admin.call("POST", "/scenes", scene())).json;
     await w.sync();
-    const { scenes } = await import("@/core/database/schema");
+    const { scenes } = await import("../../core/database/schema");
     w.db.update(scenes).set({ syncStatus: "failed" }).run(); // pretend the scene's last attempt failed
     w.configApi.calls.length = 0;
     const r = (await h.admin.call("POST", "/routines", { name: "Goodnight", steps: [{ type: "scene", sceneId: s.id }, { type: "delay", seconds: 30 }, { type: "device", entityId: "light.floor_lamp", action: "turn_off" }, { type: "mode", mode: "night" }] })).json;

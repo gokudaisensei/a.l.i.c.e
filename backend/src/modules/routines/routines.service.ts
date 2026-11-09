@@ -1,9 +1,9 @@
 import { and, asc, desc, eq, lt } from "drizzle-orm";
-import type { Db } from "@/core/database/client";
-import { HOUSEHOLD_MODES, type RoutineStep, routineRuns, routines } from "@/core/database/schema";
-import { AppError, notFound } from "@/core/errors/errors";
-import { newId } from "@/core/ids";
-import { writeAudit } from "@/core/security/audit";
+import type { Db } from "../../core/database/client";
+import { HOUSEHOLD_MODES, type RoutineStep, routineRuns, routines } from "../../core/database/schema";
+import { AppError, notFound } from "../../core/errors/errors";
+import { newId } from "../../core/ids";
+import { writeAudit } from "../../core/security/audit";
 import type { ActionService } from "../devices/actions";
 import { toPublicCommand } from "../devices/commands/public-command";
 import type { Caller } from "../devices/devices.service";
@@ -12,8 +12,8 @@ import type { HouseholdService } from "../households/household.service";
 import { can } from "../permissions/permissions";
 import { type HaScriptView, type HaSyncService, scriptView } from "../home-assistant/sync.service";
 import type { ScenesService } from "../scenes/scenes.service";
-import type { AppEvent } from "@/core/events/app-events";
-import type { EventBus } from "@/core/events/event-bus";
+import type { AppEvent } from "../../core/events/app-events";
+import type { EventBus } from "../../core/events/event-bus";
 
 export const MAX_STEPS = 50;
 export const MAX_DELAY_S = 3600;

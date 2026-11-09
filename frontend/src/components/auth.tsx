@@ -2,7 +2,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { startRegistration } from "@simplewebauthn/browser";
 import { Button, Checkbox, Field, Icon, Input, Loading, Notice, cn } from "@/ui";
-import { get, post, put } from "@/lib/api";
+import { ok, v1 } from "@/lib/api";
 import { isLive, loadHome, startRealtime } from "@/lib/live";
 import { setStepUp } from "@/lib/store";
 import { stepUp } from "@/lib/auth";
@@ -127,9 +127,9 @@ function AddPasskey() {
     <Card title="Add a new passkey" lead="You signed in with a recovery code. Add a passkey on this device to finish getting back in.">
       <ErrNote err={err} />
       <Button variant="primary" size="lg" loading={busy} disabled={busy} onClick={() => void run(async () => {
-        const o = await post<{ challengeId: string; options: Parameters<typeof startRegistration>[0]["optionsJSON"] }>("/auth/passkeys/options");
+        const o = await ok(v1.auth.passkeys.options.post({}));
         const response = await startRegistration({ optionsJSON: o.options });
-        await post("/auth/passkeys/verify", { challengeId: o.challengeId, response });
+        await ok(v1.auth.passkeys.verify.post({ challengeId: o.challengeId, response }));
         await loadSession();
       })}>{busy ? "Waiting for your passkey…" : "Add passkey"}</Button>
       <button type="button" className="link small" onClick={() => void signOut()}>Cancel</button>
@@ -146,7 +146,7 @@ export function ConnectHa({ onDone, onSkip }: { onDone: () => void; onSkip: () =
   const { busy, err, run } = useAction();
   return (
     <Card title="Connect Home Assistant" lead="Alice talks to your Home Assistant. Create a long-lived access token in Home Assistant (your profile, then Security) and paste it here. It is stored encrypted and never shown again.">
-      <form onSubmit={(e) => { e.preventDefault(); void run(async () => { const t = await post<{ version: string; locationName: string | null }>("/ha/connection/test", { baseUrl: url.trim(), token: token.trim() }); setTested(`Found Home Assistant ${t.version}${t.locationName ? ` (${t.locationName})` : ""}.`); await withStepUp(() => put("/ha/connection", { baseUrl: url.trim(), token: token.trim() })); if (admin) await withStepUp(() => put("/ha/connection/admin-token", { token: token.trim() })); onDone(); }); }}>
+      <form onSubmit={(e) => { e.preventDefault(); void run(async () => { const t = await ok(v1.ha.connection.test.post({ baseUrl: url.trim(), token: token.trim() })); setTested(`Found Home Assistant ${t.version}${t.locationName ? ` (${t.locationName})` : ""}.`); await withStepUp(() => ok(v1.ha.connection.put({ baseUrl: url.trim(), token: token.trim() }))); if (admin) await withStepUp(() => ok(v1.ha.connection["admin-token"].put({ token: token.trim() }))); onDone(); }); }}>
         <Field label="Address"><Input value={url} onChange={(e) => { setUrl(e.target.value); setTested(null); }} inputMode="url" autoComplete="off" spellCheck={false} /></Field>
         <Field label="Access token"><Input value={token} onChange={(e) => setToken(e.target.value)} type="password" autoComplete="off" spellCheck={false} /></Field>
         <Checkbox checked={admin} onChange={setAdmin}>This is an administrator’s token: also let Alice add scenes and automations to Home Assistant</Checkbox>
@@ -165,7 +165,7 @@ export function AdminToken({ onDone, onSkip }: { onDone: () => void; onSkip: () 
   const { busy, err, run } = useAction();
   return (
     <Card title="Let Alice add automations" lead="To put your scenes, routines and automations into Home Assistant, Alice needs a long-lived token from an administrator account. It is sealed so only a separate helper process can open it.">
-      <form onSubmit={(e) => { e.preventDefault(); void run(async () => { await withStepUp(() => put("/ha/connection/admin-token", { token: token.trim() })); onDone(); }); }}>
+      <form onSubmit={(e) => { e.preventDefault(); void run(async () => { await withStepUp(() => ok(v1.ha.connection["admin-token"].put({ token: token.trim() }))); onDone(); }); }}>
         <Field label="Administrator token"><Input value={token} onChange={(e) => setToken(e.target.value)} type="password" autoComplete="off" spellCheck={false} /></Field>
         <ErrNote err={err} />
         <Button variant="primary" size="lg" loading={busy} type="submit" disabled={busy || token.trim().length < 10}>{busy ? "Saving…" : "Save"}</Button>
@@ -182,7 +182,7 @@ function HaGate({ children }: { children: ReactNode }) {
   const [asked, setAsked] = useState<"connect" | "admin" | false | null>(null);
   useEffect(() => {
     if (!isAdmin) return;
-    get<{ configured: boolean; adminTokenSet?: boolean }>("/ha/connection").then((c) => setAsked(!c.configured ? "connect" : !c.adminTokenSet && sessionStorage.getItem("alice-skip-admin-token") !== "1" ? "admin" : false), () => setAsked(false));
+    ok(v1.ha.connection.get()).then((c) => setAsked(!c.configured ? "connect" : !c.adminTokenSet && sessionStorage.getItem("alice-skip-admin-token") !== "1" ? "admin" : false), () => setAsked(false));
   }, [isAdmin]);
   const need = isAdmin ? asked : false;
   const done = () => setAsked(false);

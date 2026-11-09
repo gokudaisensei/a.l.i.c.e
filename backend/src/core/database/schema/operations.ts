@@ -1,6 +1,6 @@
 import { index, integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
-import { COMMAND_STATES } from "@/modules/devices/command-lifecycle";
-import type { FailureCode } from "@/modules/devices/commands/command-types";
+import { COMMAND_STATES } from "../../../modules/devices/command-lifecycle";
+import type { FailureCode } from "../../../modules/devices/commands/command-types";
 import { households } from "./households";
 
 export const commands = sqliteTable(

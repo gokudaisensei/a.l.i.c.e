@@ -1,8 +1,8 @@
 import { statSync } from "node:fs";
 import { and, desc, eq, like, lt, or, sql } from "drizzle-orm";
-import type { Db } from "@/core/database/client";
-import { env } from "@/core/config/env";
-import { auditLog, automations, notifications, routines, scenes, users } from "@/core/database/schema";
+import type { Db } from "../../core/database/client";
+import { env } from "../../core/config/env";
+import { auditLog, automations, notifications, routines, scenes, users } from "../../core/database/schema";
 import type { ConfigJobService } from "../home-assistant/config-jobs.service";
 import type { UpdateService } from "../updates/update.service";
 import type { BackupService } from "../backups/backup.service";

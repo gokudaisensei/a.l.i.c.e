@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { ADMIN_TOKEN, createWorld, HA_TOKEN, homeWithHa, type World } from "@/testing/world";
+import { ADMIN_TOKEN, createWorld, HA_TOKEN, homeWithHa, type World } from "../../testing/world";
 
 let w: World;
 let h: Awaited<ReturnType<typeof homeWithHa>>;
@@ -39,7 +39,7 @@ describe("health", () => {
   test("a Home Assistant that is not answering makes the whole thing 'down'; failed changes are called out", async () => {
     h = await homeWithHa(w);
     await h.withAdminToken();
-    const { httpError } = await import("@/testing/fake-config-api");
+    const { httpError } = await import("../../testing/fake-config-api");
     w.configApi.failWith = httpError(403);
     await h.admin.call("POST", "/scenes", { name: "S", actions: [{ entityId: "light.floor_lamp", action: "turn_off" }] });
     await w.worker.drain();

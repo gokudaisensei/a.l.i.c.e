@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import { eq } from "drizzle-orm";
-import { createTestDb } from "@/core/database/client";
-import { auditLog, passkeys, sessions } from "@/core/database/schema";
+import { createTestDb } from "../../core/database/client";
+import { auditLog, passkeys, sessions } from "../../core/database/schema";
 import { HouseholdService } from "../households/household.service";
 import { AuthService } from "./auth.service";
 import { VirtualAuthenticator } from "./testing/virtual-authenticator";

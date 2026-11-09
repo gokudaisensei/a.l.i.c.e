@@ -11,7 +11,14 @@ export function TooltipProvider({ children }: { children: ReactNode }) {
 }
 
 /** Short label for an icon button. Shows on hover and keyboard focus; never on touch. */
-export function Tooltip({ label, side = "top", children }: { label: ReactNode; side?: Side; children: ReactElement }) {
+export function Tooltip({ label, side = "top", children }: {
+  /** The tip. Keep it to a few words. */
+  label: ReactNode;
+  /** Which side of the trigger it opens on. */
+  side?: Side;
+  /** The one element that triggers it (usually an icon button). It must carry its own accessible name. */
+  children: ReactElement;
+}) {
   return (
     <BaseTooltip.Provider delay={450} closeDelay={80}>
       <BaseTooltip.Root>
@@ -27,7 +34,17 @@ export function Tooltip({ label, side = "top", children }: { label: ReactNode; s
 }
 
 /** Small floating panel anchored to its trigger. Focus moves in on open and back out on close. */
-export function Popover({ trigger, title, side = "bottom", align = "center", children }: { trigger: ReactElement; title?: ReactNode; side?: Side; align?: "start" | "center" | "end"; children: ReactNode }) {
+export function Popover({ trigger, title, side = "bottom", align = "center", children }: {
+  /** The element that opens it. */
+  trigger: ReactElement;
+  /** A heading inside the panel. Also names it for screen readers. */
+  title?: ReactNode;
+  /** Which side of the trigger it opens on. */
+  side?: Side;
+  /** How it lines up with the trigger along that side. */
+  align?: "start" | "center" | "end";
+  children: ReactNode;
+}) {
   return (
     <BasePopover.Root>
       <BasePopover.Trigger render={trigger} />

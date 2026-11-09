@@ -1,10 +1,10 @@
 import { Elysia, t } from "elysia";
-import { householdSettings } from "@/core/database/schema";
+import { householdSettings } from "../../core/database/schema";
 import { eq } from "drizzle-orm";
-import { requireMember, requirePermission, requireStepUp } from "@/core/http/guards";
-import { sessionPlugin } from "@/core/http/session-plugin";
-import { writeAudit } from "@/core/security/audit";
-import type { Services } from "@/services";
+import { requireMember, requirePermission, requireStepUp } from "../../core/http/guards";
+import { sessionPlugin } from "../../core/http/session-plugin";
+import { writeAudit } from "../../core/security/audit";
+import type { Services } from "../../services";
 
 const role = t.Union([t.Literal("admin"), t.Literal("member"), t.Literal("guest")]);
 

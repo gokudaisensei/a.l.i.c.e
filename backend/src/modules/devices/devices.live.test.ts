@@ -1,11 +1,11 @@
 /** The whole stack against the mock Home Assistant (bun run ha:up && bun run ha:bootstrap). Skipped when HA_TOKEN is not set. */
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { randomBytes } from "node:crypto";
-import { buildApp } from "@/app";
-import { createTestDb } from "@/core/database/client";
-import { createServices } from "@/services";
-import { Browser } from "@/testing/http";
-import { TEST_AUTH } from "@/testing/world";
+import { buildApp } from "../../app";
+import { createTestDb } from "../../core/database/client";
+import { createServices } from "../../services";
+import { Browser } from "../../testing/http";
+import { TEST_AUTH } from "../../testing/world";
 
 const url = process.env.HA_URL;
 const token = process.env.HA_TOKEN;

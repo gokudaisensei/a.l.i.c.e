@@ -1,8 +1,9 @@
 "use client";
-import { Icon, Button, IconButton, Pill, Input, Textarea, Select, Segmented, Switch, Stepper, TimeField, Notice, Tooltip, OptionButton, Avatar, Safe, Steps, Table, Tabs, PageHeader, Tile, TileHeader, AccordionContext, resetTileOrder, type AccordionApi } from "@/ui";
+import { Icon, Button, IconButton, Pill, Input, Textarea, Select, Segmented, Switch, Stepper, TimeField, Notice, Tooltip, OptionButton, Avatar, Safe, Steps, Table, Tabs, PageHeader, Tile, TileHeader, AccordionContext, type AccordionApi } from "@/ui";
 import { useEffect, useState, type ReactNode, type CSSProperties } from "react";
 import { A, S, useS, usePhone, useMounted, bump, fmtCd, toast, passkey } from "@/lib/store";
 import { ADM, deleteBackup, downloadBackup, endSupport, extendSupport, grantSupport, linkPerson, moreAudit, removeMember, restoreBackup, rollbackUpdate, setAuditFilter, verifyBackup, backUpNow, createInvite, emergencyDeploy, inviteHours, loadAdminTab, loadHealth, revokeInvite, saveBackupSettings, setAutoUpdate, setRole, testLatest, updateAction, type BackupItem, type Member } from "@/lib/admin";
+import { ok, v1 } from "@/lib/api";
 import { addPasskey, passkeyMessage } from "@/lib/auth";
 import { clockOf } from "@/lib/live";
 import { auditSentence } from "@/lib/audit-text";
@@ -58,7 +59,7 @@ function People() {
       {ADM.invitations.length ? <div className="list">{ADM.invitations.map((x) => (
         <div key={x.id} className="row" style={{ padding: "6px 0" }}>
           <span className="dico"><Icon n="key" /></span>
-          <div><b style={{ fontSize: 13 }}>Waiting to be used</b><small>{x.role === "guest" ? "Guest" : "Member"} · expires {clockOf(x.expiresAt)}</small></div>
+          <div><b style={{ fontSize: "0.8125rem" }}>Waiting to be used</b><small>{x.role === "guest" ? "Guest" : "Member"} · expires {clockOf(x.expiresAt)}</small></div>
           <Button size="sm" onClick={() => void revokeInvite(x.id)}>Revoke</Button>
         </div>
       ))}</div> : null}
@@ -180,16 +181,16 @@ function Updates() {
     </Tile>
     <Tile id="unew" cols={7} rows={3} colsTablet={6} className={ready ? "t-glow" : ""}>
       {!u.available && !busy ? <><TileHeader title="You are up to date" /><p className="muted">Version {u.currentVersion} is installed. Alice checks for new versions every few hours.</p>
-        <div className="btns" style={{ marginTop: "auto" }}><Button onClick={() => void updateAction("check", undefined, "Checked")}>Check now</Button></div></> : <>
+        <div className="btns" style={{ marginTop: "auto" }}><Button onClick={() => void updateAction(() => ok(v1.updates.check.post({})), "Checked")}>Check now</Button></div></> : <>
         <TileHeader title={`Version ${u.available?.version ?? ""} ${busy ? "is installing" : "is ready"}`} right={u.available?.signed ? <Pill tone="ok" icon="check">Signature verified</Pill> : <Pill tone="warn" icon="alert">Not signed</Pill>} />
         {notes.length ? <Safe items={notes} /> : <p className="muted">No release notes.</p>}
         {busy ? <Steps steps={["Backing up first", "Handing over to the host updater", "Waiting for Alice to restart"]} current={u.state === "preparing" ? 0 : 1} />
         : sched ? <>
           <Pill tone="info" icon="clock" style={{ alignSelf: "flex-start" }}>Scheduled for {u.active?.scheduledFor ? clockOf(u.active.scheduledFor) : "the next window"}, after the backups</Pill>
-          <Button size="sm" style={{ alignSelf: "flex-start" }} onClick={() => void updateAction(`${u.active!.id}/cancel`, undefined, "Schedule cancelled")}>Cancel schedule</Button></>
+          <Button size="sm" style={{ alignSelf: "flex-start" }} onClick={() => void updateAction(() => ok(v1.updates({ id: u.active!.id }).cancel.post({})), "Schedule cancelled")}>Cancel schedule</Button></>
         : <div className="btns" style={{ marginTop: "auto" }}>
-          <Button variant="primary" disabled={!u.installable} onClick={() => void updateAction("schedule", undefined, "Scheduled for the next window")}><Icon n="moon" c="sm" />Install in the next window</Button>
-          <Button disabled={!u.installable} onClick={() => void updateAction("install", undefined, "Installing")}>Install now</Button></div>}
+          <Button variant="primary" disabled={!u.installable} onClick={() => void updateAction(() => ok(v1.updates.schedule.post({})), "Scheduled for the next window")}><Icon n="moon" c="sm" />Install in the next window</Button>
+          <Button disabled={!u.installable} onClick={() => void updateAction(() => ok(v1.updates.install.post({})), "Installing")}>Install now</Button></div>}
         {!u.installable && u.available ? <small>Alice won’t install an update that isn’t signed by the publisher.</small> : null}
       </>}
     </Tile>
@@ -288,7 +289,6 @@ export function AdminView() {
   useEffect(() => { void loadAdminTab(S.at); }, [S.at]);
   const phone = usePhone(), mounted = useMounted();
   if (!mounted) return null;
-  resetTileOrder();
   const tabs: [string, string, boolean?][] = [["people", "People"], ["backups", "Backups", ADM.loaded && !ADM.backups.some((b) => b.kind === "app" && b.verify.status === "passed")], ["health", "Health", ADM.health ? ADM.health.status !== "ok" : false], ["updates", "Updates", ADM.upd?.state === "ready"], ["support", "Support access", !!ADM.support?.active]];
   const Body = BODY[S.at] ?? People;
   return (

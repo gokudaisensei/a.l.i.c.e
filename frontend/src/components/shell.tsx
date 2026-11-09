@@ -1,5 +1,5 @@
 "use client";
-import { Icon, Avatar, Button, IconButton, Popover, PopoverClose, Switch, Tooltip } from "@/ui";
+import { Icon, Avatar, Button, IconButton, Popover, PopoverClose, Switch, Tooltip, useHapticsEnabled, haptic } from "@/ui";
 import { useTheme } from "next-themes";
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
@@ -23,6 +23,7 @@ export function Shell({ children }: { children: ReactNode }) {
   useS();
   const router = useRouter(), pathname = usePathname(), mounted = useMounted();
   const { resolvedTheme, setTheme } = useTheme();
+  const [hapticsOn, setHaptics] = useHapticsEnabled();
   const dark = mounted && resolvedTheme === "dark";
   const view = VIEW_BY_PATH[pathname] ?? "home";
   S.view = view;
@@ -51,7 +52,7 @@ export function Shell({ children }: { children: ReactNode }) {
       const y = window.scrollY;
       document.body.classList.toggle("hgone", y > 150);
       // the Ask Alice button steps aside while reading downward and returns on the way up
-      if (Math.abs(y - last) > 6) { document.body.classList.toggle("fab-away", y > last && y > 200); last = y; }
+      if (Math.abs(y - last) > 6) { const down = y > last && y > 200; document.body.classList.toggle("fab-away", down); document.body.classList.toggle("bar-min", down); last = y; }
     };
     const onVis = () => document.documentElement.toggleAttribute("data-hidden", document.hidden);
     document.addEventListener("visibilitychange", onVis);
@@ -81,7 +82,7 @@ export function Shell({ children }: { children: ReactNode }) {
           <div className="brand">alice<i>.</i></div>
           <nav className="nav" aria-label="Main">{items.map((n) => (
             <Link key={n.k} href={n.href} aria-current={view === n.k ? "page" : undefined}>
-                            <Icon n={n.ic} /><span>{n.n}</span>{n.k === "admin" && att ? <span className="badge">{att}</span> : null}
+                            <Icon n={n.ic} filled={view === n.k} /><span>{n.n}</span>{n.k === "admin" && att ? <span className="badge">{att}</span> : null}
             </Link>
           ))}</nav>
           <div className="rail-foot">
@@ -92,12 +93,13 @@ export function Shell({ children }: { children: ReactNode }) {
         <div className="main">
           <div className="top">
             <div className="brand">alice<i>.</i></div>
-            <button className="ask" onClick={openPal} aria-label="Ask Alice or search"><Icon n="search" /><span>Try “turn off the kitchen lights”</span><kbd>Ctrl K</kbd></button>
+            <button className="ask" onClick={() => { haptic("light"); openPal(); }} aria-label="Ask Alice or search"><Icon n="search" /><span>Try “turn off the kitchen lights”</span><kbd>Ctrl K</kbd></button>
             <div className="live"><i /><span className="lt">Live · synced {mounted ? <Ago /> : <b className="num">0</b>}s ago</span></div>
             <Tooltip label={dark ? "Switch to light" : "Switch to dark"} side="bottom"><IconButton aria-label={dark ? "Switch to light theme" : "Switch to dark theme"} onClick={() => setTheme(dark ? "light" : "dark")}><Icon n={dark ? "sun" : "moon"} /></IconButton></Tooltip>
             {/* The side rail with Sign out is hidden on a phone, so the phone gets its own way to sign out. */}
             <span className="me-phone"><Popover trigger={<IconButton aria-label={`${p.n}: account`}><Avatar initial={p.n[0]} tone={p.c} /></IconButton>} title={p.n} align="end">
               <p className="small">{(p.role[0] ?? "m").toUpperCase() + p.role.slice(1)} · passkey</p>
+              <label className="field" style={{ justifyContent: "space-between" }}><span>Haptics</span><Switch checked={hapticsOn} label="Haptics" onChange={setHaptics} /></label>
               {p.role !== "guest" ? <>
                 <label className="field" style={{ justifyContent: "space-between" }}><span>Push notifications</span><Switch checked={S.push} label="Push notifications" onChange={A.push} /></label>
                 <label className="field" style={{ justifyContent: "space-between" }}><span>Quiet hours</span><Switch checked={S.quiet} label="Quiet hours" onChange={A.quiet} /></label>
@@ -108,7 +110,7 @@ export function Shell({ children }: { children: ReactNode }) {
           <main id="main" className={enter ? "enter" : ""}>{children}</main>
         </div>
       </div>
-      <button className="fab" onClick={openPal} aria-label="Ask Alice"><Icon n="sparkle" /></button>
+      <button className="fab" onClick={() => { haptic("light"); openPal(); }} aria-label="Ask Alice"><Icon n="sparkle" /></button>
       <Overlay />
       <AppToast />
     </>

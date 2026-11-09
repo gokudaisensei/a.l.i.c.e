@@ -1,0 +1,31 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "tooltip",
+  "type": "registry:ui",
+  "title": "Tooltip",
+  "description": "A short label for an icon button, shown on hover and keyboard focus. Never shown on touch, so it can only repeat what the control already says.",
+  "dependencies": [
+    "@base-ui/react"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "ui/floating.tsx",
+      "type": "registry:ui",
+      "content": "\"use client\";\nimport type { ReactElement, ReactNode } from \"react\";\nimport { Tooltip as BaseTooltip } from \"@base-ui/react/tooltip\";\nimport { Popover as BasePopover } from \"@base-ui/react/popover\";\n\ntype Side = \"top\" | \"bottom\" | \"left\" | \"right\";\n\n/** Wrap a region once so neighbouring tooltips open instantly after the first one. */\nexport function TooltipProvider({ children }: { children: ReactNode }) {\n  return <BaseTooltip.Provider delay={450} closeDelay={80}>{children}</BaseTooltip.Provider>;\n}\n\n/** Short label for an icon button. Shows on hover and keyboard focus; never on touch. */\nexport function Tooltip({ label, side = \"top\", children }: {\n  /** The tip. Keep it to a few words. */\n  label: ReactNode;\n  /** Which side of the trigger it opens on. */\n  side?: Side;\n  /** The one element that triggers it (usually an icon button). It must carry its own accessible name. */\n  children: ReactElement;\n}) {\n  return (\n    <BaseTooltip.Provider delay={450} closeDelay={80}>\n      <BaseTooltip.Root>\n        <BaseTooltip.Trigger render={children} />\n        <BaseTooltip.Portal>\n          <BaseTooltip.Positioner className=\"pos\" side={side} sideOffset={8}>\n            <BaseTooltip.Popup data-slot=\"tooltip\" className=\"tip\">{label}</BaseTooltip.Popup>\n          </BaseTooltip.Positioner>\n        </BaseTooltip.Portal>\n      </BaseTooltip.Root>\n    </BaseTooltip.Provider>\n  );\n}\n\n/** Small floating panel anchored to its trigger. Focus moves in on open and back out on close. */\nexport function Popover({ trigger, title, side = \"bottom\", align = \"center\", children }: {\n  /** The element that opens it. */\n  trigger: ReactElement;\n  /** A heading inside the panel. Also names it for screen readers. */\n  title?: ReactNode;\n  /** Which side of the trigger it opens on. */\n  side?: Side;\n  /** How it lines up with the trigger along that side. */\n  align?: \"start\" | \"center\" | \"end\";\n  children: ReactNode;\n}) {\n  return (\n    <BasePopover.Root>\n      <BasePopover.Trigger render={trigger} />\n      <BasePopover.Portal>\n        <BasePopover.Positioner className=\"pos\" side={side} align={align} sideOffset={8}>\n          <BasePopover.Popup data-slot=\"popover\" className=\"float pop\">\n            {title ? <BasePopover.Title className=\"pop-t\">{title}</BasePopover.Title> : null}\n            {children}\n          </BasePopover.Popup>\n        </BasePopover.Positioner>\n      </BasePopover.Portal>\n    </BasePopover.Root>\n  );\n}\n\n/** Put on any control inside a Popover that should close it. */\nexport const PopoverClose = BasePopover.Close;\n"
+    },
+    {
+      "path": "ui/floating.css",
+      "type": "registry:style",
+      "content": "/* Floating surfaces: Select list, Popover, Tooltip. They live in a portal, so they sit above sheets and dialogs. */\n.pos{z-index:80}\n.float{background:var(--tile);color:var(--ink);border-radius:16px;box-shadow:0 18px 50px -14px rgba(0,0,0,.45),0 0 0 1px var(--line);outline:0;\n  transform-origin:var(--transform-origin,50% 0);transition:transform .4s var(--spring),opacity .16s var(--ease-out)}\n.float[data-starting-style],.float[data-ending-style]{opacity:0;transform:scale(.94)}\n.float[data-ending-style]{transition:transform .14s var(--ease-in),opacity .12s var(--ease-in)}\n\n.sel-t{display:inline-flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;cursor:pointer;min-width:120px}\n.sel-t[data-popup-open]{border-color:var(--sage)}\n.sel-t[data-disabled]{opacity:.5;cursor:not-allowed}\n.sel-i{display:grid;place-items:center;color:var(--ink3);transform:rotate(90deg);transition:transform .3s var(--spring)}\n.sel-t[data-popup-open] .sel-i{transform:rotate(-90deg)}\n.sel-pop{min-width:var(--anchor-width);max-height:min(46vh,320px);overflow:auto;padding:6px}\n.sel-item{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:9px 12px;border-radius:11px;font-weight:600;font-size:0.875rem;cursor:pointer;user-select:none;outline:0}\n.sel-item[data-highlighted]{background:var(--tile2)}\n.sel-item[data-selected]{color:var(--sage-ink)}\n.sel-check{display:grid;place-items:center}\n\n.pop{padding:14px;min-width:200px;max-width:min(320px,calc(100vw - 32px));display:flex;flex-direction:column;gap:8px}\n.pop-t{font:650 1rem var(--f-display);font-stretch:92%;margin:0}\n\n.tip{background:var(--ink);color:var(--tile);font-size:0.7812rem;font-weight:600;padding:6px 10px;border-radius:10px;box-shadow:0 8px 24px -8px rgba(0,0,0,.5);\n  transform-origin:var(--transform-origin,50% 100%);transition:transform .25s var(--spring),opacity .12s var(--ease-out);pointer-events:none}\n.tip[data-starting-style],.tip[data-ending-style]{opacity:0;transform:scale(.92)}\n.tip[data-instant]{transition-duration:0s}\n\n@media (prefers-reduced-motion:reduce){\n  .float,.tip{transition:opacity .12s linear}\n  .float[data-starting-style],.float[data-ending-style],.tip[data-starting-style],.tip[data-ending-style]{transform:none}\n  .sel-i{transition:none}\n}\n"
+    }
+  ],
+  "meta": {
+    "category": "Overlays",
+    "status": "stable",
+    "exports": [
+      "Tooltip",
+      "TooltipProvider"
+    ]
+  }
+}

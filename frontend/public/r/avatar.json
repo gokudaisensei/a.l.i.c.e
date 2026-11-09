@@ -1,0 +1,32 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "avatar",
+  "type": "registry:ui",
+  "title": "Avatar",
+  "description": "A round initial for a person, and a square holder for an icon at the start of a row.",
+  "dependencies": [],
+  "registryDependencies": [
+    "icon",
+    "utilities"
+  ],
+  "files": [
+    {
+      "path": "ui/avatar.tsx",
+      "type": "registry:ui",
+      "content": "import type { ComponentProps } from \"react\";\nimport { Icon } from \"./icon\";\nimport { cn } from \"./cn\";\n\n/** Round initial. `tone` 1 to 4 picks the colour; `away` greys it. */\nexport function Avatar({ initial, tone, away, className, ...rest }: Omit<ComponentProps<\"span\">, \"children\"> & {\n  /** One letter. */\n  initial: string;\n  /** 1 to 4. */\n  tone: number;\n  /** Greys it: the person is away. */\n  away?: boolean;\n}) {\n  return <span data-slot=\"avatar\" data-away={away ? \"\" : undefined} className={cn(\"av\", `a${tone}`, away && \"away\", className)} {...rest}>{initial}</span>;\n}\n\n/** Square icon holder used at the start of rows. */\nexport function IconTile({ icon, className, ...rest }: Omit<ComponentProps<\"span\">, \"children\"> & { icon: string }) {\n  return <span data-slot=\"icon-tile\" className={cn(\"dico\", className)} {...rest}><Icon n={icon} /></span>;\n}\n"
+    },
+    {
+      "path": "ui/avatar.css",
+      "type": "registry:style",
+      "content": "/* Avatar and IconTile. */\n.dico{width:40px;height:40px;border-radius:13px;background:var(--tile2);display:grid;place-items:center;color:var(--ink2);flex:none}\n.av{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font:700 1rem var(--f-display);color:#fff;flex:none;position:relative}\n.av.a1{background:#4E7258}\n.av.a2{background:#B25A37}\n.av.a3{background:#6C6A9E}\n.av.a4{background:#8A6B2E}\n.av.away{filter:saturate(.2) brightness(1.1);opacity:.7}\n.av.sm{width:32px;height:32px;font-size:0.8125rem}\n"
+    }
+  ],
+  "meta": {
+    "category": "Display",
+    "status": "stable",
+    "exports": [
+      "Avatar",
+      "IconTile"
+    ]
+  }
+}

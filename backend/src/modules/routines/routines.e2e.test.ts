@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { households as householdsTable, routineRuns as routineRunsTable } from "@/core/database/schema";
-import { createWorld, homeWithHa, type World } from "@/testing/world";
+import { households as householdsTable, routineRuns as routineRunsTable } from "../../core/database/schema";
+import { createWorld, homeWithHa, type World } from "../../testing/world";
 
 /** Waits are controlled by the test: each one parks until released. */
 const pending: { ms: number; release: () => void }[] = [];
@@ -158,9 +158,9 @@ describe("runs survive a restart", () => {
   /** "Restarts" Alice: new services over the same database, with their own parked waits. */
   async function restart() {
     const parked: { ms: number; release: () => void }[] = [];
-    const { createServices } = await import("@/services");
+    const { createServices } = await import("../../services");
     const fresh = createServices(w.db, {
-      now: () => w.clock.now, secretsKey: (await import("@/testing/world")).SECRETS_KEY, gatewayFactory: () => w.gw,
+      now: () => w.clock.now, secretsKey: (await import("../../testing/world")).SECRETS_KEY, gatewayFactory: () => w.gw,
       sleep: (ms, wake) => new Promise<void>((resolve) => { parked.push({ ms, release: resolve }); wake(resolve); }),
     });
     fresh.ha.startAll();

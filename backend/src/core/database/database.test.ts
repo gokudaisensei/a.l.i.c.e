@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { eq } from "drizzle-orm";
-import { DrizzleCommandStore } from "@/modules/devices/commands/drizzle-command-store";
-import type { DeviceCommand } from "@/modules/devices/commands/command-types";
+import { DrizzleCommandStore } from "../../modules/devices/commands/drizzle-command-store";
+import type { DeviceCommand } from "../../modules/devices/commands/command-types";
 import { createTestDb } from "./client";
 import { households, householdMembers, users } from "./schema";
 

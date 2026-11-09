@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import type { Browser } from "@/testing/http";
-import { changeState, createWorld, homeWithHa, type World } from "@/testing/world";
+import type { Browser } from "../../testing/http";
+import { changeState, createWorld, homeWithHa, type World } from "../../testing/world";
 
 let w: World;
 let h: Awaited<ReturnType<typeof homeWithHa>>;
@@ -88,7 +88,7 @@ describe("running in Home Assistant", () => {
     await ready();
     const scene = (await h.admin.call("POST", "/scenes", { name: "Movie", actions: [{ entityId: "light.floor_lamp", action: "turn_off" }] })).json;
     await w.sync();
-    const { scenes } = await import("@/core/database/schema");
+    const { scenes } = await import("../../core/database/schema");
     w.db.update(scenes).set({ syncStatus: "failed" }).run();
     w.configApi.calls.length = 0;
     await create({ definition: arrive({ actions: [{ type: "scene", sceneId: scene.id }] }) });
@@ -154,7 +154,7 @@ describe("running in Home Assistant", () => {
 
   test("a failure shows its reason and a resync retries it", async () => {
     await ready();
-    const { httpError } = await import("@/testing/fake-config-api");
+    const { httpError } = await import("../../testing/fake-config-api");
     w.configApi.failWith = httpError(400);
     const a = (await create({})).json;
     await w.sync();
@@ -231,7 +231,7 @@ describe("tied to the household's people", () => {
     await create({});
     await w.sync();
     expect((([...w.configApi.automations.values()][0]!.trigger[0]) as { entity_id: string[] }).entity_id).toEqual(["person.gokul", "person.meera"]);
-    const { state } = await import("@/modules/home-assistant/testing");
+    const { state } = await import("../home-assistant/testing");
     w.gw.states = [...w.gw.states, state("person.arjun", "home", { friendly_name: "Arjun" })];
     await h.admin.call("POST", "/ha/connection/resync"); // Home Assistant now has a third person
     await w.sync();

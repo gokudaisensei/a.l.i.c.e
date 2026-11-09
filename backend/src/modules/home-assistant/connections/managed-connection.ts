@@ -1,6 +1,6 @@
 import type { Logger } from "pino";
-import type { AppEvent } from "@/core/events/app-events";
-import type { EventBus, Unsubscribe } from "@/core/events/event-bus";
+import type { AppEvent } from "../../../core/events/app-events";
+import type { EventBus, Unsubscribe } from "../../../core/events/event-bus";
 import { HaAuthError } from "../clients/ha-ws-gateway";
 import { discover } from "../discovery/discovery";
 import type { Inventory } from "../discovery/inventory";

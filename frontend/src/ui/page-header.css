@@ -1,0 +1,9 @@
+/* PageHeader. */
+.ph{margin:4px 0 18px;display:flex;flex-wrap:wrap;gap:10px 20px;align-items:flex-end;justify-content:space-between}
+.ph h1{font:760 clamp(2.2rem,4.4vw,3.6rem)/.95 var(--f-display);font-stretch:80%;letter-spacing:-.035em}
+.ph p{color:var(--ink2);margin-top:8px;max-width:56ch}
+@media (max-width:700px){
+  .ph h1{font-size:2rem}
+  .ph{margin:0 0 10px}
+  .ph p{display:none}
+}

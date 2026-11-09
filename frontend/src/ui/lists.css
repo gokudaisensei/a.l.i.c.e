@@ -1,0 +1,16 @@
+/* Safe, KeyValue and Steps. */
+.safe{display:flex;flex-direction:column;gap:8px}
+.safe div{display:flex;gap:10px;align-items:flex-start;font-size:0.8438rem;color:var(--ink2)}
+.safe .ic{color:var(--ok);margin-top:1px}
+.kv{display:flex;flex-direction:column}
+.kv>div{display:flex;justify-content:space-between;gap:14px;padding:10px 0;align-items:center}
+.kv>div+div{border-top:1px solid var(--line)}
+.kv span:first-child{color:var(--ink2)}
+.kv span:last-child{font-weight:600;text-align:right;min-width:0;overflow-wrap:anywhere}
+.steps{display:flex;flex-direction:column;gap:8px}
+.stp{display:flex;align-items:center;gap:10px;color:var(--ink3);font-size:0.875rem}
+.stp.on{color:var(--ink);font-weight:600}
+.stp.done{color:var(--ok)}
+.stp .ic{width:18px;height:18px}
+.safe .muted{color:var(--ink3)}
+.safe .muted .ic{color:var(--ink3)}

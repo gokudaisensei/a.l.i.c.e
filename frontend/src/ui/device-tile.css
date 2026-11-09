@@ -2,17 +2,27 @@
 /* Specificity note: .dtw is repeated on the .dico overrides so they still beat the generic ".is-on .dico" rule in globals.css, which now loads after this file. */
 .dtw{position:relative;min-width:0;display:flex}
 .dt{flex:1;width:100%;min-height:116px;border-radius:22px;background:var(--tile);box-shadow:var(--shadow);padding:14px;display:flex;flex-direction:column;justify-content:space-between;gap:10px;position:relative;overflow:hidden;text-align:left;touch-action:manipulation;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;transition:transform .12s,background .25s}
-.dt>*{position:relative}
+.dt>*{position:relative;min-width:0}
+.dt{overflow-wrap:anywhere}
 .dt .dico{background:var(--tile2)}
 .dt.is-on{background:var(--glow-soft)}
 .dtw .dt.is-on .dico{background:var(--over);color:var(--glow-ink)}
 .dt.warn{background:var(--clay-soft)}
 .dtw .dt.warn .dico{background:var(--over);color:var(--clay)}
-.dt .dn b{display:block;font-weight:650;line-height:1.2;font-size:14.5px;padding-right:4px}
+.dt .dn b{display:block;font-weight:650;line-height:1.2;font-size:0.9062rem;padding-right:4px}
 .dt .dn small{display:block;margin-top:2px}
-.dt>.dfill{position:absolute;left:0;right:0;bottom:0;background:color-mix(in srgb,var(--glow) 34%,transparent);transition:height .12s;pointer-events:none}
+.dt>.dfill{position:absolute;left:0;right:0;bottom:0;background:color-mix(in srgb,var(--glow) 30%,transparent);transition:height .12s;pointer-events:none}
 .dmore{position:absolute;top:8px;right:8px;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:var(--ink2);z-index:2}
 .dmore .ic{transform:rotate(90deg)}
 @media (max-width:900px){
-  .dt.add{background:transparent;box-shadow:none;border:1.5px dashed var(--line);color:var(--ink3);align-items:center;justify-content:center;text-align:center;font-weight:600;font-size:13px}
+  .dt.add{background:transparent;box-shadow:none;border:1.5px dashed var(--line);color:var(--ink3);align-items:center;justify-content:center;text-align:center;font-weight:600;font-size:0.8125rem}
 }
+/* a lit tile reads its detail line in the strong ink: the fill behind it is tinted, and the softer ink would not hold 4.5:1 */
+.dt.is-on .dn small{color:var(--ink)}
+/* stretched past an end of a drag: it follows with resistance, and springs back when let go */
+.dt{translate:var(--rb,0px) 0;transition:transform .12s,background .25s,translate .45s var(--spring)}
+.dt.dragging{translate:var(--rb,0px) 0;transition:none}
+/* a hold is on its way: the tile presses in a little, so the long press is not a surprise (Apple: hinting) */
+.dt[data-pressing]{animation:dt-hint .31s var(--ease-out) forwards}
+@keyframes dt-hint{to{transform:scale(.955);filter:brightness(.97)}}
+@media (prefers-reduced-motion:reduce){.dt[data-pressing]{animation:none;filter:brightness(.95)}}

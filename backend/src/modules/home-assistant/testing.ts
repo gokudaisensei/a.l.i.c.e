@@ -1,4 +1,4 @@
-import type { Unsubscribe } from "@/core/events/event-bus";
+import type { Unsubscribe } from "../../core/events/event-bus";
 import type { HomeAssistantGateway } from "./gateway";
 import type {
   ConnectionStatus,

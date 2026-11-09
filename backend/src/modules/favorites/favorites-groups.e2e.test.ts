@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { changeState, createWorld, homeWithHa, type World } from "@/testing/world";
-import type { Browser } from "@/testing/http";
+import { changeState, createWorld, homeWithHa, type World } from "../../testing/world";
+import type { Browser } from "../../testing/http";
 
 let w: World;
 let h: Awaited<ReturnType<typeof homeWithHa>>;

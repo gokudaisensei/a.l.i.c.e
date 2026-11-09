@@ -1,6 +1,6 @@
-import { AppError } from "@/core/errors/errors";
-import type { ActionSpec } from "@/core/database/schema";
-import type { Role } from "@/core/database/schema";
+import { AppError } from "../../core/errors/errors";
+import type { ActionSpec } from "../../core/database/schema";
+import type { Role } from "../../core/database/schema";
 import { resolveOperation, supportsOperation } from "../home-assistant";
 import type { ThingsService } from "../home-assistant/things/things.service";
 import { evaluateDeviceAccess } from "../permissions/device-access";

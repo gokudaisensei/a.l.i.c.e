@@ -5,7 +5,7 @@ import {
   ERR_INVALID_AUTH,
   type Connection,
 } from "home-assistant-js-websocket";
-import type { Unsubscribe } from "@/core/events/event-bus";
+import type { Unsubscribe } from "../../../core/events/event-bus";
 import type { HaConnectionConfig, HomeAssistantGateway } from "../gateway";
 import type {
   ConnectionStatus,

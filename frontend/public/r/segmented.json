@@ -1,0 +1,38 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "segmented",
+  "type": "registry:ui",
+  "title": "Segmented",
+  "description": "A choice of exactly one among a few options, with a thumb that slides between them. OptionGroup is its cousin for options that can be combined.",
+  "dependencies": [],
+  "registryDependencies": [
+    "haptics",
+    "utilities"
+  ],
+  "files": [
+    {
+      "path": "ui/segmented.tsx",
+      "type": "registry:ui",
+      "content": "\"use client\";\nimport { useRef, type ComponentProps, type KeyboardEvent, type ReactNode } from \"react\";\nimport { useIndicator } from \"./use-indicator\";\nimport { useSwipeSelect } from \"./use-swipe-select\";\nimport { haptic } from \"./haptics\";\nimport { cn } from \"./cn\";\n\nexport interface SegmentedProps<T extends string | number> extends Omit<ComponentProps<\"span\">, \"onChange\" | \"children\" | \"role\" | \"aria-label\"> {\n  value: T;\n  /** `[value, label]` pairs, in order. */\n  items: readonly (readonly [T, ReactNode])[];\n  onChange: (value: T) => void;\n  /** Names the group for screen readers. */\n  label?: string;\n}\n\n/**\n * Single-choice control. A thumb slides between segments on a spring, arrow keys move the choice\n * (roving tabindex, like a native radio group), and it behaves as a radiogroup for assistive tech.\n */\nexport function Segmented<T extends string | number>({ value, items, onChange, label, className, onKeyDown, ...rest }: SegmentedProps<T>) {\n  const root = useRef<HTMLSpanElement>(null);\n  const { box, ready } = useIndicator(root, \"[aria-checked=true]\", `${String(value)}|${items.length}`);\n  const choose = (v: T) => { if (v !== value) haptic(\"select\"); onChange(v); };\n  const swipe = useSwipeSelect({ index: Math.max(0, items.findIndex(([k]) => k === value)), onIndex: (i) => choose(items[i][0]), itemSelector: \"button\" });\n\n  const onKey = (e: KeyboardEvent) => {\n    const keys = [\"ArrowRight\", \"ArrowDown\", \"ArrowLeft\", \"ArrowUp\", \"Home\", \"End\"];\n    if (!keys.includes(e.key)) return;\n    e.preventDefault();\n    const i = Math.max(0, items.findIndex(([k]) => k === value));\n    const n = e.key === \"Home\" ? 0 : e.key === \"End\" ? items.length - 1 : (i + (e.key === \"ArrowRight\" || e.key === \"ArrowDown\" ? 1 : -1) + items.length) % items.length;\n    choose(items[n][0]);\n    requestAnimationFrame(() => root.current?.querySelectorAll<HTMLElement>(\"button\")[n]?.focus());\n  };\n\n  return (\n    <span ref={root} data-slot=\"segmented\" className={cn(\"seg\", className)} role=\"radiogroup\" aria-label={label} {...rest} {...swipe} onKeyDown={(e) => { onKey(e); onKeyDown?.(e); }}>\n      {box ? <span className={cn(\"seg-ind\", ready && \"ready\")} aria-hidden=\"true\" style={{ width: box.w, transform: `translateX(${box.x}px)` }} /> : null}\n      {items.map(([k, l]) => (\n        <button key={String(k)} type=\"button\" role=\"radio\" aria-checked={value === k} tabIndex={value === k || (!items.some(([x]) => x === value) && k === items[0][0]) ? 0 : -1} onClick={() => choose(k)}>{l}</button>\n      ))}\n    </span>\n  );\n}\n\n/** Wrap-around group of option cards: several can be on at once (use `Segmented` for exactly one). */\nexport function OptionGroup({ className, ...rest }: ComponentProps<\"div\">) {\n  return <div className={cn(\"opts\", className)} data-slot=\"option-group\" {...rest} />;\n}\n\n/** One toggleable card in an `OptionGroup`. `pressed` is the selected state. */\nexport function OptionButton({ pressed, icon, className, children, onClick, ...rest }: Omit<ComponentProps<\"button\">, \"type\"> & {\n  /** Whether it is selected. */\n  pressed?: boolean;\n  /** A leading element, usually an `Icon`. */\n  icon?: ReactNode;\n}) {\n  return <button type=\"button\" data-slot=\"option\" className={cn(\"opt\", className)} aria-pressed={pressed} onClick={(e) => { haptic(\"select\"); onClick?.(e); }} {...rest}>{icon}{children}</button>;\n}\n"
+    },
+    {
+      "path": "ui/segmented.css",
+      "type": "registry:style",
+      "content": "/* Segmented control and option buttons. Moved out of globals.css; contextual overrides (.hero .btn, .pg3 .dt) stay with the screens that need them. */\n.seg{display:inline-flex;padding:3px;border-radius:99px;background:var(--tile2);gap:2px;max-width:100%}\n.seg button{padding:6px 13px;border-radius:99px;font-size:0.8125rem;font-weight:600;color:var(--ink2);white-space:nowrap}\n.seg button[aria-pressed=true]{background:var(--tile);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.14)}\n.opts{display:flex;flex-wrap:wrap;gap:8px}\n.opt{display:inline-flex;align-items:center;gap:8px;padding:9px 13px;border-radius:14px;background:var(--tile2);font-weight:600;font-size:0.875rem;color:var(--ink2);text-align:left}\n.opt[aria-pressed=true]{background:var(--ink);color:var(--tile)}\n.opt[disabled]{opacity:.55;cursor:not-allowed;text-decoration:line-through;text-decoration-color:var(--ink3)}\n.seg{position:relative}\n.seg button{position:relative;z-index:1}\n.seg [role=radio][aria-checked=true]{color:var(--ink)}\n.seg-ind{position:absolute;top:3px;bottom:3px;left:0;border-radius:99px;background:var(--tile);box-shadow:0 1px 3px rgba(0,0,0,.14);z-index:0;pointer-events:none}\n.seg-ind.ready{transition:transform .5s var(--spring),width .3s var(--ease-out)}\n@media (prefers-reduced-motion:reduce){\n  .seg-ind.ready{transition:none}\n}\n.seg-full{display:flex;width:100%}\n.seg-full button{flex:1;padding:12px}\n/* a finger sliding across the segments chooses them: sideways is ours, vertical still scrolls (a mouse never showed this: only a real touch cancels a pan) */\n.seg{touch-action:pan-y}\n"
+    },
+    {
+      "path": "ui/use-indicator.ts",
+      "type": "registry:ui",
+      "content": "\"use client\";\nimport { useLayoutEffect, useState, type RefObject } from \"react\";\n\n/**\n * Measures the element matching `selector` inside `root` so a single thumb can slide under the active item.\n * Re-measures when `dep` changes and whenever the root or its children resize. `ready` turns true one frame\n * after the first measurement, so the thumb appears in place instead of sliding in from the left.\n */\nexport function useIndicator(root: RefObject<HTMLElement | null>, selector: string, dep: unknown, childSelector = \"button\") {\n  const [box, setBox] = useState<{ x: number; w: number } | null>(null);\n  const [ready, setReady] = useState(false);\n  useLayoutEffect(() => {\n    const el = root.current;\n    if (!el) return;\n    const measure = () => {\n      const on = el.querySelector<HTMLElement>(selector);\n      if (on) setBox((b) => (b && b.x === on.offsetLeft && b.w === on.offsetWidth ? b : { x: on.offsetLeft, w: on.offsetWidth }));\n    };\n    measure();\n    const ro = new ResizeObserver(measure);\n    ro.observe(el);\n    el.querySelectorAll(childSelector).forEach((c) => ro.observe(c));\n    const raf = requestAnimationFrame(() => setReady(true));\n    return () => { ro.disconnect(); cancelAnimationFrame(raf); };\n  }, [root, selector, dep, childSelector]);\n  return { box, ready };\n}\n"
+    }
+  ],
+  "meta": {
+    "category": "Inputs",
+    "status": "stable",
+    "exports": [
+      "Segmented",
+      "OptionGroup",
+      "OptionButton"
+    ]
+  }
+}

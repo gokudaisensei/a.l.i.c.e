@@ -1,5 +1,5 @@
 // Icon paths lifted from the Alice Home design (24px grid, 1.7 stroke).
-export const PATHS: Record<string, string> = {
+export const PATHS = {
   home: "<path d=\"M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z\"/>",
   grid: "<rect x=\"4\" y=\"4\" width=\"7\" height=\"7\" rx=\"2\"/><rect x=\"13\" y=\"4\" width=\"7\" height=\"7\" rx=\"2\"/><rect x=\"4\" y=\"13\" width=\"7\" height=\"7\" rx=\"2\"/><rect x=\"13\" y=\"13\" width=\"7\" height=\"7\" rx=\"2\"/>",
   flow: "<circle cx=\"6\" cy=\"6\" r=\"2.5\"/><circle cx=\"18\" cy=\"12\" r=\"2.5\"/><circle cx=\"6\" cy=\"18\" r=\"2.5\"/><path d=\"M8.5 6H11a4 4 0 0 1 4 4v.5M8.5 18H11a4 4 0 0 0 4-4v-.5\"/>",
@@ -48,4 +48,15 @@ export const PATHS: Record<string, string> = {
   layers: "<path d=\"M12 4l9 5-9 5-9-5zM3 14l9 5 9-5\"/>",
   rocket: "<path d=\"M12 3c3 2 5 5 5 9l-2 3H9l-2-3c0-4 2-7 5-9zM9 18l-1 3 4-2 4 2-1-3M12 10h.01\"/>",
   note: "<path d=\"M6 4h9l3 3v13H6zM9 11h6M9 15h6\"/>",
+} satisfies Record<string, string>;
+
+/** Solid forms, used for the selected tab. Open strokes inside carry fill="none" so only the closed shapes fill. */
+export const FILLED: Record<string, string> = {
+  home: PATHS.home,
+  grid: PATHS.grid,
+  flow: '<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="12" r="2.5"/><circle cx="6" cy="18" r="2.5"/><path fill="none" d="M8.5 6H11a4 4 0 0 1 4 4v.5M8.5 18H11a4 4 0 0 0 4-4v-.5"/>',
+  shield: PATHS.shield,
 };
+
+/** Every icon name, for autocomplete and checking. */
+export type IconName = keyof typeof PATHS;

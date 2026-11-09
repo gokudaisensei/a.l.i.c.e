@@ -1,11 +1,11 @@
 import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect, test } from "bun:test";
-import { buildApp } from "@/app";
-import { createTestDb } from "@/core/database/client";
-import { households, notifications, pushSubscriptions } from "@/core/database/schema";
-import type { Browser } from "@/testing/http";
-import { homeWithHa, MIN, SECRETS_KEY, createWorld, type World } from "@/testing/world";
-import { createServices } from "@/services";
+import { buildApp } from "../../../app";
+import { createTestDb } from "../../../core/database/client";
+import { households, notifications, pushSubscriptions } from "../../../core/database/schema";
+import type { Browser } from "../../../testing/http";
+import { homeWithHa, MIN, SECRETS_KEY, createWorld, type World } from "../../../testing/world";
+import { createServices } from "../../../services";
 import type { PushPayload, PushProvider, PushResult, PushSubscription } from "./provider";
 
 /** Records what it was asked to send; the result can be set per test. */

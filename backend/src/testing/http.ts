@@ -1,5 +1,5 @@
-import type { buildApp } from "@/app";
-import { VirtualAuthenticator } from "@/modules/authentication/testing/virtual-authenticator";
+import type { buildApp } from "../app";
+import { VirtualAuthenticator } from "../modules/authentication/testing/virtual-authenticator";
 
 export const RP = "localhost";
 export const ORIGIN = "http://localhost:3000";

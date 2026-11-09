@@ -1,0 +1,2050 @@
+{
+  "AccordionContext": {
+    "kind": "component",
+    "file": "src/ui/tile.tsx",
+    "description": "Provide this above a grid to make its tiles collapsible on a phone.",
+    "props": [],
+    "inherits": []
+  },
+  "ActionRow": {
+    "kind": "component",
+    "file": "src/ui/action-row.tsx",
+    "description": "One step in a list of things to do: a verb (\"Turn on\") followed by the controls that finish it (a device picker, a\nnumber), with a remove button at the end. Used by the automation, scene and routine builders.",
+    "props": [
+      {
+        "name": "icon",
+        "type": "string",
+        "required": true,
+        "description": "Name of an icon from the icon set."
+      },
+      {
+        "name": "verb",
+        "type": "string",
+        "required": true,
+        "description": "What the step does: \"Turn on\", \"Dim\"."
+      },
+      {
+        "name": "onRemove",
+        "type": "(() => void)",
+        "required": false,
+        "description": "Shows a remove button when given."
+      }
+    ],
+    "inherits": [
+      "div"
+    ]
+  },
+  "AddTile": {
+    "kind": "component",
+    "file": "src/ui/device-tile.tsx",
+    "description": "Dashed \"add\" tile that sits at the end of a device grid.",
+    "props": [
+      {
+        "name": "children",
+        "type": "ReactNode",
+        "required": true,
+        "description": "The content."
+      },
+      {
+        "name": "onClick",
+        "type": "() => void",
+        "required": true,
+        "description": "Called when the tile is pressed."
+      },
+      {
+        "name": "className",
+        "type": "string",
+        "required": false,
+        "description": "Extra class names, merged with the component's own."
+      },
+      {
+        "name": "hint",
+        "type": "ReactNode",
+        "required": false,
+        "description": "A small line under the label."
+      }
+    ],
+    "inherits": []
+  },
+  "Avatar": {
+    "kind": "component",
+    "file": "src/ui/avatar.tsx",
+    "description": "Round initial. `tone` 1 to 4 picks the colour; `away` greys it.",
+    "props": [
+      {
+        "name": "initial",
+        "type": "string",
+        "required": true,
+        "description": "One letter."
+      },
+      {
+        "name": "tone",
+        "type": "number",
+        "required": true,
+        "description": "1 to 4."
+      },
+      {
+        "name": "away",
+        "type": "boolean",
+        "required": false,
+        "description": "Greys it: the person is away."
+      }
+    ],
+    "inherits": [
+      "span"
+    ]
+  },
+  "Bar": {
+    "kind": "component",
+    "file": "src/ui/progress.tsx",
+    "description": "Horizontal meter: a `Progress` that takes a percentage. `warn` turns it clay.",
+    "props": [
+      {
+        "name": "percent",
+        "type": "number",
+        "required": true,
+        "description": "How full the bar is, 0 to 100."
+      },
+      {
+        "name": "className",
+        "type": "string",
+        "required": false,
+        "description": "Extra class names, merged with the component's own."
+      },
+      {
+        "name": "label",
+        "type": "string",
+        "required": false,
+        "description": "What is progressing, for screen readers."
+      },
+      {
+        "name": "warn",
+        "type": "boolean",
+        "required": false,
+        "description": "Turns the fill clay: close to a limit."
+      }
+    ],
+    "inherits": [
+      "@base-ui/react/progress",
+      "div"
+    ]
+  },
+  "BottomSheet": {
+    "kind": "component",
+    "file": "src/ui/overlay.tsx",
+    "description": "Bottom sheet. Drag it down to dismiss: it follows the finger, and a flick closes it faster.\nPut `data-base-ui-swipe-ignore` on any child that needs its own drag (the Slider already does).",
+    "props": [
+      {
+        "name": "children",
+        "type": "ReactNode",
+        "required": true,
+        "description": "The content."
+      },
+      {
+        "name": "label",
+        "type": "string",
+        "required": true,
+        "description": "Accessible name for the dialog."
+      },
+      {
+        "name": "onOpenChange",
+        "type": "(open: boolean) => void",
+        "required": true,
+        "description": "Called with `false` when the person dismisses it (Escape, a tap outside, a swipe down)."
+      },
+      {
+        "name": "open",
+        "type": "boolean",
+        "required": true,
+        "description": "Whether it is showing."
+      }
+    ],
+    "inherits": []
+  },
+  "Button": {
+    "kind": "component",
+    "file": "src/ui/button.tsx",
+    "description": "Pill-shaped action button. Icons and text go in as children. Ref and native props pass through.",
+    "props": [
+      {
+        "name": "haptic",
+        "type": "Haptic",
+        "required": false,
+        "description": "A haptic on press. Off by default: a plain tap needs none. Use `medium` for the one action that sends something out, `warning` for a danger button."
+      },
+      {
+        "name": "loading",
+        "type": "boolean",
+        "required": false,
+        "description": "Shows a spinner, keeps the width, and ignores taps until it clears."
+      },
+      {
+        "name": "size",
+        "type": "\"sm\" | \"md\" | \"lg\"",
+        "required": false,
+        "description": "`md` is 42 px tall; `lg` is 52 px (thumb-sized, for the main action on a phone); `sm` is for dense rows."
+      },
+      {
+        "name": "variant",
+        "type": "\"default\" | \"primary\" | \"sage\" | \"danger\" | \"ghost\"",
+        "required": false,
+        "description": "`primary` is the one main action on a surface (dark); `sage` confirms calmly; `danger` is for things that cannot be undone; `ghost` is borderless; the default is a quiet fill."
+      }
+    ],
+    "inherits": [
+      "button"
+    ]
+  },
+  "buttonVariants": {
+    "kind": "function",
+    "file": "src/ui/button.tsx",
+    "description": "Class recipe for anything that should look like a button (links, triggers).",
+    "props": [],
+    "inherits": []
+  },
+  "Checkbox": {
+    "kind": "component",
+    "file": "src/ui/checkbox.tsx",
+    "description": "Tick box. With children it renders a tappable row, so the whole label toggles it.",
+    "props": [
+      {
+        "name": "checked",
+        "type": "boolean",
+        "required": true,
+        "description": "Whether it is on (controlled)."
+      },
+      {
+        "name": "onChange",
+        "type": "(next: boolean) => void",
+        "required": true,
+        "description": "Called with the new value."
+      },
+      {
+        "name": "children",
+        "type": "ReactNode",
+        "required": false,
+        "description": "Visible label. Without it, pass `label` for screen readers."
+      },
+      {
+        "name": "className",
+        "type": "string",
+        "required": false,
+        "description": "Extra class names, merged with the component's own."
+      },
+      {
+        "name": "disabled",
+        "type": "boolean",
+        "required": false,
+        "description": "Turns the control off."
+      },
+      {
+        "name": "indeterminate",
+        "type": "boolean",
+        "required": false,
+        "description": "Shows a dash instead of a tick: some, but not all, of what it covers is selected."
+      },
+      {
+        "name": "label",
+        "type": "string",
+        "required": false,
+        "description": "Names the control for screen readers."
+      }
+    ],
+    "inherits": [
+      "@base-ui/react/checkbox",
+      "span"
+    ]
+  },
+  "Chip": {
+    "kind": "component",
+    "file": "src/ui/badge.tsx",
+    "description": "Status chip for the hero. A button when given `onClick`, otherwise inert text that is skipped by Tab.",
+    "props": [
+      {
+        "name": "icon",
+        "type": "string",
+        "required": true,
+        "description": "Name of an icon from the icon set."
+      },
+      {
+        "name": "warn",
+        "type": "boolean",
+        "required": false,
+        "description": "Outlines the chip: something to look at."
+      }
+    ],
+    "inherits": [
+      "button"
+    ]
+  },
+  "cn": {
+    "kind": "function",
+    "file": "src/ui/cn.ts",
+    "description": "Join class names. Falsy values are skipped; arrays and `{ name: condition }` objects are flattened.",
+    "props": [],
+    "inherits": []
+  },
+  "ColorWheel": {
+    "kind": "component",
+    "file": "src/ui/color-control.tsx",
+    "description": "Colour wheel: angle is hue, distance from the centre is saturation. Previews while dragging, commits on release. It ticks each\n30 degrees of hue, clicks at the centre (white) and bumps at the rim. Double-tap to go straight to white.",
+    "props": [
+      {
+        "name": "label",
+        "type": "string",
+        "required": true,
+        "description": "Names the wheel for screen readers: \"Lamp colour\"."
+      },
+      {
+        "name": "onCommit",
+        "type": "(rgb: RGB) => void",
+        "required": true,
+        "description": "Called with the chosen colour when the finger lifts (not on every move)."
+      },
+      {
+        "name": "rgb",
+        "type": "RGB",
+        "required": true,
+        "description": "The current colour as `[red, green, blue]`, each 0 to 255."
+      },
+      {
+        "name": "className",
+        "type": "string",
+        "required": false,
+        "description": "Extra class names, merged with the component's own."
+      }
+    ],
+    "inherits": []
+  },
+  "ConfirmDialog": {
+    "kind": "component",
+    "file": "src/ui/overlay.tsx",
+    "description": "Passkey-style confirmation dialog.",
+    "props": [
+      {
+        "name": "description",
+        "type": "string",
+        "required": true,
+        "description": "Why it needs a passkey, in a line or two."
+      },
+      {
+        "name": "onCancel",
+        "type": "() => void",
+        "required": true,
+        "description": "Called by the Cancel button, Escape, or a tap outside."
+      },
+      {
+        "name": "onConfirm",
+        "type": "() => void",
+        "required": true,
+        "description": "Called when the confirm button is pressed."
+      },
+      {
+        "name": "open",
+        "type": "boolean",
+        "required": true,
+        "description": "Whether it is showing."
+      },
+      {
+        "name": "state",
+        "type": "\"ok\" | \"go\" | \"idle\"",
+        "required": true,
+        "description": "`idle` waits for a tap; `go` shows that the passkey prompt is open; `ok` shows it worked."
+      },
+      {
+        "name": "title",
+        "type": "string",
+        "required": true,
+        "description": "What is being confirmed, as a short sentence."
+      },
+      {
+        "name": "cancelLabel",
+        "type": "string",
+        "required": false,
+        "default": "\"Cancel\"",
+        "description": "The cancel button's text. Keep it \"Cancel\": it is the word people look for."
+      },
+      {
+        "name": "confirmLabel",
+        "type": "string",
+        "required": false,
+        "default": "\"Use passkey\"",
+        "description": "The confirm button's text."
+      },
+      {
+        "name": "confirmRef",
+        "type": "RefObject<HTMLButtonElement>",
+        "required": false,
+        "description": "A ref to the confirm button, so it can take focus when the dialog opens."
+      },
+      {
+        "name": "destructive",
+        "type": "boolean",
+        "required": false,
+        "description": "Styles the confirm button as dangerous (red). Only for things that cannot be undone, and that the person did not choose with that in mind."
+      }
+    ],
+    "inherits": []
+  },
+  "CoverShade": {
+    "kind": "component",
+    "file": "src/ui/color-control.tsx",
+    "description": "A window with a shade you pull: drag down to close, up to open. Previews live, commits on release. It clicks at each quarter,\nand if you pull past either end it stretches with growing resistance and bumps, then settles back. A flick carries on.",
+    "props": [
+      {
+        "name": "label",
+        "type": "string",
+        "required": true,
+        "description": "Names the control for screen readers."
+      },
+      {
+        "name": "moving",
+        "type": "boolean",
+        "required": true,
+        "description": "Pulses the handle while the cover is moving."
+      },
+      {
+        "name": "onCommit",
+        "type": "(p: number) => void",
+        "required": true,
+        "description": "Called with the chosen position when the finger lifts."
+      },
+      {
+        "name": "pos",
+        "type": "number",
+        "required": true,
+        "description": "How open the cover is: 0 closed, 100 open."
+      },
+      {
+        "name": "className",
+        "type": "string",
+        "required": false,
+        "description": "Extra class names, merged with the component's own."
+      }
+    ],
+    "inherits": []
+  },
+  "DeviceTile": {
+    "kind": "component",
+    "file": "src/ui/device-tile.tsx",
+    "description": "Phone device tile. Tap to toggle. Drag sideways to set its main value: it ticks at each quarter, bumps at either end, stretches\nif you pull past an end, and a flick carries on after you let go. Hold for more controls (or press the chevron): a slight press-in\nshows the hold is coming, and a firm tap confirms it was recognised.",
+    "props": [
+      {
+        "name": "detail",
+        "type": "ReactNode",
+        "required": true,
+        "description": "State line under the name, for example \"60% · Living room\"."
+      },
+      {
+        "name": "icon",
+        "type": "string",
+        "required": true,
+        "description": "Name of an icon from the icon set."
+      },
+      {
+        "name": "name",
+        "type": "string",
+        "required": true,
+        "description": "The device's name."
+      },
+      {
+        "name": "onTap",
+        "type": "() => void",
+        "required": true,
+        "description": "Tap: usually toggles the device."
+      },
+      {
+        "name": "className",
+        "type": "string",
+        "required": false,
+        "description": "Extra class names, merged with the component's own."
+      },
+      {
+        "name": "dragValue",
+        "type": "number",
+        "required": false,
+        "description": "Current level 0–100 for drag-to-set. A sideways drag on the tile sets it; the tile fills live and `onDragCommit` fires on release."
+      },
+      {
+        "name": "fill",
+        "type": "number",
+        "required": false,
+        "description": "0–100. Draws a level fill from the bottom, like a dimmer."
+      },
+      {
+        "name": "hint",
+        "type": "string",
+        "required": false,
+        "description": "What the gestures do, read after the name: \"Tap to toggle. Hold for more.\""
+      },
+      {
+        "name": "label",
+        "type": "string",
+        "required": false,
+        "description": "Replaces the accessible name. Leave it out: then the visible name and state are the name, as \"label in name\" (WCAG 2.5.3) asks."
+      },
+      {
+        "name": "moreLabel",
+        "type": "string",
+        "required": false,
+        "description": "Screen-reader name for the chevron. Defaults to \"More controls for <name>\"."
+      },
+      {
+        "name": "on",
+        "type": "boolean",
+        "required": false,
+        "description": "Whether the device is on: the tile glows."
+      },
+      {
+        "name": "onDragCommit",
+        "type": "((value: number) => void)",
+        "required": false,
+        "description": "Called with the chosen level (0 to 100, in steps of 5) when a sideways drag ends. 0 means off."
+      },
+      {
+        "name": "onHold",
+        "type": "(() => void)",
+        "required": false,
+        "description": "Fires after a half-second press. A tap that follows a hold is swallowed."
+      },
+      {
+        "name": "onMore",
+        "type": "(() => void)",
+        "required": false,
+        "description": "Shows the chevron that opens the full controls (the tap-free twin of holding)."
+      },
+      {
+        "name": "spin",
+        "type": "number",
+        "required": false,
+        "description": "Seconds per turn: the icon spins (a fan)."
+      },
+      {
+        "name": "tint",
+        "type": "string",
+        "required": false,
+        "description": "Colour the \"on\" glow (a lamp's own colour)."
+      },
+      {
+        "name": "warn",
+        "type": "boolean",
+        "required": false,
+        "description": "Needs attention (an unlocked door, for example)."
+      }
+    ],
+    "inherits": []
+  },
+  "Dial": {
+    "kind": "component",
+    "file": "src/ui/dial.tsx",
+    "description": "Radial dial: drag around a 270° arc. Previews while dragging, commits on release.",
+    "props": [
+      {
+        "name": "label",
+        "type": "string",
+        "required": true,
+        "description": "Names the dial for screen readers: \"Target temperature\"."
+      },
+      {
+        "name": "max",
+        "type": "number",
+        "required": true,
+        "description": "Largest value."
+      },
+      {
+        "name": "min",
+        "type": "number",
+        "required": true,
+        "description": "Smallest value."
+      },
+      {
+        "name": "onCommit",
+        "type": "(v: number) => void",
+        "required": true,
+        "description": "Called with the chosen value when the finger lifts."
+      },
+      {
+        "name": "value",
+        "type": "number",
+        "required": true,
+        "description": "The current value (controlled)."
+      },
+      {
+        "name": "children",
+        "type": "((v: number) => ReactNode)",
+        "required": false,
+        "description": "Show live while dragging (for the centre text)."
+      },
+      {
+        "name": "className",
+        "type": "string",
+        "required": false,
+        "description": "Extra class names, merged with the component's own."
+      },
+      {
+        "name": "color",
+        "type": "string",
+        "required": false,
+        "default": "\"var(--glow)\"",
+        "description": "Colour of the filled arc."
+      },
+      {
+        "name": "marker",
+        "type": "number",
+        "required": false,
+        "description": "A second marker on the track (the room's current temperature)."
+      },
+      {
+        "name": "resetValue",
+        "type": "number",
+        "required": false,
+        "description": "Double-tap the dial to return to this value (a default). Leave it out for no reset."
+      },
+      {
+        "name": "step",
+        "type": "number",
+        "required": false,
+        "default": "1",
+        "description": "Size of one step: the dial snaps to multiples of it."
+      },
+      {
+        "name": "unit",
+        "type": "string",
+        "required": false,
+        "default": "\"\"",
+        "description": "Shown after the value for screen readers (\"24 degrees\"), for example \"°\"."
+      }
+    ],
+    "inherits": []
+  },
+  "Empty": {
+    "kind": "component",
+    "file": "src/ui/empty.tsx",
+    "description": "What to show when there is nothing yet. It is temporary: say what to do next, and give the action if there is one.",
+    "props": [
+      {
+        "name": "action",
+        "type": "ReactNode",
+        "required": false,
+        "description": "The next step, usually a Button: an empty state is a signpost, not a dead end."
+      }
+    ],
+    "inherits": [
+      "div"
+    ]
+  },
+  "Eyebrow": {
+    "kind": "component",
+    "file": "src/ui/badge.tsx",
+    "description": "Small uppercase mono label that sits above a title.",
+    "props": [],
+    "inherits": [
+      "div"
+    ]
+  },
+  "Field": {
+    "kind": "component",
+    "file": "src/ui/fields.tsx",
+    "description": "A label and its control, on one line (wrapping when narrow). The label is the control's accessible name.",
+    "props": [
+      {
+        "name": "children",
+        "type": "ReactNode",
+        "required": true,
+        "description": "The content."
+      },
+      {
+        "name": "label",
+        "type": "string",
+        "required": false,
+        "description": "Names the control for screen readers."
+      },
+      {
+        "name": "minLabel",
+        "type": "number",
+        "required": false,
+        "description": "Minimum width of the label in px, to line several fields up."
+      }
+    ],
+    "inherits": [
+      "label"
+    ]
+  },
+  "FieldRow": {
+    "kind": "component",
+    "file": "src/ui/fields.tsx",
+    "description": "Wrapper for several fields that sit on one row.",
+    "props": [],
+    "inherits": [
+      "div"
+    ]
+  },
+  "FilterChip": {
+    "kind": "component",
+    "file": "src/ui/badge.tsx",
+    "description": "Filter chip with an optional count, used for room filters. `pressed` is the selected state.",
+    "props": [
+      {
+        "name": "pressed",
+        "type": "boolean",
+        "required": true,
+        "description": "Whether it is selected."
+      },
+      {
+        "name": "count",
+        "type": "number",
+        "required": false,
+        "description": "A number shown after the label."
+      },
+      {
+        "name": "icon",
+        "type": "string",
+        "required": false,
+        "description": "Name of an icon from the icon set."
+      }
+    ],
+    "inherits": [
+      "button"
+    ]
+  },
+  "Grid": {
+    "kind": "component",
+    "file": "src/ui/tile.tsx",
+    "description": "Auto-fitting 12-column bento grid.",
+    "props": [],
+    "inherits": [
+      "div"
+    ]
+  },
+  "haptic": {
+    "kind": "function",
+    "file": "src/ui/haptics.ts",
+    "description": "Plays one haptic. Does nothing when the person turned haptics off, when the device cannot, or when it is too soon after the last one.",
+    "props": [],
+    "inherits": []
+  },
+  "HAPTICS": {
+    "kind": "constant",
+    "file": "src/ui/haptics.ts",
+    "description": "",
+    "props": [],
+    "inherits": []
+  },
+  "hapticsSupported": {
+    "kind": "function",
+    "file": "src/ui/haptics.ts",
+    "description": "True where a haptic can be felt at all: Android Chrome's vibrate, or the iPhone path.",
+    "props": [],
+    "inherits": []
+  },
+  "Html": {
+    "kind": "component",
+    "file": "src/ui/html.tsx",
+    "description": "Trusted in-app HTML (activity strings that carry bold). Never pass user input: it is not sanitised.",
+    "props": [
+      {
+        "name": "html",
+        "type": "string",
+        "required": true,
+        "description": "Markup from the app itself. Never user input: it is not sanitised."
+      },
+      {
+        "name": "as",
+        "type": "\"div\" | \"small\" | \"span\"",
+        "required": false,
+        "default": "\"span\"",
+        "description": "The element to render."
+      }
+    ],
+    "inherits": []
+  },
+  "Icon": {
+    "kind": "component",
+    "file": "src/ui/icon.tsx",
+    "description": "One 24 px icon set, 1.7 stroke, round caps. Decorative by default: pair it with text, or pass `title`.",
+    "props": [
+      {
+        "name": "n",
+        "type": "\"search\" | \"x\" | \"key\" | \"home\" | \"grid\" | \"flow\" | \"shield\" | \"shieldcheck\" | \"lock\" | \"unlock\" | \"bulb\" | \"thermo\" | \"fan\" | \"plug\" | \"camera\" | \"door\" | \"moon\" | \"sun\" | \"exit\" | \"bag\" | \"bolt\" | \"bell\" | \"users\" | \"user\" | \"star\" | \"plus\" | \"minus\" | \"check\" | \"alert\" | \"clock\" | \"server\" | \"disk\" | \"refresh\" | \"finger\" | \"copy\" | \"chev\" | \"sparkle\" | \"play\" | \"cloud\" | \"mic\" | \"pulse\" | \"trash\" | \"wifi\" | \"download\" | \"eye\" | \"layers\" | \"rocket\" | \"note\" | (string & {})",
+        "required": true,
+        "description": "The icon's name. Any string is accepted (so a name can come from data) and unknown names draw nothing."
+      },
+      {
+        "name": "c",
+        "type": "string",
+        "required": false,
+        "default": "\"\"",
+        "description": "Extra size or motion classes: `sm`, `lg`, `spin`."
+      },
+      {
+        "name": "filled",
+        "type": "boolean",
+        "required": false,
+        "description": "Draws the solid form where there is one (the selected tab); otherwise the outline."
+      },
+      {
+        "name": "title",
+        "type": "string",
+        "required": false,
+        "description": "Gives the icon a name for screen readers. Without it the icon is decorative and hidden from them."
+      }
+    ],
+    "inherits": [
+      "svg"
+    ]
+  },
+  "ICON_PATHS": {
+    "kind": "constant",
+    "file": "src/ui/icon-paths.ts",
+    "description": "",
+    "props": [],
+    "inherits": []
+  },
+  "IconButton": {
+    "kind": "component",
+    "file": "src/ui/button.tsx",
+    "description": "Square, icon-only button. It has no visible text, so it must carry an accessible name.",
+    "props": [
+      {
+        "name": "aria-label",
+        "type": "string",
+        "required": true,
+        "description": "Names the button for screen readers. Required: there is no text to read."
+      },
+      {
+        "name": "active",
+        "type": "boolean",
+        "required": false,
+        "description": "Marks it as the current choice (a pressed look)."
+      },
+      {
+        "name": "haptic",
+        "type": "Haptic",
+        "required": false,
+        "description": "A haptic on press. Off by default."
+      }
+    ],
+    "inherits": [
+      "button"
+    ]
+  },
+  "IconTile": {
+    "kind": "component",
+    "file": "src/ui/avatar.tsx",
+    "description": "Square icon holder used at the start of rows.",
+    "props": [
+      {
+        "name": "icon",
+        "type": "string",
+        "required": true,
+        "description": "Name of an icon from the icon set."
+      }
+    ],
+    "inherits": [
+      "span"
+    ]
+  },
+  "Input": {
+    "kind": "component",
+    "file": "src/ui/fields.tsx",
+    "description": "Text input. Size classes: `inp--sm`, `inp--code`, `inp--fill`, `inp--mono`. Always give it a label (a `Field` around it, or `aria-label`).",
+    "props": [],
+    "inherits": [
+      "input"
+    ]
+  },
+  "KeyValue": {
+    "kind": "component",
+    "file": "src/ui/lists.tsx",
+    "description": "Key and value rows.",
+    "props": [
+      {
+        "name": "rows",
+        "type": "[ReactNode, ReactNode][]",
+        "required": true,
+        "description": "`[key, value]` pairs, in order."
+      }
+    ],
+    "inherits": [
+      "div"
+    ]
+  },
+  "Loading": {
+    "kind": "component",
+    "file": "src/ui/loading.tsx",
+    "description": "Calm waiting state: a softly breathing mark and a short line. Use instead of bare \"Loading…\" text.",
+    "props": [
+      {
+        "name": "label",
+        "type": "string",
+        "required": false,
+        "default": "\"Loading…\"",
+        "description": "What is being waited for, in a few words."
+      }
+    ],
+    "inherits": [
+      "div"
+    ]
+  },
+  "LockTile": {
+    "kind": "component",
+    "file": "src/ui/lock-tile.tsx",
+    "description": "Door tile for a dark surface. Amber when the door is open.",
+    "props": [
+      {
+        "name": "icon",
+        "type": "string",
+        "required": true,
+        "description": "Name of an icon from the icon set."
+      },
+      {
+        "name": "locked",
+        "type": "boolean",
+        "required": true,
+        "description": "Whether the door is locked. Unlocked shows amber."
+      },
+      {
+        "name": "name",
+        "type": "string",
+        "required": true,
+        "description": "The door's name."
+      },
+      {
+        "name": "status",
+        "type": "string",
+        "required": true,
+        "description": "What state it is in, in words: \"Locked\", \"Open · tap to lock\"."
+      },
+      {
+        "name": "hint",
+        "type": "string",
+        "required": false,
+        "description": "What a tap does, read after the name and state (hidden from sight): \"Tap to unlock.\""
+      }
+    ],
+    "inherits": [
+      "button"
+    ]
+  },
+  "Modal": {
+    "kind": "component",
+    "file": "src/ui/overlay.tsx",
+    "description": "Centred or top-anchored dialog. Focus is trapped while open and returns to the trigger on close;\nEscape and a tap on the scrim dismiss it. It animates out as well as in.",
+    "props": [
+      {
+        "name": "children",
+        "type": "ReactNode",
+        "required": true,
+        "description": "The content."
+      },
+      {
+        "name": "label",
+        "type": "string",
+        "required": true,
+        "description": "Accessible name for the dialog."
+      },
+      {
+        "name": "onOpenChange",
+        "type": "(open: boolean) => void",
+        "required": true,
+        "description": "Called with `false` when the person dismisses it (Escape, a tap outside, a swipe down)."
+      },
+      {
+        "name": "open",
+        "type": "boolean",
+        "required": true,
+        "description": "Whether it is showing."
+      },
+      {
+        "name": "initialFocus",
+        "type": "RefObject<HTMLElement>",
+        "required": false,
+        "description": "The element to focus when it opens. Defaults to the first focusable one."
+      },
+      {
+        "name": "placement",
+        "type": "\"center\" | \"top\"",
+        "required": false,
+        "default": "\"top\"",
+        "description": "`top` sits near the top (good with a keyboard); `center` is for short confirmations."
+      }
+    ],
+    "inherits": []
+  },
+  "ModeButton": {
+    "kind": "component",
+    "file": "src/ui/choice.tsx",
+    "description": "One option in a household-mode picker. `pressed` marks the active mode.",
+    "props": [
+      {
+        "name": "icon",
+        "type": "string",
+        "required": true,
+        "description": "Name of an icon from the icon set."
+      },
+      {
+        "name": "label",
+        "type": "string",
+        "required": true,
+        "description": "The mode's name."
+      },
+      {
+        "name": "pressed",
+        "type": "boolean",
+        "required": true,
+        "description": "Whether it is selected."
+      },
+      {
+        "name": "description",
+        "type": "ReactNode",
+        "required": false,
+        "description": "A short line under the label."
+      }
+    ],
+    "inherits": [
+      "button"
+    ]
+  },
+  "Notice": {
+    "kind": "component",
+    "file": "src/ui/notice.tsx",
+    "description": "An inline message that stays on the page: something to know (info), something done (ok), or something to fix (warn, announced to screen readers).",
+    "props": [
+      {
+        "name": "children",
+        "type": "ReactNode",
+        "required": true,
+        "description": "The content."
+      },
+      {
+        "name": "action",
+        "type": "ReactNode",
+        "required": false,
+        "description": "An optional button at the end."
+      },
+      {
+        "name": "icon",
+        "type": "string",
+        "required": false,
+        "description": "Replaces the icon the tone would pick."
+      },
+      {
+        "name": "tone",
+        "type": "Tone",
+        "required": false,
+        "default": "\"info\"",
+        "description": "`warn` is something to fix (announced at once); `ok` confirms; `info` is for your information."
+      }
+    ],
+    "inherits": [
+      "div"
+    ]
+  },
+  "Nudge": {
+    "kind": "component",
+    "file": "src/ui/nudge.tsx",
+    "description": "Visible minus and plus beside a control you set by dragging. A gesture is never the only way to do something (Apple's\nrule for custom gestures), and a drag is hard for some people: this is the twin that is always on screen.",
+    "props": [
+      {
+        "name": "label",
+        "type": "string",
+        "required": true,
+        "description": "What is being changed, for the button names: \"Floor lamp brightness\" gives \"Lower Floor lamp brightness\"."
+      },
+      {
+        "name": "onMinus",
+        "type": "() => void",
+        "required": true,
+        "description": "Called by the minus button."
+      },
+      {
+        "name": "onPlus",
+        "type": "() => void",
+        "required": true,
+        "description": "Called by the plus button."
+      },
+      {
+        "name": "children",
+        "type": "ReactNode",
+        "required": false,
+        "default": "\"or tap − / +\"",
+        "description": "A short line between the buttons. Hidden at large text sizes, where there is no room for it."
+      },
+      {
+        "name": "minusDisabled",
+        "type": "boolean",
+        "required": false,
+        "description": "Greys the minus button (at the lowest value)."
+      },
+      {
+        "name": "plusDisabled",
+        "type": "boolean",
+        "required": false,
+        "description": "Greys the plus button (at the highest value)."
+      }
+    ],
+    "inherits": [
+      "div"
+    ]
+  },
+  "OptionButton": {
+    "kind": "component",
+    "file": "src/ui/segmented.tsx",
+    "description": "One toggleable card in an `OptionGroup`. `pressed` is the selected state.",
+    "props": [
+      {
+        "name": "icon",
+        "type": "ReactNode",
+        "required": false,
+        "description": "A leading element, usually an `Icon`."
+      },
+      {
+        "name": "pressed",
+        "type": "boolean",
+        "required": false,
+        "description": "Whether it is selected."
+      }
+    ],
+    "inherits": [
+      "button"
+    ]
+  },
+  "OptionGroup": {
+    "kind": "component",
+    "file": "src/ui/segmented.tsx",
+    "description": "Wrap-around group of option cards: several can be on at once (use `Segmented` for exactly one).",
+    "props": [],
+    "inherits": [
+      "div"
+    ]
+  },
+  "PageHeader": {
+    "kind": "component",
+    "file": "src/ui/page-header.tsx",
+    "description": "Page title block: the page's one `h1`, with an optional line under it.",
+    "props": [
+      {
+        "name": "title",
+        "type": "string",
+        "required": true,
+        "description": "The page title (the one `h1`)."
+      }
+    ],
+    "inherits": [
+      "div"
+    ]
+  },
+  "Pill": {
+    "kind": "component",
+    "file": "src/ui/badge.tsx",
+    "description": "Small status label with an optional leading icon. Colour is never the only signal: say the status in words too.",
+    "props": [
+      {
+        "name": "icon",
+        "type": "string",
+        "required": false,
+        "description": "Leading icon name."
+      },
+      {
+        "name": "tone",
+        "type": "Tone",
+        "required": false,
+        "default": "\"neutral\"",
+        "description": "Meaning of the colour: ok (done, safe), warn (needs a look), info (for your information)."
+      }
+    ],
+    "inherits": [
+      "span"
+    ]
+  },
+  "Popover": {
+    "kind": "component",
+    "file": "src/ui/floating.tsx",
+    "description": "Small floating panel anchored to its trigger. Focus moves in on open and back out on close.",
+    "props": [
+      {
+        "name": "children",
+        "type": "ReactNode",
+        "required": true,
+        "description": "The content."
+      },
+      {
+        "name": "trigger",
+        "type": "ReactElement<unknown, string | JSXElementConstructor<any>>",
+        "required": true,
+        "description": "The element that opens it."
+      },
+      {
+        "name": "align",
+        "type": "\"center\" | \"end\" | \"start\"",
+        "required": false,
+        "default": "\"center\"",
+        "description": "How it lines up with the trigger along that side."
+      },
+      {
+        "name": "side",
+        "type": "Side",
+        "required": false,
+        "default": "\"bottom\"",
+        "description": "Which side of the trigger it opens on."
+      },
+      {
+        "name": "title",
+        "type": "ReactNode",
+        "required": false,
+        "description": "A heading inside the panel. Also names it for screen readers."
+      }
+    ],
+    "inherits": []
+  },
+  "PopoverClose": {
+    "kind": "component",
+    "file": "src/ui/floating.tsx",
+    "description": "Put on any control inside a Popover that should close it.",
+    "props": [],
+    "inherits": [
+      "button"
+    ]
+  },
+  "Progress": {
+    "kind": "component",
+    "file": "src/ui/progress.tsx",
+    "description": "Determinate progress bar. The fill glides to a new value. Exposes `role=\"progressbar\"` to assistive tech.",
+    "props": [
+      {
+        "name": "value",
+        "type": "number",
+        "required": true,
+        "description": "The current value (controlled)."
+      },
+      {
+        "name": "className",
+        "type": "string",
+        "required": false,
+        "description": "Extra class names, merged with the component's own."
+      },
+      {
+        "name": "label",
+        "type": "string",
+        "required": false,
+        "default": "\"Progress\"",
+        "description": "What is progressing, for screen readers."
+      },
+      {
+        "name": "max",
+        "type": "number",
+        "required": false,
+        "default": "100",
+        "description": "Largest value."
+      },
+      {
+        "name": "warn",
+        "type": "boolean",
+        "required": false,
+        "description": "Turns the fill clay: close to a limit."
+      }
+    ],
+    "inherits": [
+      "@base-ui/react/progress",
+      "div"
+    ]
+  },
+  "project": {
+    "kind": "function",
+    "file": "src/ui/use-drag.ts",
+    "description": "Where something flicked from `pos` (0 to 1) with velocity `vel` (fractions per second) comes to rest. A flick carries on after the\nfinger lifts, the way a scroll view does: the distance is the sum of a decelerating glide. `rate` is how quickly it slows\n(0.998 glides a long way, 0.99 a short one). The result is not clamped.",
+    "props": [],
+    "inherits": []
+  },
+  "Safe": {
+    "kind": "component",
+    "file": "src/ui/lists.tsx",
+    "description": "Checklist-style list of reassurances. `muted` rows use a cross.",
+    "props": [
+      {
+        "name": "items",
+        "type": "(string | { text: string; muted?: boolean; icon?: string; })[]",
+        "required": true,
+        "description": "Each line, as plain text or `{ text, muted, icon }`. `muted` shows a cross: something Alice does not do."
+      }
+    ],
+    "inherits": [
+      "div"
+    ]
+  },
+  "SceneCard": {
+    "kind": "component",
+    "file": "src/ui/choice.tsx",
+    "description": "Scene or routine card. `suggested` outlines it in sage.",
+    "props": [
+      {
+        "name": "icon",
+        "type": "string",
+        "required": true,
+        "description": "Name of an icon from the icon set."
+      },
+      {
+        "name": "name",
+        "type": "string",
+        "required": true,
+        "description": "The scene's name."
+      },
+      {
+        "name": "description",
+        "type": "ReactNode",
+        "required": false,
+        "description": "What it does, in a short line."
+      },
+      {
+        "name": "suggested",
+        "type": "boolean",
+        "required": false,
+        "description": "Outlines the card: Alice suggests it for now."
+      },
+      {
+        "name": "tag",
+        "type": "ReactNode",
+        "required": false,
+        "description": "A small label at the bottom: \"Routine\", \"Suggested\"."
+      }
+    ],
+    "inherits": [
+      "button"
+    ]
+  },
+  "Segmented": {
+    "kind": "component",
+    "file": "src/ui/segmented.tsx",
+    "description": "Single-choice control. A thumb slides between segments on a spring, arrow keys move the choice\n(roving tabindex, like a native radio group), and it behaves as a radiogroup for assistive tech.",
+    "props": [
+      {
+        "name": "items",
+        "type": "readonly (readonly [T, ReactNode])[]",
+        "required": true,
+        "description": "`[value, label]` pairs, in order."
+      },
+      {
+        "name": "onChange",
+        "type": "(value: T) => void",
+        "required": true,
+        "description": "Called with the new value."
+      },
+      {
+        "name": "value",
+        "type": "T",
+        "required": true,
+        "description": "The current value (controlled)."
+      },
+      {
+        "name": "label",
+        "type": "string",
+        "required": false,
+        "description": "Names the group for screen readers."
+      }
+    ],
+    "inherits": [
+      "span"
+    ]
+  },
+  "Select": {
+    "kind": "component",
+    "file": "src/ui/select.tsx",
+    "description": "Drop-down list. A real popup instead of the browser's native one, so it matches the rest of the UI,\nopens and closes with a spring, and supports type-ahead and arrow keys. Touch opens it below the field.",
+    "props": [
+      {
+        "name": "onChange",
+        "type": "(value: string) => void",
+        "required": true,
+        "description": "Called with the new value."
+      },
+      {
+        "name": "options",
+        "type": "readonly (readonly [string, string])[]",
+        "required": true,
+        "description": "`[value, label]` pairs."
+      },
+      {
+        "name": "value",
+        "type": "string",
+        "required": true,
+        "description": "The current value (controlled)."
+      },
+      {
+        "name": "className",
+        "type": "string",
+        "required": false,
+        "description": "Extra class names, merged with the component's own."
+      },
+      {
+        "name": "disabled",
+        "type": "boolean",
+        "required": false,
+        "description": "Turns the control off."
+      },
+      {
+        "name": "label",
+        "type": "string",
+        "required": false,
+        "description": "Accessible name when there is no visible label next to it."
+      },
+      {
+        "name": "placeholder",
+        "type": "string",
+        "required": false,
+        "description": "Text shown while nothing is chosen."
+      }
+    ],
+    "inherits": [
+      "button"
+    ]
+  },
+  "setHapticsEnabled": {
+    "kind": "function",
+    "file": "src/ui/haptics.ts",
+    "description": "Turns haptics on or off for this device, and remembers it.",
+    "props": [],
+    "inherits": []
+  },
+  "Slider": {
+    "kind": "component",
+    "file": "src/ui/slider.tsx",
+    "description": "Filled slider built from real elements, so the fill glides when a value jumps (a preset tap)\nand the thumb lifts while it is dragged. It opts out of the bottom sheet's swipe-to-dismiss.",
+    "props": [
+      {
+        "name": "label",
+        "type": "string",
+        "required": true,
+        "description": "Names the control for screen readers."
+      },
+      {
+        "name": "onChange",
+        "type": "(value: number) => void",
+        "required": true,
+        "description": "Called with the new value."
+      },
+      {
+        "name": "value",
+        "type": "number",
+        "required": true,
+        "description": "The current value (controlled)."
+      },
+      {
+        "name": "className",
+        "type": "string",
+        "required": false,
+        "description": "Extra class names, merged with the component's own."
+      },
+      {
+        "name": "disabled",
+        "type": "boolean",
+        "required": false,
+        "description": "Turns the control off."
+      },
+      {
+        "name": "max",
+        "type": "number",
+        "required": false,
+        "default": "100",
+        "description": "Largest value."
+      },
+      {
+        "name": "min",
+        "type": "number",
+        "required": false,
+        "default": "1",
+        "description": "Smallest value."
+      },
+      {
+        "name": "resetValue",
+        "type": "number",
+        "required": false,
+        "description": "Double-tap the bar to return to this value (a default, such as full brightness). Leave it out for no reset."
+      },
+      {
+        "name": "showValue",
+        "type": "boolean",
+        "required": false,
+        "description": "Shows the value beside the bar as live feedback while it is dragged."
+      },
+      {
+        "name": "size",
+        "type": "\"md\" | \"xl\"",
+        "required": false,
+        "default": "\"md\"",
+        "description": "`md` is the thin bar; `xl` is the tall full-width bar for sheets."
+      },
+      {
+        "name": "valueText",
+        "type": "((value: number) => string)",
+        "required": false,
+        "description": "Words for a value, for screen readers and for `showValue`: `(v) => `${v}%``. Defaults to the bare number."
+      }
+    ],
+    "inherits": [
+      "@base-ui/react/slider",
+      "div"
+    ]
+  },
+  "Sparkline": {
+    "kind": "component",
+    "file": "src/ui/chart.tsx",
+    "description": "Smooth area sparkline with an end-point dot. Draws in the sage colour; the label is what a screen reader says.",
+    "props": [
+      {
+        "name": "values",
+        "type": "number[]",
+        "required": true,
+        "description": "The series, oldest first. Needs at least two values."
+      },
+      {
+        "name": "height",
+        "type": "number",
+        "required": false,
+        "default": "56",
+        "description": "Height of the drawing area in its own units."
+      },
+      {
+        "name": "label",
+        "type": "string",
+        "required": false,
+        "default": "\"Trend\"",
+        "description": "Names the control for screen readers."
+      },
+      {
+        "name": "width",
+        "type": "number",
+        "required": false,
+        "default": "240",
+        "description": "Width of the drawing area in its own units; the SVG scales to its container."
+      }
+    ],
+    "inherits": [
+      "svg"
+    ]
+  },
+  "StepButton": {
+    "kind": "component",
+    "file": "src/ui/button.tsx",
+    "description": "Round stepper button (plus or minus). Like `IconButton`, it needs an accessible name.",
+    "props": [
+      {
+        "name": "aria-label",
+        "type": "string",
+        "required": true,
+        "description": "Names the button for screen readers: \"More backups\"."
+      },
+      {
+        "name": "haptic",
+        "type": "Haptic",
+        "required": false,
+        "description": "A haptic on press. Off by default: a `Stepper` ticks for itself."
+      }
+    ],
+    "inherits": [
+      "button"
+    ]
+  },
+  "Stepper": {
+    "kind": "component",
+    "file": "src/ui/stepper.tsx",
+    "description": "A number you nudge up and down with round buttons, held between `min` and `max`. Tap for one step. Press and hold to run through a\nrange: it starts steady and speeds up the longer you hold. Or drag the number itself sideways, one step every few pixels, like\nscrubbing. Each step ticks, and reaching either end bumps. Arrow keys work too. For small counts, not free typing.",
+    "props": [
+      {
+        "name": "label",
+        "type": "string",
+        "required": true,
+        "description": "Names the control for screen readers, e.g. \"Backups to keep\"."
+      },
+      {
+        "name": "max",
+        "type": "number",
+        "required": true,
+        "description": "Largest value."
+      },
+      {
+        "name": "min",
+        "type": "number",
+        "required": true,
+        "description": "Smallest value."
+      },
+      {
+        "name": "onChange",
+        "type": "(next: number) => void",
+        "required": true,
+        "description": "Called with the new value."
+      },
+      {
+        "name": "value",
+        "type": "number",
+        "required": true,
+        "description": "The current value (controlled)."
+      },
+      {
+        "name": "step",
+        "type": "number",
+        "required": false,
+        "default": "1",
+        "description": "Size of one step."
+      },
+      {
+        "name": "unit",
+        "type": "string",
+        "required": false,
+        "description": "Shown after the number, e.g. \"backups\" or \"h\"."
+      }
+    ],
+    "inherits": [
+      "div"
+    ]
+  },
+  "Steps": {
+    "kind": "component",
+    "file": "src/ui/lists.tsx",
+    "description": "Step list for multi-stage jobs. `current` is the active step index.",
+    "props": [
+      {
+        "name": "current",
+        "type": "number",
+        "required": true,
+        "description": "Index of the step in progress: earlier ones are done, later ones wait."
+      },
+      {
+        "name": "steps",
+        "type": "string[]",
+        "required": true,
+        "description": "The names of the steps, in order."
+      }
+    ],
+    "inherits": [
+      "div"
+    ]
+  },
+  "Switch": {
+    "kind": "component",
+    "file": "src/ui/switch.tsx",
+    "description": "On/off switch. Tap it, or drag the thumb across and let go: it lands on whichever side it is nearer to, with a bump as it\ncrosses the middle. The thumb stretches while pressed and settles with a light spring; on and off feel different.",
+    "props": [
+      {
+        "name": "checked",
+        "type": "boolean",
+        "required": true,
+        "description": "Whether it is on (controlled)."
+      },
+      {
+        "name": "label",
+        "type": "string",
+        "required": true,
+        "description": "Accessible name. Required because the switch has no visible text."
+      },
+      {
+        "name": "onChange",
+        "type": "(next: boolean) => void",
+        "required": true,
+        "description": "Called with the new value."
+      },
+      {
+        "name": "className",
+        "type": "string",
+        "required": false,
+        "description": "Extra class names, merged with the component's own."
+      },
+      {
+        "name": "disabled",
+        "type": "boolean",
+        "required": false,
+        "description": "Turns the control off."
+      }
+    ],
+    "inherits": [
+      "@base-ui/react/switch",
+      "span"
+    ]
+  },
+  "Table": {
+    "kind": "component",
+    "file": "src/ui/table.tsx",
+    "description": "A simple table that scrolls sideways on a narrow screen. `mono` sets it in the code font.",
+    "props": [
+      {
+        "name": "head",
+        "type": "string[]",
+        "required": true,
+        "description": "Column headings."
+      },
+      {
+        "name": "rows",
+        "type": "ReactNode[][]",
+        "required": true,
+        "description": "One array of cells per row."
+      },
+      {
+        "name": "mono",
+        "type": "boolean",
+        "required": false,
+        "description": "Sets the table in the code font, smaller."
+      }
+    ],
+    "inherits": [
+      "table"
+    ]
+  },
+  "Tabs": {
+    "kind": "component",
+    "file": "src/ui/tabs.tsx",
+    "description": "Pill tab bar. A dark thumb slides to the chosen tab, and the bar scrolls sideways when it does not fit.",
+    "props": [
+      {
+        "name": "label",
+        "type": "string",
+        "required": true,
+        "description": "Names the tab list for screen readers."
+      },
+      {
+        "name": "onChange",
+        "type": "(id: T) => void",
+        "required": true,
+        "description": "Called with the new value."
+      },
+      {
+        "name": "tabs",
+        "type": "{ id: T; label: string; badge?: boolean; }[]",
+        "required": true,
+        "description": "`badge` shows a small dot: something in that tab needs a look."
+      },
+      {
+        "name": "value",
+        "type": "T",
+        "required": true,
+        "description": "The current value (controlled)."
+      }
+    ],
+    "inherits": [
+      "div"
+    ]
+  },
+  "Textarea": {
+    "kind": "component",
+    "file": "src/ui/fields.tsx",
+    "description": "Multi-line text input. Same size classes as `Input`.",
+    "props": [],
+    "inherits": [
+      "textarea"
+    ]
+  },
+  "Tile": {
+    "kind": "component",
+    "file": "src/ui/tile.tsx",
+    "description": "A card on the home grid: sized in columns and rows, tinted with `tone`, and (on a phone, inside an `AccordionContext`) collapsible.",
+    "props": [
+      {
+        "name": "children",
+        "type": "ReactNode",
+        "required": true,
+        "description": "The content."
+      },
+      {
+        "name": "id",
+        "type": "string",
+        "required": true,
+        "description": "A stable name for the tile: becomes its element id and its accordion key."
+      },
+      {
+        "name": "bare",
+        "type": "boolean",
+        "required": false,
+        "description": "Skip the card chrome. Used for phone layouts that style themselves."
+      },
+      {
+        "name": "className",
+        "type": "string",
+        "required": false,
+        "description": "Extra class names, merged with the component's own."
+      },
+      {
+        "name": "cols",
+        "type": "number",
+        "required": false,
+        "default": "4",
+        "description": "Column span on desktop."
+      },
+      {
+        "name": "colsMobile",
+        "type": "number",
+        "required": false,
+        "default": "6",
+        "description": "Column span on a phone."
+      },
+      {
+        "name": "colsTablet",
+        "type": "number",
+        "required": false,
+        "default": "3",
+        "description": "Column span on a tablet."
+      },
+      {
+        "name": "defaultOpen",
+        "type": "boolean",
+        "required": false,
+        "description": "Start expanded when inside an accordion."
+      },
+      {
+        "name": "rows",
+        "type": "number",
+        "required": false,
+        "default": "2",
+        "description": "Row span."
+      },
+      {
+        "name": "style",
+        "type": "Vars",
+        "required": false,
+        "description": "Inline styles, including `--custom` properties."
+      },
+      {
+        "name": "tone",
+        "type": "string",
+        "required": false,
+        "description": "Colour treatment: sage, clay, glow, deep, or hero."
+      }
+    ],
+    "inherits": []
+  },
+  "TileHeader": {
+    "kind": "component",
+    "file": "src/ui/tile.tsx",
+    "description": "Tile header: title, optional eyebrow above it, optional trailing control.",
+    "props": [
+      {
+        "name": "eyebrow",
+        "type": "ReactNode",
+        "required": false,
+        "description": "Small label above the title."
+      },
+      {
+        "name": "right",
+        "type": "ReactNode",
+        "required": false,
+        "description": "A control at the end of the header."
+      },
+      {
+        "name": "title",
+        "type": "ReactNode",
+        "required": false,
+        "description": "The tile's heading."
+      }
+    ],
+    "inherits": []
+  },
+  "TimeField": {
+    "kind": "component",
+    "file": "src/ui/time-field.tsx",
+    "description": "A time of day. Uses the device's own time picker, so it is native on phones.",
+    "props": [
+      {
+        "name": "label",
+        "type": "string",
+        "required": true,
+        "description": "Names the field for screen readers, e.g. \"Backup time\"."
+      },
+      {
+        "name": "onChange",
+        "type": "(next: string) => void",
+        "required": true,
+        "description": "Called with the new value."
+      },
+      {
+        "name": "value",
+        "type": "string",
+        "required": true,
+        "description": "24-hour \"HH:MM\"."
+      }
+    ],
+    "inherits": [
+      "input"
+    ]
+  },
+  "Toast": {
+    "kind": "component",
+    "file": "src/ui/toast.tsx",
+    "description": "A short notice that appears at the bottom of the screen. It is a card, not a pill: long messages wrap (and, past five\nlines, are cut with a tap to read the rest). It pauses while it is being pointed at or touched, so it cannot vanish\nmid-sentence, and warnings are announced to screen readers straight away.",
+    "props": [
+      {
+        "name": "message",
+        "type": "string",
+        "required": true,
+        "description": "What happened, in plain words."
+      },
+      {
+        "name": "show",
+        "type": "boolean",
+        "required": true,
+        "description": "Whether it is on screen."
+      },
+      {
+        "name": "className",
+        "type": "string",
+        "required": false,
+        "description": "Extra class names, merged with the component's own."
+      },
+      {
+        "name": "duration",
+        "type": "number",
+        "required": false,
+        "description": "How long it stays, in ms: by default it grows with the message (3.2 s to 10 s). `null` keeps it until dismissed, which is the default for `warn` (a failure is never taken away before it is read)."
+      },
+      {
+        "name": "onDismiss",
+        "type": "(() => void)",
+        "required": false,
+        "description": "Called when the time is up or the close button is pressed."
+      },
+      {
+        "name": "onUndo",
+        "type": "(() => void)",
+        "required": false,
+        "description": "Shows an Undo button; the toast stays a little longer."
+      },
+      {
+        "name": "placement",
+        "type": "\"inline\" | \"fixed\"",
+        "required": false,
+        "default": "\"fixed\"",
+        "description": "`fixed` sits at the bottom of the screen above the phone's tab bar; `inline` flows with the page (for the library page)."
+      },
+      {
+        "name": "title",
+        "type": "string",
+        "required": false,
+        "description": "A short bold line above the message, for longer notices."
+      },
+      {
+        "name": "tone",
+        "type": "ToastTone",
+        "required": false,
+        "default": "\"neutral\"",
+        "description": "`warn` is announced to screen readers at once and shows an alert icon."
+      }
+    ],
+    "inherits": []
+  },
+  "toastDuration": {
+    "kind": "function",
+    "file": "src/ui/toast.tsx",
+    "description": "How long to leave a message up: enough to read it, never less than 3.2 s, never more than 10 s.",
+    "props": [],
+    "inherits": []
+  },
+  "Tooltip": {
+    "kind": "component",
+    "file": "src/ui/floating.tsx",
+    "description": "Short label for an icon button. Shows on hover and keyboard focus; never on touch.",
+    "props": [
+      {
+        "name": "children",
+        "type": "ReactElement<unknown, string | JSXElementConstructor<any>>",
+        "required": true,
+        "description": "The one element that triggers it (usually an icon button). It must carry its own accessible name."
+      },
+      {
+        "name": "label",
+        "type": "ReactNode",
+        "required": true,
+        "description": "The tip. Keep it to a few words."
+      },
+      {
+        "name": "side",
+        "type": "Side",
+        "required": false,
+        "default": "\"top\"",
+        "description": "Which side of the trigger it opens on."
+      }
+    ],
+    "inherits": []
+  },
+  "TooltipProvider": {
+    "kind": "component",
+    "file": "src/ui/floating.tsx",
+    "description": "Wrap a region once so neighbouring tooltips open instantly after the first one.",
+    "props": [
+      {
+        "name": "children",
+        "type": "ReactNode",
+        "required": true,
+        "description": "The content."
+      }
+    ],
+    "inherits": []
+  },
+  "useDoubleTap": {
+    "kind": "hook",
+    "file": "src/ui/use-double-tap.ts",
+    "description": "Calls `onDouble` when the element is tapped twice quickly in the same place. A press that moved (a drag) is not a tap, so\ndragging a control and then letting go never counts. Spread the result onto the element.",
+    "props": [],
+    "inherits": []
+  },
+  "useDrag": {
+    "kind": "hook",
+    "file": "src/ui/use-drag.ts",
+    "description": "Pointer-capture drag over an element. `move` gets the pointer as 0 to 1 fractions of the element's box (clamped), and as a fourth\nargument the same position unclamped (so a control can stretch when pulled past its end);\n`end` fires on release with the last position and the velocity at the moment of release (use it with `project`\nto let a flick carry on). Props go on the element itself.",
+    "props": [],
+    "inherits": []
+  },
+  "useHapticsEnabled": {
+    "kind": "hook",
+    "file": "src/ui/haptics.ts",
+    "description": "The setting, for a switch: `[enabled, setEnabled]`.",
+    "props": [],
+    "inherits": []
+  },
+  "useSwipeSelect": {
+    "kind": "hook",
+    "file": "src/ui/use-swipe-select.ts",
+    "description": "Lets a row of choices be swiped: put a finger on one and slide, and the choice under it is selected as it passes (like\nan iOS segmented control). A plain tap still clicks. `itemSelector` finds the items inside the element the props go on.",
+    "props": [],
+    "inherits": []
+  },
+  "WhiteStrip": {
+    "kind": "component",
+    "file": "src/ui/color-control.tsx",
+    "description": "Warm-to-cool strip for white light. The track shows the real colour at each end of the lamp's range.",
+    "props": [
+      {
+        "name": "kelvin",
+        "type": "number",
+        "required": true,
+        "description": "The current colour temperature in Kelvin."
+      },
+      {
+        "name": "label",
+        "type": "string",
+        "required": true,
+        "description": "Names the strip for screen readers."
+      },
+      {
+        "name": "max",
+        "type": "number",
+        "required": true,
+        "description": "The coolest the lamp can go, in Kelvin (the right end)."
+      },
+      {
+        "name": "min",
+        "type": "number",
+        "required": true,
+        "description": "The warmest the lamp can go, in Kelvin (the left end)."
+      },
+      {
+        "name": "onCommit",
+        "type": "(k: number) => void",
+        "required": true,
+        "description": "Called with the chosen temperature when the finger lifts."
+      },
+      {
+        "name": "className",
+        "type": "string",
+        "required": false,
+        "description": "Extra class names, merged with the component's own."
+      }
+    ],
+    "inherits": []
+  }
+}

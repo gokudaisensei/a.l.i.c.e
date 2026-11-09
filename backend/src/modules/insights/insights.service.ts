@@ -1,9 +1,9 @@
 import { and, eq, gt } from "drizzle-orm";
-import type { Db } from "@/core/database/client";
-import { households, type HouseholdMode, insightDismissals } from "@/core/database/schema";
-import { notFound } from "@/core/errors/errors";
-import type { AppEvent } from "@/core/events/app-events";
-import type { EventBus, Unsubscribe } from "@/core/events/event-bus";
+import type { Db } from "../../core/database/client";
+import { households, type HouseholdMode, insightDismissals } from "../../core/database/schema";
+import { notFound } from "../../core/errors/errors";
+import type { AppEvent } from "../../core/events/app-events";
+import type { EventBus, Unsubscribe } from "../../core/events/event-bus";
 import type { ThingsService } from "../home-assistant/things/things.service";
 import type { ModesService } from "../household-modes/modes.service";
 import type { PresenceService } from "../households/presence.service";

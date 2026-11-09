@@ -1,9 +1,9 @@
 import { and, desc, eq, inArray, lt, or } from "drizzle-orm";
-import type { Db } from "@/core/database/client";
-import { activityEvents, activityReads, alerts, automations, users } from "@/core/database/schema";
-import type { AppEvent } from "@/core/events/app-events";
-import type { EventBus, Unsubscribe } from "@/core/events/event-bus";
-import { newId } from "@/core/ids";
+import type { Db } from "../../core/database/client";
+import { activityEvents, activityReads, alerts, automations, users } from "../../core/database/schema";
+import type { AppEvent } from "../../core/events/app-events";
+import type { EventBus, Unsubscribe } from "../../core/events/event-bus";
+import { newId } from "../../core/ids";
 import { describeDoneAction } from "../devices/describe";
 import type { Caller } from "../devices/devices.service";
 import type { ThingsService } from "../home-assistant/things/things.service";

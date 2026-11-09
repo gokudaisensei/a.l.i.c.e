@@ -1,0 +1,30 @@
+# Home Assistant config for the demo: the test config plus demo/pack.yaml (extra devices). Generated from ../configuration.yaml; keep them in step.
+homeassistant:
+  name: Alice Demo Home
+  packages:
+    demo: !include pack.yaml
+  unit_system: metric
+  time_zone: Asia/Kolkata
+
+http:
+api:
+websocket_api:
+auth:
+onboarding:
+config:
+person:
+history:
+logbook:
+sun:
+backup:
+conversation:
+input_select:
+recorder:
+  commit_interval: 1
+
+# Fake devices: lights, switches, climate, covers, sensors, etc.
+demo:
+
+# Scripts and automations are edited through Home Assistant's config API (as the UI does), so they live in files it can write.
+script: !include scripts.yaml
+automation: !include automations.yaml

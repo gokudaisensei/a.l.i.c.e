@@ -1,0 +1,45 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "nudge",
+  "type": "registry:ui",
+  "title": "Nudge",
+  "description": "Visible minus and plus beside a control you set by dragging. A gesture is never the only way to do something, and a drag is hard for some people: this is the twin that is always on screen.",
+  "dependencies": [
+    "class-variance-authority"
+  ],
+  "registryDependencies": [
+    "button",
+    "haptics",
+    "icon",
+    "utilities"
+  ],
+  "files": [
+    {
+      "path": "ui/nudge.tsx",
+      "type": "registry:ui",
+      "content": "import type { ComponentProps, ReactNode } from \"react\";\nimport { Icon } from \"./icon\";\nimport { StepButton } from \"./button\";\nimport { cn } from \"./cn\";\n\n/**\n * Visible minus and plus beside a control you set by dragging. A gesture is never the only way to do something (Apple's\n * rule for custom gestures), and a drag is hard for some people: this is the twin that is always on screen.\n */\nexport function Nudge({ label, onMinus, onPlus, minusDisabled, plusDisabled, children = \"or tap − / +\", className, ...rest }: Omit<ComponentProps<\"div\">, \"children\" | \"role\" | \"aria-label\"> & {\n  /** What is being changed, for the button names: \"Floor lamp brightness\" gives \"Lower Floor lamp brightness\". */\n  label: string;\n  /** Called by the minus button. */\n  onMinus: () => void;\n  /** Called by the plus button. */\n  onPlus: () => void;\n  /** Greys the minus button (at the lowest value). */\n  minusDisabled?: boolean;\n  /** Greys the plus button (at the highest value). */\n  plusDisabled?: boolean;\n  /** A short line between the buttons. Hidden at large text sizes, where there is no room for it. */\n  children?: ReactNode;\n}) {\n  return (\n    <div data-slot=\"nudge\" role=\"group\" aria-label={label} className={cn(\"nudge\", className)} {...rest}>\n      <StepButton haptic=\"light\" disabled={minusDisabled} onClick={onMinus} aria-label={`Lower ${label}`}><Icon n=\"minus\" /></StepButton>\n      <small>{children}</small>\n      <StepButton haptic=\"light\" disabled={plusDisabled} onClick={onPlus} aria-label={`Raise ${label}`}><Icon n=\"plus\" /></StepButton>\n    </div>\n  );\n}\n"
+    },
+    {
+      "path": "ui/nudge.css",
+      "type": "registry:style",
+      "content": "/* Nudge: visible minus and plus beside a drag control. */\n.nudge{display:flex;align-items:center;justify-content:space-between;gap:12px}\n.nudge .step-btn{width:52px;height:52px;background:var(--tile2)}\n"
+    },
+    {
+      "path": "ui/button.tsx",
+      "type": "registry:ui",
+      "content": "import type { ComponentProps } from \"react\";\nimport { cva } from \"class-variance-authority\";\nimport { cn } from \"./cn\";\nimport { Icon } from \"./icon\";\nimport { haptic as play, type Haptic } from \"./haptics\";\n\n/** Class recipe for anything that should look like a button (links, triggers). */\nexport const buttonVariants = cva(\"btn\", {\n  variants: {\n    variant: { default: \"\", primary: \"btn--p\", sage: \"btn--sage\", danger: \"btn--danger\", ghost: \"btn--ghost\" },\n    size: { sm: \"btn--sm\", md: \"\", lg: \"btn--lg\" },\n  },\n  defaultVariants: { variant: \"default\", size: \"md\" },\n});\n\nexport type ButtonVariant = NonNullable<ButtonProps[\"variant\"]>;\nexport type ButtonProps = ComponentProps<\"button\"> & {\n  /** `primary` is the one main action on a surface (dark); `sage` confirms calmly; `danger` is for things that cannot be undone; `ghost` is borderless; the default is a quiet fill. */\n  variant?: \"default\" | \"primary\" | \"sage\" | \"danger\" | \"ghost\";\n  /** `md` is 42 px tall; `lg` is 52 px (thumb-sized, for the main action on a phone); `sm` is for dense rows. */\n  size?: \"sm\" | \"md\" | \"lg\";\n  /** Shows a spinner, keeps the width, and ignores taps until it clears. */\n  loading?: boolean;\n  /** A haptic on press. Off by default: a plain tap needs none. Use `medium` for the one action that sends something out, `warning` for a danger button. */\n  haptic?: Haptic;\n};\n\n/** Pill-shaped action button. Icons and text go in as children. Ref and native props pass through. */\nexport function Button({ variant, size, className, type = \"button\", loading, children, disabled, haptic, onClick, ...rest }: ButtonProps) {\n  return (\n    <button data-slot=\"button\" data-variant={variant ?? \"default\"} data-loading={loading ? \"\" : undefined} aria-busy={loading || undefined} type={type}\n      className={cn(buttonVariants({ variant, size }), className)} disabled={disabled || loading} onClick={(e) => { if (haptic) play(haptic); onClick?.(e); }} {...rest}>\n      {loading ? <Icon n=\"refresh\" c=\"sm spin\" /> : null}{children}\n    </button>\n  );\n}\n\n/** Square, icon-only button. It has no visible text, so it must carry an accessible name. */\nexport function IconButton({ active, className, type = \"button\", haptic, onClick, ...rest }: Omit<ComponentProps<\"button\">, \"aria-label\"> & {\n  /** Names the button for screen readers. Required: there is no text to read. */\n  \"aria-label\": string;\n  /** Marks it as the current choice (a pressed look). */\n  active?: boolean;\n  /** A haptic on press. Off by default. */\n  haptic?: Haptic;\n}) {\n  return <button data-slot=\"icon-button\" data-active={active ? \"\" : undefined} type={type} className={cn(\"icon-btn\", active && \"on\", className)} onClick={(e) => { if (haptic) play(haptic); onClick?.(e); }} {...rest} />;\n}\n\n/** Round stepper button (plus or minus). Like `IconButton`, it needs an accessible name. */\nexport function StepButton({ className, type = \"button\", haptic, onClick, ...rest }: Omit<ComponentProps<\"button\">, \"aria-label\"> & {\n  /** Names the button for screen readers: \"More backups\". */\n  \"aria-label\": string;\n  /** A haptic on press. Off by default: a `Stepper` ticks for itself. */\n  haptic?: Haptic;\n}) {\n  return <button data-slot=\"step-button\" type={type} className={cn(\"step-btn\", className)} onClick={(e) => { if (haptic) play(haptic); onClick?.(e); }} {...rest} />;\n}\n"
+    },
+    {
+      "path": "ui/button.css",
+      "type": "registry:style",
+      "content": "/* Buttons: Button, IconButton, StepButton. Moved out of globals.css; contextual overrides (.hero .btn, .pg3 .dt) stay with the screens that need them. */\n.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:0 18px;border-radius:99px;font-weight:600;font-size:0.875rem;background:var(--tile2);color:var(--ink);transition:transform .12s,filter .2s;white-space:nowrap}\n@media(hover:hover){\n  .btn:hover{filter:brightness(.97)}\n}\n.btn--p{background:var(--ink);color:var(--tile)}\n.btn--sage{background:var(--sage);color:var(--on-sage)}\n.btn--sm{min-height:34px;padding:0 13px;font-size:0.8125rem}\n.btn--danger{background:var(--crit);color:var(--on-crit)}\n.btn[disabled]{opacity:.45;cursor:not-allowed}\n.icon-btn{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;color:var(--ink2);flex:none}\n@media(hover:hover){\n  .icon-btn:hover{background:var(--tile2)}\n}\n.icon-btn.on{color:var(--glow-ink)}\n.icon-btn.on .ic{fill:var(--glow)}\n.step-btn{width:42px;height:42px;border-radius:50%;background:var(--over);display:grid;place-items:center}\n.btn--ghost{background:transparent}\n.btn--lg{min-height:50px;padding:0 24px;font-size:0.9375rem}\n.btn[data-loading]{cursor:progress;opacity:1}\n.btn[data-loading][disabled]{opacity:.85}\n"
+    }
+  ],
+  "meta": {
+    "category": "Inputs",
+    "status": "new",
+    "exports": [
+      "Nudge"
+    ]
+  }
+}

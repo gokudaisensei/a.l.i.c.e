@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { createTestDb } from "@/core/database/client";
-import { users } from "@/core/database/schema";
-import { AppError } from "@/core/errors/errors";
+import { createTestDb } from "../../core/database/client";
+import { users } from "../../core/database/schema";
+import { AppError } from "../../core/errors/errors";
 import { HouseholdService } from "./household.service";
 
 let now = 1_000_000;

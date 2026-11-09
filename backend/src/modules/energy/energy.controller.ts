@@ -1,8 +1,8 @@
 import { Elysia, t } from "elysia";
-import { requirePermission, type RequestAuth } from "@/core/http/guards";
-import { sessionPlugin } from "@/core/http/session-plugin";
+import { requirePermission, type RequestAuth } from "../../core/http/guards";
+import { sessionPlugin } from "../../core/http/session-plugin";
 import type { Caller } from "../devices/devices.service";
-import type { Services } from "@/services";
+import type { Services } from "../../services";
 
 const caller = (a: RequestAuth): Caller => {
   const { session, membership } = requirePermission(a, "energy.view");

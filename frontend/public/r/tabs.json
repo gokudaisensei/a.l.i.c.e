@@ -1,0 +1,37 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "tabs",
+  "type": "registry:ui",
+  "title": "Tabs",
+  "description": "A row of pill tabs for switching between a few views of the same thing. A dark thumb slides to the chosen tab, and the row scrolls sideways when it does not fit.",
+  "dependencies": [],
+  "registryDependencies": [
+    "haptics",
+    "segmented",
+    "utilities"
+  ],
+  "files": [
+    {
+      "path": "ui/tabs.tsx",
+      "type": "registry:ui",
+      "content": "\"use client\";\nimport { useEffect, useRef, useState, type ComponentProps } from \"react\";\nimport { cn } from \"./cn\";\nimport { useIndicator } from \"./use-indicator\";\nimport { useSwipeSelect } from \"./use-swipe-select\";\nimport { haptic } from \"./haptics\";\n\nexport interface TabsProps<T extends string> extends Omit<ComponentProps<\"div\">, \"onChange\" | \"children\" | \"role\" | \"aria-label\"> {\n  value: T;\n  /** `badge` shows a small dot: something in that tab needs a look. */\n  tabs: { id: T; label: string; badge?: boolean }[];\n  onChange: (id: T) => void;\n  /** Names the tab list for screen readers. */\n  label: string;\n}\n\n/** Pill tab bar. A dark thumb slides to the chosen tab, and the bar scrolls sideways when it does not fit. */\nexport function Tabs<T extends string>({ value, tabs, onChange, label, className, style, ...rest }: TabsProps<T>) {\n  const root = useRef<HTMLDivElement>(null);\n  // Swiping across the tabs only makes sense when they all fit. When they do not, a sideways swipe scrolls the list instead.\n  const [roomy, setRoomy] = useState(true);\n  useEffect(() => {\n    const el = root.current; if (!el) return;\n    const ro = new ResizeObserver(() => setRoomy(el.scrollWidth <= el.clientWidth + 1));\n    ro.observe(el);\n    return () => ro.disconnect();\n  }, [tabs.length]);\n  const { box, ready } = useIndicator(root, \"[aria-selected=true]\", `${value}|${tabs.length}`);\n  const choose = (id: T) => { if (id !== value) haptic(\"select\"); onChange(id); };\n  const swipe = useSwipeSelect({ index: Math.max(0, tabs.findIndex((t) => t.id === value)), onIndex: (i) => choose(tabs[i].id), itemSelector: \".tab\" });\n  return (\n    <div ref={root} data-slot=\"tabs\" className={cn(\"tabs\", className)} role=\"tablist\" aria-label={label} style={{ ...style, ...(roomy ? { touchAction: \"pan-y\" } : {}) }} {...rest} {...(roomy ? swipe : {})}>\n      {box ? <span className={cn(\"tab-ind\", ready && \"ready\")} aria-hidden=\"true\" style={{ width: box.w, transform: `translateX(${box.x}px)` }} /> : null}\n      {tabs.map((t) => (\n        <button key={t.id} type=\"button\" className=\"tab\" role=\"tab\" aria-selected={value === t.id} onClick={() => choose(t.id)}>\n          {t.label}{t.badge ? <span className=\"dotb\" title=\"Needs a look\" /> : null}\n        </button>\n      ))}\n    </div>\n  );\n}\n"
+    },
+    {
+      "path": "ui/tabs.css",
+      "type": "registry:style",
+      "content": "/* Tabs. */\n.tabs{position:relative;display:flex;gap:6px;overflow-x:auto;margin-bottom:14px;padding-bottom:4px}\n.tab{position:relative;z-index:1;display:inline-flex;align-items:center;gap:8px;padding:9px 15px;border-radius:99px;font-weight:600;color:var(--ink2);white-space:nowrap;background:transparent}\n.tab[aria-selected=true]{color:var(--tile)}\n.tab-ind{position:absolute;top:0;bottom:4px;left:0;border-radius:99px;background:var(--ink);z-index:0;pointer-events:none}\n.tab-ind.ready{transition:transform .5s var(--spring),width .3s var(--ease-out)}\n@media (prefers-reduced-motion:reduce){.tab-ind.ready{transition:none}}\n.tab .dotb{width:8px;height:8px;border-radius:50%;background:var(--clay)}\n.table{width:100%;border-collapse:collapse;font-size:0.8438rem}\n.table th{font:500 0.6562rem var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);text-align:left;padding:6px 10px 8px 0}\n.table td{padding:10px 10px 10px 0;border-top:1px solid var(--line);vertical-align:middle}\n@media (max-width:700px){\n  .tabs{margin-bottom:10px}\n}\n"
+    },
+    {
+      "path": "ui/use-indicator.ts",
+      "type": "registry:ui",
+      "content": "\"use client\";\nimport { useLayoutEffect, useState, type RefObject } from \"react\";\n\n/**\n * Measures the element matching `selector` inside `root` so a single thumb can slide under the active item.\n * Re-measures when `dep` changes and whenever the root or its children resize. `ready` turns true one frame\n * after the first measurement, so the thumb appears in place instead of sliding in from the left.\n */\nexport function useIndicator(root: RefObject<HTMLElement | null>, selector: string, dep: unknown, childSelector = \"button\") {\n  const [box, setBox] = useState<{ x: number; w: number } | null>(null);\n  const [ready, setReady] = useState(false);\n  useLayoutEffect(() => {\n    const el = root.current;\n    if (!el) return;\n    const measure = () => {\n      const on = el.querySelector<HTMLElement>(selector);\n      if (on) setBox((b) => (b && b.x === on.offsetLeft && b.w === on.offsetWidth ? b : { x: on.offsetLeft, w: on.offsetWidth }));\n    };\n    measure();\n    const ro = new ResizeObserver(measure);\n    ro.observe(el);\n    el.querySelectorAll(childSelector).forEach((c) => ro.observe(c));\n    const raf = requestAnimationFrame(() => setReady(true));\n    return () => { ro.disconnect(); cancelAnimationFrame(raf); };\n  }, [root, selector, dep, childSelector]);\n  return { box, ready };\n}\n"
+    }
+  ],
+  "meta": {
+    "category": "Navigation and layout",
+    "status": "stable",
+    "exports": [
+      "Tabs"
+    ]
+  }
+}

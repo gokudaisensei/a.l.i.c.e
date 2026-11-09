@@ -1,7 +1,7 @@
 import { Elysia } from "elysia";
-import { requirePermission } from "@/core/http/guards";
-import { sessionPlugin } from "@/core/http/session-plugin";
-import type { Services } from "@/services";
+import { requirePermission } from "../../core/http/guards";
+import { sessionPlugin } from "../../core/http/session-plugin";
+import type { Services } from "../../services";
 
 export const insightsController = ({ auth, households, insights }: Services) =>
   new Elysia({ name: "module.insights", prefix: "/insights", tags: ["insights"] })

@@ -1,4 +1,5 @@
 "use client";
+import { haptic } from "@/ui/haptics";
 import { create } from "zustand";
 import { useSyncExternalStore } from "react";
 import { savePreference } from "./admin";
@@ -74,9 +75,9 @@ export const mainClimate = () => S.devices.find((d) => d.t === "climate" && (S.r
 export const vis = () => S.devices.filter((d) => S.role !== "guest" || d.g);
 export const rname = (id: string) => ROOMS.find((r) => r.id === id)!.n;
 export const isLight = (d: Dev) => d.t === "light" || d.t === "dim";
-const ICON: Record<string, string> = { light: "bulb", dim: "bulb", plug: "plug", fan: "fan", climate: "thermo", lock: "lock", camera: "camera", contact: "door", other: "plug" };
+const ICON: Record<string, string> = { light: "bulb", dim: "bulb", plug: "plug", fan: "fan", climate: "thermo", lock: "lock", camera: "camera", contact: "door", cover: "door", other: "plug" };
 export const icn = (d: Dev) => (d.t === "lock" ? (d.locked ? "lock" : "unlock") : d.ic ?? ICON[d.t]);
-export const isOn = (d: Dev) => (d.t === "contact" ? !!d.open : d.t === "lock" || d.t === "camera" ? false : !!d.on);
+export const isOn = (d: Dev) => (d.t === "contact" || d.t === "cover" ? !!d.open : d.t === "lock" || d.t === "camera" ? false : !!d.on);
 export const watts = (d: Dev) =>
   d.t === "plug" && d.on ? d.w! : d.t === "climate" && d.on ? 850 : d.t === "fan" && d.on ? 45
   : d.t === "dim" && d.on ? Math.round(d.v! * 0.12) : d.t === "light" && d.on ? 9 : 0;
@@ -93,7 +94,6 @@ export const clock = () =>
 export const dateStr = () => new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
 export const nowT = () => new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 export const nowS = () => new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).toLowerCase();
-export const buzz = (n: number) => { try { navigator.vibrate?.(n); } catch {} };
 
 export function backupState() { return { ok: S.adm ? S.adm.backupOk : true }; }
 export const adminAttention = () => (backupState().ok ? 0 : 1) + (S.adm?.updateReady ? 1 : 0) + (S.adm?.healthWarn ? 1 : 0);
@@ -107,7 +107,7 @@ export function alerts(): Alert[] {
     const p = d.w! / d.limit!;
     if (p >= 0.9 && !S.ack["p" + d.id]) out.push({ id: "p" + d.id, t: `${d.n} is at ${Math.round(p * 100)}% of its ${d.limit!.toLocaleString()} W limit`, d: "Alice alerts you at 90%. You can raise the limit in Rooms.", ic: "bolt" });
   });
-  S.devices.filter((d) => d.t === "contact" && d.open && !S.ack["o" + d.id]).forEach((d) => out.push({ id: "o" + d.id, t: `${d.n} is open`, d: "Left open for 12 minutes.", ic: "door" }));
+  S.devices.filter((d) => (d.t === "contact" || d.t === "cover") && d.open && !S.ack["o" + d.id]).forEach((d) => out.push({ id: "o" + d.id, t: `${d.n} is open`, d: "Left open for 12 minutes.", ic: "door" }));
   return out;
 }
 /** One human line about the household, from what actually happened last. */
@@ -120,7 +120,7 @@ export function personal(): string | null {
 export interface StatusChip { ic: string; t: string; warn?: boolean; to: string | null }
 export function status() {
   const locks = S.devices.filter((d) => d.t === "lock"), un = locks.filter((l) => !l.locked);
-  const opens = S.devices.filter((d) => d.t === "contact" && d.open), al = alerts();
+  const opens = S.devices.filter((d) => (d.t === "contact" || d.t === "cover") && d.open), al = alerts();
   let line: string;
   if (un.length) line = `${un.map((l) => l.n).join(" and ")} ${un.length > 1 ? "are" : "is"} unlocked.`;
   else if (opens.length) line = `${opens[0].n} is open. Everything else is shut.`;
@@ -157,7 +157,7 @@ export function toast(msg: string, undo?: () => void, opts: { title?: string; to
 export function dismissToast() { if (S.toast.show) { S.toast.show = false; bump(); } }
 export function commit(msg: string, fn: () => void) {
   const before = structuredClone({ d: S.devices, m: S.mode, p: S.people });
-  fn(); S.sync = Date.now(); buzz(14);
+  fn(); S.sync = Date.now(); haptic("medium");
   S.activity.unshift({ ic: "sparkle", t: `<b>${me().n}</b>: ${msg}`, time: "just now" });
   S.activity.length = Math.min(S.activity.length, 10);
   bump();
@@ -225,7 +225,7 @@ export const sumPlain = () => { const { w, c, a } = sumParts(); return `When ${w
 export function setTrigger(k: string) {
   const live = isLive();
   const first = (f: (d: Dev) => boolean) => S.devices.find(f)?.id ?? null;
-  S.b.trig = { k, p: live && k === "door" ? first((d) => d.t === "contact") : live && k === "power" ? first((d) => d.t === "plug" && !!d.limit) : TDEF[k] };
+  S.b.trig = { k, p: live && k === "door" ? first((d) => d.t === "contact" || d.t === "cover") : live && k === "power" ? first((d) => d.t === "plug" && !!d.limit) : TDEF[k] };
   bump();
 }
 export function builderAdd(v: string) { const o = VERBS[v].pick()[0]; if (!o) { toast("Nothing in your home can do that yet"); return; } S.b.acts.push({ v, t: o.id, n: VERBS[v].val?.def }); bump(); }
@@ -332,16 +332,16 @@ export function runPal(i: number) { const it = S.pal?.items[i]; if (!it || it.di
 
 /* ---------- actions ---------- */
 /** Switch a device on or off and say so, with a one-tap undo. A fast second tap replaces the toast rather than stacking. */
-function flip(id: string, haptic: boolean) {
+function flip(id: string, felt: boolean) {
   const d = dev(id);
   if (isLive()) {
     const target = !d.on;
-    if (haptic) buzz(12);
+    if (felt) haptic(target ? "toggleOn" : "toggleOff");
     void sendCommand(id, target ? "turn_on" : "turn_off", undefined, (x) => { x.on = target; }, d.n, stepUpFn)
       .then((cmd) => { if (cmd) toast(`${d.n} ${target ? "on" : "off"}`, () => void undoCommand(cmd)); });
     return;
   }
-  d.on = !d.on; if (haptic) buzz(12); S.sync = Date.now(); bump();
+  d.on = !d.on; if (felt) haptic(d.on ? "toggleOn" : "toggleOff"); S.sync = Date.now(); bump();
   toast(`${d.n} ${d.on ? "on" : "off"}`, () => { d.on = !d.on; S.sync = Date.now(); bump(); toast(`${d.n} ${d.on ? "on" : "off"}`); });
 }
 export const A = {
@@ -351,17 +351,35 @@ export const A = {
   dtap: (id: string) => {
     const d = dev(id);
     if (d.t === "lock") return d.locked ? A.unlock(id) : A.lock(id);
+    if (d.t === "cover") return A.cover(id, d.mv ? "stop" : d.open ? "close" : "open");
     if (d.t === "contact" || d.t === "camera") return openSheet(d.id);
     flip(id, true);
   },
-  preset: (id: string, n: number) => { const d = dev(id); if (isLive()) { buzz(8); void sendCommand(id, "set_brightness", { brightness_pct: n }, (x) => { x.v = n; x.on = true; }, d.n, stepUpFn); return; } d.v = n; d.on = true; buzz(8); bump(); },
+  preset: (id: string, n: number) => { const d = dev(id); if (isLive()) { haptic("select"); void sendCommand(id, "set_brightness", { brightness_pct: n }, (x) => { x.v = n; x.on = true; }, d.n, stepUpFn); return; } d.v = n; d.on = true; haptic("select"); bump(); },
+  /** Drag on a tile: 0 turns the light off, anything else sets brightness. */
+  drag: (id: string, v: number) => { if (v <= 0) { if (dev(id).on) flip(id, true); } else A.slide(id, v); },
+  /** Open, close or stop a cover. */
+  cover: (id: string, op: "open" | "close" | "stop") => {
+    const d = dev(id); haptic(op === "stop" ? "select" : "medium");
+    const set = (x: Dev) => { if (op === "stop") x.mv = undefined; else { x.mv = op === "open" ? "opening" : "closing"; x.open = true; } };
+    if (isLive()) { void sendCommand(id, op, undefined, set, d.n, stepUpFn); return; }
+    d.open = op !== "close"; d.pos = op === "open" ? 100 : op === "close" ? 0 : d.pos; S.sync = Date.now(); bump(); toast(`${d.n} ${op === "stop" ? "stopped" : op === "open" ? "opened" : "closed"}`);
+  },
+  /** Set a cover to a position (0 closed – 100 open). */
+  pos: (id: string, p: number) => {
+    const d = dev(id); const set = (x: Dev) => { x.pos = p; x.open = p > 0; };
+    if (isLive()) { void sendCommand(id, "set_position", { position: p }, set, d.n, stepUpFn); return; }
+    set(d); S.sync = Date.now(); bump();
+  },
+  color: (id: string, rgb: number[]) => { const d = dev(id); const set = (x: Dev) => { x.rgb = rgb; x.cm = "color"; x.on = true; }; if (isLive()) { void sendCommand(id, "set_color", { rgb }, set, d.n, stepUpFn); return; } set(d); S.sync = Date.now(); bump(); },
+  kelvin: (id: string, k: number) => { const d = dev(id); const set = (x: Dev) => { x.k = k; x.cm = "white"; x.on = true; }; if (isLive()) { void sendCommand(id, "set_color_temperature", { kelvin: k }, set, d.n, stepUpFn); return; } set(d); S.sync = Date.now(); bump(); },
   slide: (id: string, v: number) => { const d = dev(id); if (isLive()) { void sendCommand(id, "set_brightness", { brightness_pct: v }, (x) => { x.v = v; x.on = true; }, d.n, stepUpFn); return; } d.v = v; d.on = true; S.sync = Date.now(); bump(); },
   role: (r: Role) => { S.role = r; go(S.view); },
   setTod: (t: "auto" | Tod) => { S.tod = t; bump(); },
   lock: (id: string) => { const d = dev(id); if (isLive()) { void sendCommand(id, "lock", undefined, (x) => { x.locked = true; x.by = me().n; x.at = "just now"; }, d.n, stepUpFn).then((cmd) => { if (cmd) toast(`${d.n} locked`, () => void undoCommand(cmd)); }); return; } commit(`${d.n} locked`, () => { d.locked = true; d.by = me().n; d.at = "just now"; }); },
   unlock: (id: string) => { const d = dev(id); passkey(`Unlock ${d.n}?`, "Unlocking always needs your passkey, even for admins.", () => isLive() ? (void sendCommand(id, "unlock", undefined, (x) => { x.locked = false; x.by = me().n; x.at = "just now"; }, d.n, stepUpFn).then((cmd) => { if (cmd) toast(`${d.n} unlocked`, () => void undoCommand(cmd)); })) : commit(`${d.n} unlocked`, () => { d.locked = false; d.by = me().n; d.at = "just now"; })); },
   lockall: () => { if (isLive()) { for (const d of S.devices.filter((x) => x.t === "lock" && !x.locked)) void sendCommand(d.id, "lock", undefined, (x) => { x.locked = true; x.by = me().n; x.at = "just now"; }, d.n, stepUpFn); toast("Locking every door"); return; } commit("Every door locked", lockAll); },
-  mode: (m: string) => { if (isLive() && S.mode !== m) { const prev = S.mode; S.mode = m; bump(); void import("./api").then(({ put }) => put("/household/mode", { mode: m.toLowerCase() })).then(() => toast(`Mode: ${m}`), () => { S.mode = prev; bump(); toast("Couldn't change the mode"); }); return; } if (S.mode !== m) commit(`Mode: ${m}`, () => { S.mode = m; }); },
+  mode: (m: string) => { if (isLive() && S.mode !== m) { const prev = S.mode; S.mode = m; bump(); void import("./api").then(({ ok, v1 }) => ok(v1.household.mode.put({ mode: m.toLowerCase() }))).then(() => toast(`Mode: ${m}`), () => { S.mode = prev; bump(); toast("Couldn't change the mode"); }); return; } if (S.mode !== m) commit(`Mode: ${m}`, () => { S.mode = m; }); },
   snooze: (id: string) => { if (S.insight) { void dismissInsight(S.insight.id); return; } S.snooze[id] = true; bump(); toast("Okay, Alice will not ask again for now"); },
   scene: (id: string) => { const s = SCENES.find((x) => x.id === id); if (!s) return; if (isLive()) { void runScene(s); return; } commit(`${s.n} done`, s.run); },
   flash: (id: string) => {
@@ -373,6 +391,17 @@ export const A = {
   voice: (id: string) => { if (isLive()) { void toggleVoice(id); return; } const d = dev(id); d.voice = d.voice ? 0 : 1; bump(); toast(d.voice ? `${d.n} shared with Alexa and Google` : `${d.n} no longer shared`); },
   tgt: (id: string, delta: number) => { const d = dev(id); if (isLive()) { const t = clamp(d.tgt! + delta, 16, 30); void sendCommand(id, "set_temperature", { temperature: t }, (x) => { x.tgt = t; x.on = true; }, d.n, stepUpFn); return; } d.tgt = clamp(d.tgt! + delta, 16, 30); d.on = true; bump(); },
   fan: (id: string, n: number) => { const d = dev(id); if (isLive()) { void sendCommand(id, "set_speed", { percentage: Math.min(100, n * 33) }, (x) => { x.sp = n; x.on = true; }, d.n, stepUpFn); return; } d.sp = n; d.on = true; bump(); },
+  /** Set a thermostat's target temperature directly. */
+  setTgt: (id: string, t: number) => { const d = dev(id); const set = (x: Dev) => { x.tgt = t; x.on = true; }; if (isLive()) { void sendCommand(id, "set_temperature", { temperature: t }, set, d.n, stepUpFn); return; } set(d); bump(); },
+  hvac: (id: string, mode: string) => { const d = dev(id); const set = (x: Dev) => { x.hm = mode; x.on = mode !== "off"; }; if (isLive()) { void sendCommand(id, "set_hvac_mode", { hvac_mode: mode }, set, d.n, stepUpFn); return; } set(d); bump(); },
+  /** Set a fan's speed in percent; 0 turns it off. */
+  fanPct: (id: string, p: number) => {
+    const d = dev(id); if (p <= 0) { if (d.on) flip(id, true); return; }
+    const set = (x: Dev) => { x.pct = p; x.sp = Math.min(3, Math.max(1, Math.ceil(p / 33.4))); x.on = true; };
+    if (isLive()) { void sendCommand(id, "set_speed", { percentage: p }, set, d.n, stepUpFn); return; } set(d); bump();
+  },
+  osc: (id: string, on: boolean) => { const d = dev(id); const set = (x: Dev) => { x.osc = on; }; if (isLive()) { void sendCommand(id, "set_oscillation", { oscillating: on }, set, d.n, stepUpFn); return; } set(d); bump(); },
+  fanPreset: (id: string, preset: string) => { const d = dev(id); const set = (x: Dev) => { x.fp = preset; x.on = true; }; if (isLive()) { void sendCommand(id, "set_preset_mode", { preset_mode: preset }, set, d.n, stepUpFn); return; } set(d); bump(); },
   ack: (id: string) => { if (S.alertsLive) { void ackAlert(id); return; } S.ack[id] = true; bump(); toast("Alert cleared. Alice will tell you if it happens again"); },
   seen: () => { S.activity.forEach((a) => (a.nw = false)); bump(); toast("All caught up"); if (isLive()) void markSeen(); },
   person: () => toast("Who is home follows each person's phone in Home Assistant, so it can't be changed here"),
@@ -401,7 +430,8 @@ export const dstate = (d: Dev) => {
   switch (d.t) {
     case "dim": return d.on ? d.v + "%" : "Off"; case "light": return d.on ? "On" : "Off";
     case "plug": return d.on ? d.w!.toLocaleString() + " W" : "Off"; case "climate": return d.on ? `${d.cur!.toFixed(1)}° to ${d.tgt}°` : "Off";
-    case "fan": return d.on ? "Speed " + d.sp : "Off"; case "lock": return d.locked ? "Locked" : "Unlocked";
+    case "fan": return d.on ? (d.pct !== undefined ? d.pct + "%" : "Speed " + d.sp) : "Off"; case "lock": return d.locked ? "Locked" : "Unlocked";
+    case "cover": return d.mv ? (d.mv === "opening" ? "Opening…" : "Closing…") : d.pos !== undefined && d.pos > 0 && d.pos < 100 ? `${d.pos}% open` : d.open ? "Open" : "Closed";
     case "contact": return d.open ? "Open" : "Closed"; default: return "Live";
   }
 };

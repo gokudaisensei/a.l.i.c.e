@@ -1,4 +1,4 @@
-import type { ClientSocket, ServerMessage } from "@/realtime/hub";
+import type { ClientSocket, ServerMessage } from "../realtime/hub";
 
 /** A socket that records what the hub sends, for tests. */
 export class FakeSocket implements ClientSocket {

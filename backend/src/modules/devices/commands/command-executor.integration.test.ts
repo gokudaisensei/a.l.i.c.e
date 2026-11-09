@@ -1,9 +1,9 @@
 /** Runs against the mock HA (bun run ha:up && bun run ha:bootstrap). Skipped when HA_TOKEN is not set. */
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import pino from "pino";
-import type { AppEvent } from "@/core/events/app-events";
-import { InMemoryEventBus } from "@/core/events/event-bus";
-import { ConnectionManager, HaWebSocketGateway } from "@/modules/home-assistant";
+import type { AppEvent } from "../../../core/events/app-events";
+import { InMemoryEventBus } from "../../../core/events/event-bus";
+import { ConnectionManager, HaWebSocketGateway } from "../../home-assistant";
 import { CommandExecutor } from "./command-executor";
 
 const url = process.env.HA_URL;

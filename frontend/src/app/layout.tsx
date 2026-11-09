@@ -3,6 +3,8 @@ import { Bricolage_Grotesque, Instrument_Sans, JetBrains_Mono } from "next/font/
 import { ThemeProvider } from "next-themes";
 import "@/ui/styles.css";
 import "./globals.css";
+import { TIER_SCRIPT } from "@/lib/text-tier";
+import { LENS_SCRIPT, LensDefs } from "@/components/lens";
 
 // Bricolage Grotesque, variable: weight 200–800 plus the optical-size and width axes.
 const bricolage = Bricolage_Grotesque({
@@ -28,7 +30,9 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" suppressHydrationWarning className={`${bricolage.variable} ${instrument.variable} ${jetbrains.variable}`}>
+      <head><script dangerouslySetInnerHTML={{ __html: TIER_SCRIPT }} /><script dangerouslySetInnerHTML={{ __html: LENS_SCRIPT }} /></head>
       <body>
+        <LensDefs />
         <ThemeProvider attribute="data-theme" defaultTheme="system" enableSystem disableTransitionOnChange>
           {children}
         </ThemeProvider>

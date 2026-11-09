@@ -1,7 +1,7 @@
 import { Elysia, t } from "elysia";
-import { requireMember } from "@/core/http/guards";
-import { sessionPlugin } from "@/core/http/session-plugin";
-import type { Services } from "@/services";
+import { requireMember } from "../../core/http/guards";
+import { sessionPlugin } from "../../core/http/session-plugin";
+import type { Services } from "../../services";
 
 export const aiController = ({ auth, households, assistant }: Services) =>
   new Elysia({ name: "module.ai", prefix: "/ai", tags: ["ai"] })

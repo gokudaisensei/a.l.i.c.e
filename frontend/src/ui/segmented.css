@@ -1,9 +1,9 @@
 /* Segmented control and option buttons. Moved out of globals.css; contextual overrides (.hero .btn, .pg3 .dt) stay with the screens that need them. */
 .seg{display:inline-flex;padding:3px;border-radius:99px;background:var(--tile2);gap:2px;max-width:100%}
-.seg button{padding:6px 13px;border-radius:99px;font-size:13px;font-weight:600;color:var(--ink2);white-space:nowrap}
+.seg button{padding:6px 13px;border-radius:99px;font-size:0.8125rem;font-weight:600;color:var(--ink2);white-space:nowrap}
 .seg button[aria-pressed=true]{background:var(--tile);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.14)}
 .opts{display:flex;flex-wrap:wrap;gap:8px}
-.opt{display:inline-flex;align-items:center;gap:8px;padding:9px 13px;border-radius:14px;background:var(--tile2);font-weight:600;font-size:14px;color:var(--ink2);text-align:left}
+.opt{display:inline-flex;align-items:center;gap:8px;padding:9px 13px;border-radius:14px;background:var(--tile2);font-weight:600;font-size:0.875rem;color:var(--ink2);text-align:left}
 .opt[aria-pressed=true]{background:var(--ink);color:var(--tile)}
 .opt[disabled]{opacity:.55;cursor:not-allowed;text-decoration:line-through;text-decoration-color:var(--ink3)}
 .seg{position:relative}
@@ -16,3 +16,5 @@
 }
 .seg-full{display:flex;width:100%}
 .seg-full button{flex:1;padding:12px}
+/* a finger sliding across the segments chooses them: sideways is ours, vertical still scrolls (a mouse never showed this: only a real touch cancels a pan) */
+.seg{touch-action:pan-y}

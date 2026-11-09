@@ -1,4 +1,4 @@
-import type { Role } from "@/core/database/schema";
+import type { Role } from "../../core/database/schema";
 
 export interface DevicePolicyRow {
   connectionId: string;

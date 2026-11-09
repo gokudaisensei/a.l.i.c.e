@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import { eq } from "drizzle-orm";
-import { configJobs, haConnections } from "@/core/database/schema";
-import { generateSealKeyPair } from "@/core/security/sealed";
+import { configJobs, haConnections } from "../core/database/schema";
+import { generateSealKeyPair } from "../core/security/sealed";
 import { ConfigWorker } from "./config-worker";
-import { ConfigOpError, MODE_HELPER_ENTITY, TEMPLATE_NO_ONE_HOME, validateOperation, type ConfigOperation } from "@/modules/home-assistant/config-ops";
-import { httpError } from "@/testing/fake-config-api";
-import { ADMIN_TOKEN, createWorld, homeWithHa, SEAL_KEYS, SECRETS_KEY, type World } from "@/testing/world";
-import { households } from "@/core/database/schema";
+import { ConfigOpError, MODE_HELPER_ENTITY, TEMPLATE_NO_ONE_HOME, validateOperation, type ConfigOperation } from "../modules/home-assistant/config-ops";
+import { httpError } from "../testing/fake-config-api";
+import { ADMIN_TOKEN, createWorld, homeWithHa, SEAL_KEYS, SECRETS_KEY, type World } from "../testing/world";
+import { households } from "../core/database/schema";
 import pino from "pino";
 
 const script = (over: object = {}): ConfigOperation => ({ op: "script.upsert", objectId: "alice_scene_1", config: { alias: "Alice: Movie", mode: "single", sequence: [{ service: "light.turn_on", target: { entity_id: "light.floor_lamp" }, data: { brightness_pct: 15 } }] }, ...over }) as ConfigOperation;
@@ -82,10 +82,10 @@ describe("the worker", () => {
     const stored = w.db.select().from(haConnections).get()!.adminTokenEnc!;
     expect(stored.startsWith("s1.")).toBe(true);
     expect(stored).not.toContain(ADMIN_TOKEN);
-    const { open } = await import("@/core/security/sealed");
+    const { open } = await import("../core/security/sealed");
     expect(open(stored, SEAL_KEYS.privateKey)).toBe(ADMIN_TOKEN);
     expect(() => open(stored, SEAL_KEYS.publicKey)).toThrow();
-    const { createServices } = await import("@/services");
+    const { createServices } = await import("../services");
     const noKey = createServices(w.db, { secretsKey: SECRETS_KEY, adminSealPublicKey: null, gatewayFactory: () => w.gw });
     await expect(noKey.ha.setAdminToken(householdId(), "u", ADMIN_TOKEN)).rejects.toMatchObject({ code: "not_configured" });
   });

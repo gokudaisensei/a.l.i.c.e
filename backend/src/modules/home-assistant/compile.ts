@@ -1,4 +1,4 @@
-import type { ActionSpec, RoutineStep } from "@/core/database/schema";
+import type { ActionSpec, RoutineStep } from "../../core/database/schema";
 import { resolveOperation } from "./capabilities/capability-detector";
 import { type HaAction, MODE_HELPER_ENTITY, type ScriptConfig } from "./config-ops";
 

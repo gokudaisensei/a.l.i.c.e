@@ -1,5 +1,5 @@
 "use client";
-import { Icon, Button, Pill, Select, Switch, Input, Stepper, OptionButton, Empty, Safe, PageHeader, TileHeader, ActionRow, TimeField, Segmented, resetTileOrder } from "@/ui";
+import { Icon, Button, Pill, Select, Switch, Input, Stepper, OptionButton, Empty, Safe, PageHeader, TileHeader, ActionRow, TimeField, Segmented } from "@/ui";
 import type { ReactNode } from "react";
 import {
   A, S, SCENES, useS, usePhone, useMounted, bump, sumParts, joinL, VERBS, VERBS_FOR, TRIG, setTrigger, builderAdd, builderSave, builderTest,
@@ -25,14 +25,14 @@ function Hd({ k, cls, label, text, P, st }: { k: string; cls: string; label: str
 }
 
 /** In a live home, only triggers Alice can build from real devices are offered. */
-const usable = (t: { k: string }) => !isLive() || (t.k === "motion" ? false : t.k === "power" ? S.devices.some((d) => d.t === "plug" && d.limit) : t.k === "door" ? S.devices.some((d) => d.t === "contact") : true);
+const usable = (t: { k: string }) => !isLive() || (t.k === "motion" ? false : t.k === "power" ? S.devices.some((d) => d.t === "plug" && d.limit) : t.k === "door" ? S.devices.some((d) => d.t === "contact" || d.t === "cover") : true);
 
 function TrigParam() {
   const b = S.b, k = TRIG.find((x) => x.k === b.trig.k)!, p = (b.trig.p ?? "") as string;
   const setP = (v: string) => { b.trig.p = v; bump(); };
   if (k.p === "person") return <Wrap l="Who"><Select label="Who" value={p} onChange={setP} options={[["anyone", "Anyone"], ...pairs(S.people.filter((x) => x.role !== "guest"))]} /></Wrap>;
   if (k.p === "time") return <Wrap l="Time"><TimeField label="Time" value={p} onChange={setP} /></Wrap>;
-  if (k.p === "contact") return <Wrap l="Which"><Select label="Which" value={p} onChange={setP} options={pairs(S.devices.filter((d) => d.t === "contact"))} /></Wrap>;
+  if (k.p === "contact") return <Wrap l="Which"><Select label="Which" value={p} onChange={setP} options={pairs(S.devices.filter((d) => d.t === "contact" || d.t === "cover"))} /></Wrap>;
   if (k.p === "room") return <Wrap l="Where"><Select label="Where" value={p} onChange={setP} options={pairs(ROOMS)} /></Wrap>;
   if (k.p === "plug") return <Wrap l="Which"><Select label="Which" value={p} onChange={setP} options={pairs(S.devices.filter((d) => d.t === "plug" && d.limit))} /></Wrap>;
   return null;
@@ -69,7 +69,6 @@ export function BuildView() {
   useS();
   const P = usePhone(), mounted = useMounted();
   if (!mounted) return null;
-  resetTileOrder();
   const b = S.b, c = b.conds, { w, c: cc, a } = sumParts(), st = S.bstep, kind = b.kind ?? "automation", auto = kind === "automation";
   const whenS = (
     <Acc k="when" P={P} st={st}><Hd k="when" cls="w" label="When" text={"When " + w} P={P} st={st} />

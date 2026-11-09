@@ -1,11 +1,21 @@
-export type DevType = "dim" | "light" | "plug" | "fan" | "climate" | "contact" | "lock" | "camera" | "other";
+export type DevType = "dim" | "light" | "plug" | "fan" | "climate" | "contact" | "cover" | "lock" | "camera" | "other";
 export type Role = "admin" | "member" | "guest";
+/** The backend sends the role as plain text; only the three roles Alice knows are accepted. */
+export const asRole = (r: string): Role => (r === "admin" || r === "member" || r === "guest" ? r : "guest");
 export type Tod = "morning" | "day" | "evening" | "night";
 
 export interface Dev {
   id: string; n: string; r: string; t: DevType; hw: string;
   on?: boolean; v?: number; w?: number; sp?: number; tgt?: number; cur?: number;
+  /** Covers: position 0 closed – 100 open, and whether it is moving. */
+  /** Fan: speed %, oscillation, preset and the presets on offer, speed step. */
+  pct?: number; osc?: boolean; fp?: string; fpresets?: string[]; fstep?: number;
+  /** Climate: mode, modes on offer, target range and step. */
+  hm?: string; hmodes?: string[]; tmin?: number; tmax?: number; tstep?: number;
+  pos?: number; mv?: "opening" | "closing";
   open?: boolean; locked?: boolean; limit?: number;
+  /** Lamp colour (RGB), colour temperature (K) and its range, and which of the two is showing. */
+  rgb?: number[]; k?: number; kmin?: number; kmax?: number; cm?: "color" | "white";
   /** For `other`: icon and plain-language kind ("Media player"). */
   ic?: string; kind?: string;
   /** The Home Assistant entity id behind this device (automations are written in terms of it). */

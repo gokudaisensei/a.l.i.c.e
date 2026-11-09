@@ -1,10 +1,10 @@
 "use client";
 import { create } from "zustand";
 import { startAuthentication, startRegistration, browserSupportsWebAuthn } from "@simplewebauthn/browser";
-import { ApiError, get, post } from "./api";
+import { ApiError, ok, v1 } from "./api";
 import { S, bump } from "./store";
 import { resetLoaded, stopRealtime } from "./live";
-import type { Role } from "./data";
+import { asRole, type Role } from "./data";
 
 export interface Me {
   userId: string; displayName: string; role: Role | null; steppedUp: boolean; restricted: boolean; expiresAt: number;
@@ -19,11 +19,9 @@ export type AuthState =
 export const useAuth = create<{ state: AuthState }>(() => ({ state: { status: "loading" } }));
 const set = (state: AuthState) => useAuth.setState({ state });
 
-interface SessionDto { userId: string; expiresAt: number; steppedUp: boolean; restricted: boolean; household: { id: string; role: Role } | null }
-interface SignedInDto { user: { id: string; displayName: string }; household: { id: string; role: Role } | null; expiresAt: number; recoveryCodes?: string[] }
 
-const toMe = (userId: string, displayName: string, d: { household: { role: Role } | null; steppedUp?: boolean; restricted?: boolean; expiresAt: number }): Me => ({
-  userId, displayName, role: d.household?.role ?? null, steppedUp: d.steppedUp ?? true, restricted: d.restricted ?? false, expiresAt: d.expiresAt,
+const toMe = (userId: string, displayName: string, d: { household: { role: string } | null; steppedUp?: boolean; restricted?: boolean; expiresAt: number }): Me => ({
+  userId, displayName, role: d.household ? asRole(d.household.role) : null, steppedUp: d.steppedUp ?? true, restricted: d.restricted ?? false, expiresAt: d.expiresAt,
 });
 
 function enter(me: Me) {
@@ -35,12 +33,12 @@ function enter(me: Me) {
 /** Called once at start: who is signed in, or does this install still need setting up? */
 export async function loadSession() {
   try {
-    const s = await get<SessionDto>("/auth/session");
-    const name = await get<{ displayName: string }>("/users/me").then((u) => u.displayName).catch(() => "You");
+    const s = await ok(v1.auth.session.get());
+    const name = await ok(v1.users.me.get()).then((u) => u.displayName).catch(() => "You");
     enter(toMe(s.userId, name, s));
   } catch (e) {
     if (e instanceof ApiError && e.status === 401) {
-      try { set((await get<{ needsSetup: boolean }>("/auth/setup")).needsSetup ? { status: "setup" } : { status: "anon" }); }
+      try { set((await ok(v1.auth.setup.get())).needsSetup ? { status: "setup" } : { status: "anon" }); }
       catch (e2) { set({ status: "offline", message: (e2 as Error).message }); }
     } else set({ status: "offline", message: (e as Error).message });
   }
@@ -59,9 +57,9 @@ export const passkeysSupported = () => typeof window !== "undefined" && browserS
 
 /** Creates the first home (no invitation) or joins one (with the invitation code). Returns the one-time recovery codes. */
 export async function register(displayName: string, inviteCode?: string): Promise<string[]> {
-  const o = await post<{ challengeId: string; options: Parameters<typeof startRegistration>[0]["optionsJSON"] }>("/auth/register/options", { displayName, inviteCode: inviteCode || undefined });
+  const o = await ok(v1.auth.register.options.post({ displayName, inviteCode: inviteCode || undefined }));
   const response = await startRegistration({ optionsJSON: o.options });
-  const r = await post<SignedInDto>("/auth/register/verify", { challengeId: o.challengeId, response, deviceLabel: deviceLabel() });
+  const r = await ok(v1.auth.register.verify.post({ challengeId: o.challengeId, response, deviceLabel: deviceLabel() }));
   // Hold the codes on screen before entering the app: they are shown once.
   pendingMe = toMe(r.user.id, r.user.displayName, { household: r.household, expiresAt: r.expiresAt });
   return r.recoveryCodes ?? [];
@@ -70,19 +68,19 @@ let pendingMe: Me | null = null;
 export function finishRegistration() { if (pendingMe) { enter(pendingMe); pendingMe = null; } }
 
 export async function signIn() {
-  const o = await post<{ challengeId: string; options: Parameters<typeof startAuthentication>[0]["optionsJSON"] }>("/auth/login/options");
+  const o = await ok(v1.auth.login.options.post({}));
   const response = await startAuthentication({ optionsJSON: o.options });
-  const r = await post<SignedInDto>("/auth/login/verify", { challengeId: o.challengeId, response });
+  const r = await ok(v1.auth.login.verify.post({ challengeId: o.challengeId, response }));
   enter(toMe(r.user.id, r.user.displayName, { household: r.household, expiresAt: r.expiresAt }));
 }
 
 export async function signInWithRecoveryCode(code: string) {
-  const r = await post<SignedInDto & { restricted?: boolean }>("/auth/recovery/verify", { code });
+  const r = await ok(v1.auth.recovery.verify.post({ code }));
   enter(toMe(r.user.id, r.user.displayName, { household: r.household, restricted: true, expiresAt: r.expiresAt }));
 }
 
 export async function signOut() {
-  await post("/auth/logout").catch(() => {});
+  await ok(v1.auth.logout.post({})).catch(() => {});
   stopRealtime();
   resetLoaded();
   set({ status: "anon" });
@@ -90,9 +88,9 @@ export async function signOut() {
 
 /** A fresh passkey check for sensitive actions (unlock, change settings). Resolves when the session is stepped up. */
 export async function stepUp() {
-  const o = await post<{ challengeId: string; options: Parameters<typeof startAuthentication>[0]["optionsJSON"] }>("/auth/step-up/options");
+  const o = await ok(v1.auth["step-up"].options.post({}));
   const response = await startAuthentication({ optionsJSON: o.options });
-  await post("/auth/step-up/verify", { challengeId: o.challengeId, response });
+  await ok(v1.auth["step-up"].verify.post({ challengeId: o.challengeId, response }));
   const st = useAuth.getState().state;
   if (st.status === "in") set({ status: "in", me: { ...st.me, steppedUp: true } });
 }
@@ -105,9 +103,9 @@ export async function withStepUp<T>(fn: () => Promise<T>): Promise<T> {
 
 /** Adds another passkey (this phone or laptop) to the signed-in person's account. */
 export async function addPasskey() {
-  const o = await withStepUp(() => post<{ challengeId: string; options: Parameters<typeof startRegistration>[0]["optionsJSON"] }>("/auth/passkeys/options"));
+  const o = await withStepUp(() => ok(v1.auth.passkeys.options.post({})));
   const response = await startRegistration({ optionsJSON: o.options });
-  await post("/auth/passkeys/verify", { challengeId: o.challengeId, response, deviceLabel: deviceLabel() });
+  await ok(v1.auth.passkeys.verify.post({ challengeId: o.challengeId, response, deviceLabel: deviceLabel() }));
 }
 
 

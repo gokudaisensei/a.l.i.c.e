@@ -1,59 +1,25 @@
 "use client";
-import { Icon, Button, IconButton, StepButton, Bar, Segmented, Modal, BottomSheet, Toast, ConfirmDialog, Field, Input, Notice } from "@/ui";
+import { Icon, Button, IconButton, Modal, BottomSheet, Toast, ConfirmDialog, Field, Input, Notice, haptic } from "@/ui";
 import { renameDevice, setHidden } from "@/lib/live";
-import { DevSlider } from "./device-controls";
+import { sheetFor } from "./device-controls";
 import { useRef, useState } from "react";
-import { Cam } from "./rooms";
 import { A, S, useS, usePhone, dev, isOn, icn, rname, closeOv, pkRun, palQuery, runPal, bump, dismissToast } from "@/lib/store";
 import type { Dev } from "@/lib/data";
 
-const CAN = ["dim", "light", "plug", "fan", "climate"];
-
 function DeviceSheet({ d }: { d: Dev }) {
-  const can = CAN.includes(d.t);
-  let b: React.ReactNode;
-  if (d.t === "dim") b = <>
-    <div className="sbig"><span>{d.on ? d.v : 0}%</span></div>
-    {d.on ? null : <small>Off · last at {d.v}%</small>}
-    <DevSlider d={d} size="xl" />
-    <div className="presets">{[25, 50, 75, 100].map((n) => <button key={n} className="btn" onClick={() => A.preset(d.id, n)}>{n}%</button>)}</div>
-  </>;
-  else if (d.t === "plug") b = <>
-    <div className="sbig">{d.on ? d.w!.toLocaleString() : 0}<small>W now</small></div>
-    {d.limit ? <><Bar percent={Math.min(100, Math.round((d.w! / d.limit) * 100))} warn={d.w! / d.limit >= 0.9} /><small>Alice alerts you at 90% of {d.limit.toLocaleString()} W</small></> : null}
-  </>;
-  else if (d.t === "fan") b = (
-    <Segmented className="seg-full" value={d.on ? d.sp! : 0} label="Fan speed" items={[[1, "Speed 1"], [2, "Speed 2"], [3, "Speed 3"]]} onChange={(n) => A.fan(d.id, n)} />
-  );
-  else if (d.t === "climate") b = <>
-    <div className="temp"><div className="sbig">{d.cur!.toFixed(1)}°<small>now</small></div></div>
-    <div className="temp">
-      <StepButton style={{ width: 56, height: 56, background: "var(--tile2)" }} onClick={() => A.tgt(d.id, -1)} aria-label="Lower target"><Icon n="minus" /></StepButton>
-      <div style={{ textAlign: "center" }}><b className="num" style={{ fontSize: 30 }}>{d.tgt}°</b><div className="small">target</div></div>
-      <StepButton style={{ width: 56, height: 56, background: "var(--tile2)" }} onClick={() => A.tgt(d.id, 1)} aria-label="Raise target"><Icon n="plus" /></StepButton>
-    </div>
-  </>;
-  else if (d.t === "lock") b = <>
-    <div className="sbig" style={{ fontSize: "2.6rem" }}>{d.locked ? "Locked" : "Unlocked"}</div>
-    <small>by {d.by || "someone"}, {d.at || ""}</small>
-    <button className={`btn ${d.locked ? "btn--p" : "btn--sage"} sbtn`} onClick={() => (d.locked ? A.unlock(d.id) : A.lock(d.id))}><Icon n={d.locked ? "unlock" : "lock"} />{d.locked ? "Unlock with passkey" : "Lock"}</button>
-  </>;
-  else if (d.t === "contact") b = <>
-    <span className={`pill ${d.open ? "warn" : "ok"}`} style={{ alignSelf: "flex-start" }}><Icon n={d.open ? "alert" : "check"} c="sm" />{d.open ? "Open" : "Closed"}</span>
-    <small>Changed 2 hours ago. Alice tells you if it stays open.</small>
-  </>;
-  else if (d.t === "camera") b = <Cam d={d} />;
-  else b = <small>{d.on ? "On" : "Off"}</small>;
+  const entry = sheetFor(d);
+  const Body = entry.body;
+  const can = entry.power;
   return (
     <>
       <div className="th">
         <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
           <span className="dico" style={isOn(d) ? { background: "var(--glow-soft)", color: "var(--glow-ink)" } : undefined}><Icon n={icn(d)} /></span>
-          <div><h3 className="tt" style={{ fontSize: 22 }}>{d.n}</h3><small>{rname(d.r)} · {d.hw}</small></div>
+          <div><h3 className="tt" style={{ fontSize: "1.375rem" }}>{d.n}</h3><small>{rname(d.r)} · {d.hw}</small></div>
         </div>
         <IconButton onClick={closeOv} aria-label="Close"><Icon n="x" /></IconButton>
       </div>
-      {b}
+      <Body d={d} />
       {can ? <button className={`btn ${d.on ? "" : "btn--p"} sbtn`} onClick={() => A.tog(d.id)}><Icon n="bolt" c="sm" />{d.on ? "Turn off" : "Turn on"}</button> : null}
       <div className="sfoot">
         <Button onClick={() => A.fav(d.id)} aria-pressed={!!d.fav}><Icon n="star" c="sm" />{d.fav ? "In favourites" : "Add to favourites"}</Button>
@@ -79,7 +45,7 @@ function Palette({ p, open }: { p: NonNullable<typeof S.pal>; open: boolean }) {
       <div className="pal-list">
         {p.q ? null : <div className="eyebrow pal-h">Try saying</div>}
         {p.items.map((it, i) => (
-          <button key={i} className="pal-i" aria-current={i === p.sel} disabled={it.dis} onClick={() => runPal(i)} onMouseMove={() => { if (p.sel !== i) { p.sel = i; bump(); } }}>
+          <button key={i} className="pal-i" aria-current={i === p.sel} disabled={it.dis} onClick={() => { haptic("select"); runPal(i); }} onMouseMove={() => { if (p.sel !== i) { p.sel = i; bump(); } }}>
             <Icon n={it.ic} /><div className="grow"><b>{it.l}</b><small>{it.s || ""}</small></div>{it.k && i === p.sel ? <kbd>{it.k}</kbd> : null}
           </button>
         ))}

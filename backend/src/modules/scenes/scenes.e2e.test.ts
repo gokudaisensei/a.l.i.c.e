@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { auditLog } from "@/core/database/schema";
-import { changeState, createWorld, homeWithHa, type World } from "@/testing/world";
-import type { Browser } from "@/testing/http";
+import { auditLog } from "../../core/database/schema";
+import { changeState, createWorld, homeWithHa, type World } from "../../testing/world";
+import type { Browser } from "../../testing/http";
 
 let w: World;
 let h: Awaited<ReturnType<typeof homeWithHa>>;

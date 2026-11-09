@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { createWorld, homeWithHa, MIN, type World } from "@/testing/world";
+import { createWorld, homeWithHa, MIN, type World } from "../../testing/world";
 
 let w: World;
 let h: Awaited<ReturnType<typeof homeWithHa>>;
@@ -208,7 +208,7 @@ describe("Home Assistant safety backup", () => {
   });
   test("if Home Assistant's backup fails, nothing is changed", async () => {
     await ready();
-    const { httpError } = await import("@/testing/fake-config-api");
+    const { httpError } = await import("../../testing/fake-config-api");
     w.configApi.failWith = httpError(500);
     await h.admin.call("POST", "/updates/install");
     await w.sync(); await w.sync(); await w.sync(); await w.sync();

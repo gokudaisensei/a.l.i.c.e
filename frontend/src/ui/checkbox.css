@@ -5,5 +5,6 @@
 .cbx-i{display:grid;place-items:center;scale:.4;opacity:0;transition:scale .35s var(--spring),opacity .12s}
 .cbx[data-checked] .cbx-i,.cbx[data-indeterminate] .cbx-i{scale:1;opacity:1}
 .cbx[data-disabled]{opacity:.5;cursor:not-allowed}
-.cbx-row{display:inline-flex;align-items:center;gap:10px;min-height:44px;font-weight:600;cursor:pointer}
+.cbx-row{display:inline-flex;align-items:center;gap:10px;min-height:44px;font-weight:600;cursor:pointer;max-width:100%;min-width:0}
+.cbx-row>span:not(.cbx){min-width:0;overflow-wrap:anywhere}
 @media (prefers-reduced-motion:reduce){.cbx-i{transition:none}}

@@ -1,6 +1,6 @@
 import { and, asc, eq } from "drizzle-orm";
-import type { Db } from "@/core/database/client";
-import { favorites } from "@/core/database/schema";
+import type { Db } from "../../core/database/client";
+import { favorites } from "../../core/database/schema";
 import type { Thing } from "../home-assistant/things/types";
 import type { ThingsService } from "../home-assistant/things/things.service";
 

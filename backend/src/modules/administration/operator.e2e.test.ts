@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { createWorld, homeWithHa, MIN, type World } from "@/testing/world";
+import { createWorld, homeWithHa, MIN, type World } from "../../testing/world";
 
 let w: World;
 let h: Awaited<ReturnType<typeof homeWithHa>>;

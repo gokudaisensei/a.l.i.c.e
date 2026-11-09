@@ -1,7 +1,7 @@
 import { Elysia, t } from "elysia";
-import { requirePermission, requireStepUp } from "@/core/http/guards";
-import { sessionPlugin } from "@/core/http/session-plugin";
-import type { Services } from "@/services";
+import { requirePermission, requireStepUp } from "../../core/http/guards";
+import { sessionPlugin } from "../../core/http/session-plugin";
+import type { Services } from "../../services";
 
 export const administrationController = ({ auth, households, configJobs, sync, admin, support }: Services) =>
   new Elysia({ name: "module.administration", prefix: "/admin", tags: ["administration"] })

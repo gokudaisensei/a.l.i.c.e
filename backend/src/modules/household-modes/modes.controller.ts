@@ -1,7 +1,7 @@
 import { Elysia, t } from "elysia";
-import { requireMember, requirePermission } from "@/core/http/guards";
-import { sessionPlugin } from "@/core/http/session-plugin";
-import type { Services } from "@/services";
+import { requireMember, requirePermission } from "../../core/http/guards";
+import { sessionPlugin } from "../../core/http/session-plugin";
+import type { Services } from "../../services";
 
 export const householdModesController = ({ auth, households, modes, modeMirror, insights }: Services) =>
   new Elysia({ name: "module.household-modes", prefix: "/household/mode", tags: ["household-modes"] })

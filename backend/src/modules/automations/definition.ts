@@ -1,5 +1,5 @@
-import { HOUSEHOLD_MODES, type HouseholdMode } from "@/core/database/schema";
-import { AppError } from "@/core/errors/errors";
+import { HOUSEHOLD_MODES, type HouseholdMode } from "../../core/database/schema";
+import { AppError } from "../../core/errors/errors";
 
 /**
  * Alice's own automation format (versioned). It is what people edit and what the app shows; it is compiled into a

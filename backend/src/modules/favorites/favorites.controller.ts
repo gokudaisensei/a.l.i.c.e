@@ -1,7 +1,7 @@
 import { Elysia, t } from "elysia";
-import { requirePermission } from "@/core/http/guards";
-import { sessionPlugin } from "@/core/http/session-plugin";
-import type { Services } from "@/services";
+import { requirePermission } from "../../core/http/guards";
+import { sessionPlugin } from "../../core/http/session-plugin";
+import type { Services } from "../../services";
 
 export const favoritesController = ({ auth, households, devices }: Services) =>
   new Elysia({ name: "module.favorites", prefix: "/favorites", tags: ["favorites"] })

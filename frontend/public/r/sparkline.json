@@ -1,0 +1,30 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "sparkline",
+  "type": "registry:ui",
+  "title": "Sparkline",
+  "description": "A small smooth area chart for a trend, such as power use through the day, with a dot at the latest value.",
+  "dependencies": [],
+  "registryDependencies": [
+    "utilities"
+  ],
+  "files": [
+    {
+      "path": "ui/chart.tsx",
+      "type": "registry:ui",
+      "content": "import { useId, type ComponentProps } from \"react\";\nimport { cn } from \"./cn\";\n\n/** Smooth area sparkline with an end-point dot. Draws in the sage colour; the label is what a screen reader says. */\nexport function Sparkline({ values, width = 240, height = 56, label = \"Trend\", className, ...rest }: Omit<ComponentProps<\"svg\">, \"viewBox\" | \"children\" | \"values\"> & {\n  /** The series, oldest first. Needs at least two values. */\n  values: number[];\n  /** Width of the drawing area in its own units; the SVG scales to its container. */\n  width?: number;\n  /** Height of the drawing area in its own units. */\n  height?: number;\n  label?: string;\n}) {\n  const gid = useId();\n  const max = Math.max(...values, 1), n = values.length;\n  const pts = values.map((v, i) => [(i / (n - 1)) * width, height - 6 - (v / max) * (height - 14)]);\n  let d = `M${pts[0][0]},${pts[0][1]}`;\n  for (let i = 1; i < n; i++) { const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], cx = (x0 + x1) / 2; d += ` C${cx},${y0} ${cx},${y1} ${x1},${y1}`; }\n  const last = pts[n - 1];\n  return (\n    <svg data-slot=\"sparkline\" className={cn(\"spark\", className)} viewBox={`0 0 ${width} ${height}`} role=\"img\" aria-label={label} {...rest}>\n      <defs><linearGradient id={gid} x1=\"0\" x2=\"0\" y1=\"0\" y2=\"1\"><stop offset=\"0\" stopColor=\"var(--sage)\" stopOpacity=\".35\" /><stop offset=\"1\" stopColor=\"var(--sage)\" stopOpacity=\"0\" /></linearGradient></defs>\n      <line x1=\"0\" x2={width} y1={height - 1} y2={height - 1} stroke=\"var(--line)\" />\n      <path d={`${d} L${width},${height} L0,${height}Z`} fill={`url(#${gid})`} />\n      <path d={d} fill=\"none\" stroke=\"var(--sage)\" strokeWidth=\"2.2\" strokeLinecap=\"round\" />\n      <circle cx={last[0] - 4} cy={last[1]} r=\"4.5\" fill=\"var(--tile)\" stroke=\"var(--sage)\" strokeWidth=\"2.5\" />\n    </svg>\n  );\n}\n"
+    },
+    {
+      "path": "ui/chart.css",
+      "type": "registry:style",
+      "content": "/* Sparkline. Moved out of globals.css; contextual overrides (.hero .btn, .pg3 .dt) stay with the screens that need them. */\n.spark{width:100%;height:auto;display:block;overflow:visible}\n"
+    }
+  ],
+  "meta": {
+    "category": "Display",
+    "status": "stable",
+    "exports": [
+      "Sparkline"
+    ]
+  }
+}

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import { AppError } from "@/core/errors/errors";
-import { createTestDb } from "@/core/database/client";
-import { rateLimits } from "@/core/database/schema";
+import { AppError } from "../errors/errors";
+import { createTestDb } from "../database/client";
+import { rateLimits } from "../database/schema";
 import { clientIp, enforce, RateLimiter, SqliteBucketStore } from "./rate-limit";
 
 describe("RateLimiter", () => {

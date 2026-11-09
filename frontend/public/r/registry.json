@@ -1,0 +1,1173 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "alice-ui",
+  "homepage": "/library",
+  "items": [
+    {
+      "name": "button",
+      "type": "registry:ui",
+      "title": "Button",
+      "description": "Pill-shaped buttons for actions, with a square icon button and a round stepper button for the cases where there is no room for text.",
+      "dependencies": [
+        "class-variance-authority"
+      ],
+      "registryDependencies": [
+        "haptics",
+        "icon",
+        "utilities"
+      ],
+      "meta": {
+        "category": "Actions",
+        "status": "stable",
+        "exports": [
+          "Button",
+          "IconButton",
+          "StepButton",
+          "buttonVariants"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/button.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/button.css",
+          "type": "registry:style"
+        }
+      ]
+    },
+    {
+      "name": "checkbox",
+      "type": "registry:ui",
+      "title": "Checkbox",
+      "description": "A tick box for choosing any number of options. With a label it becomes a full-width tappable row.",
+      "dependencies": [
+        "@base-ui/react"
+      ],
+      "registryDependencies": [
+        "haptics",
+        "icon",
+        "utilities"
+      ],
+      "meta": {
+        "category": "Inputs",
+        "status": "stable",
+        "exports": [
+          "Checkbox"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/checkbox.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/checkbox.css",
+          "type": "registry:style"
+        }
+      ]
+    },
+    {
+      "name": "nudge",
+      "type": "registry:ui",
+      "title": "Nudge",
+      "description": "Visible minus and plus beside a control you set by dragging. A gesture is never the only way to do something, and a drag is hard for some people: this is the twin that is always on screen.",
+      "dependencies": [
+        "class-variance-authority"
+      ],
+      "registryDependencies": [
+        "button",
+        "haptics",
+        "icon",
+        "utilities"
+      ],
+      "meta": {
+        "category": "Inputs",
+        "status": "new",
+        "exports": [
+          "Nudge"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/nudge.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/nudge.css",
+          "type": "registry:style"
+        },
+        {
+          "path": "ui/button.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/button.css",
+          "type": "registry:style"
+        }
+      ]
+    },
+    {
+      "name": "segmented",
+      "type": "registry:ui",
+      "title": "Segmented",
+      "description": "A choice of exactly one among a few options, with a thumb that slides between them. OptionGroup is its cousin for options that can be combined.",
+      "dependencies": [],
+      "registryDependencies": [
+        "haptics",
+        "utilities"
+      ],
+      "meta": {
+        "category": "Inputs",
+        "status": "stable",
+        "exports": [
+          "Segmented",
+          "OptionGroup",
+          "OptionButton"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/segmented.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/segmented.css",
+          "type": "registry:style"
+        },
+        {
+          "path": "ui/use-indicator.ts",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "select",
+      "type": "registry:ui",
+      "title": "Select",
+      "description": "A drop-down list for one choice among many. A real popup rather than the browser's native one, so it matches the interface and works the same everywhere.",
+      "dependencies": [
+        "@base-ui/react"
+      ],
+      "registryDependencies": [
+        "haptics",
+        "icon",
+        "utilities"
+      ],
+      "meta": {
+        "category": "Inputs",
+        "status": "stable",
+        "exports": [
+          "Select"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/select.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/fields.css",
+          "type": "registry:style"
+        },
+        {
+          "path": "ui/floating.css",
+          "type": "registry:style"
+        }
+      ]
+    },
+    {
+      "name": "slider",
+      "type": "registry:ui",
+      "title": "Slider",
+      "description": "A filled bar for a value along a range, like brightness. The fill glides when the value jumps, and the thumb lifts while it is held.",
+      "dependencies": [
+        "@base-ui/react"
+      ],
+      "registryDependencies": [
+        "haptics",
+        "utilities"
+      ],
+      "meta": {
+        "category": "Inputs",
+        "status": "stable",
+        "exports": [
+          "Slider"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/slider.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/slider.css",
+          "type": "registry:style"
+        }
+      ]
+    },
+    {
+      "name": "stepper",
+      "type": "registry:ui",
+      "title": "Stepper",
+      "description": "A number you nudge up and down with round buttons, held between a minimum and a maximum. For small counts, not free typing.",
+      "dependencies": [
+        "class-variance-authority"
+      ],
+      "registryDependencies": [
+        "button",
+        "haptics",
+        "icon",
+        "utilities"
+      ],
+      "meta": {
+        "category": "Inputs",
+        "status": "stable",
+        "exports": [
+          "Stepper"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/stepper.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/stepper.css",
+          "type": "registry:style"
+        },
+        {
+          "path": "ui/button.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/button.css",
+          "type": "registry:style"
+        }
+      ]
+    },
+    {
+      "name": "switch",
+      "type": "registry:ui",
+      "title": "Switch",
+      "description": "An on or off setting that takes effect at once. Use it in lists and settings; on a tile, the whole tile is the toggle.",
+      "dependencies": [
+        "@base-ui/react"
+      ],
+      "registryDependencies": [
+        "haptics",
+        "utilities"
+      ],
+      "meta": {
+        "category": "Inputs",
+        "status": "stable",
+        "exports": [
+          "Switch"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/switch.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/switch.css",
+          "type": "registry:style"
+        }
+      ]
+    },
+    {
+      "name": "text-input",
+      "type": "registry:ui",
+      "title": "Text input",
+      "description": "Single and multi-line text fields, and the Field that gives one a label. Native inputs with the app's look: every attribute works.",
+      "dependencies": [],
+      "registryDependencies": [
+        "utilities"
+      ],
+      "meta": {
+        "category": "Inputs",
+        "status": "stable",
+        "exports": [
+          "Input",
+          "Textarea",
+          "Field",
+          "FieldRow"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/fields.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/fields.css",
+          "type": "registry:style"
+        }
+      ]
+    },
+    {
+      "name": "time-field",
+      "type": "registry:ui",
+      "title": "Time field",
+      "description": "A time of day in 24-hour form. It uses the device's own time picker, so on a phone it is the native one people already know.",
+      "dependencies": [],
+      "registryDependencies": [
+        "utilities"
+      ],
+      "meta": {
+        "category": "Inputs",
+        "status": "stable",
+        "exports": [
+          "TimeField"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/time-field.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/fields.css",
+          "type": "registry:style"
+        }
+      ]
+    },
+    {
+      "name": "avatar",
+      "type": "registry:ui",
+      "title": "Avatar",
+      "description": "A round initial for a person, and a square holder for an icon at the start of a row.",
+      "dependencies": [],
+      "registryDependencies": [
+        "icon",
+        "utilities"
+      ],
+      "meta": {
+        "category": "Display",
+        "status": "stable",
+        "exports": [
+          "Avatar",
+          "IconTile"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/avatar.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/avatar.css",
+          "type": "registry:style"
+        }
+      ]
+    },
+    {
+      "name": "badge",
+      "type": "registry:ui",
+      "title": "Badge",
+      "description": "Small labels: Pill for a status, Chip for a fact on the hero, FilterChip for a filter with a count, and Eyebrow for the small caps line above a title.",
+      "dependencies": [],
+      "registryDependencies": [
+        "haptics",
+        "icon",
+        "utilities"
+      ],
+      "meta": {
+        "category": "Display",
+        "status": "stable",
+        "exports": [
+          "Pill",
+          "Chip",
+          "FilterChip",
+          "Eyebrow"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/badge.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/badge.css",
+          "type": "registry:style"
+        }
+      ]
+    },
+    {
+      "name": "empty",
+      "type": "registry:ui",
+      "title": "Empty",
+      "description": "What to show when there is nothing yet. It is temporary: say what to do next.",
+      "dependencies": [],
+      "registryDependencies": [
+        "utilities"
+      ],
+      "meta": {
+        "category": "Display",
+        "status": "stable",
+        "exports": [
+          "Empty"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/empty.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/empty.css",
+          "type": "registry:style"
+        }
+      ]
+    },
+    {
+      "name": "lists",
+      "type": "registry:ui",
+      "title": "Lists",
+      "description": "Three small list patterns: KeyValue for facts, Steps for a job with stages, and Safe for a checklist of reassurances.",
+      "dependencies": [],
+      "registryDependencies": [
+        "icon",
+        "utilities"
+      ],
+      "meta": {
+        "category": "Display",
+        "status": "stable",
+        "exports": [
+          "KeyValue",
+          "Steps",
+          "Safe"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/lists.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/lists.css",
+          "type": "registry:style"
+        }
+      ]
+    },
+    {
+      "name": "progress",
+      "type": "registry:ui",
+      "title": "Progress",
+      "description": "A bar that shows how far along something is, or how close a reading is to its limit. The fill glides to a new value.",
+      "dependencies": [
+        "@base-ui/react"
+      ],
+      "registryDependencies": [
+        "utilities"
+      ],
+      "meta": {
+        "category": "Display",
+        "status": "stable",
+        "exports": [
+          "Progress",
+          "Bar"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/progress.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/progress.css",
+          "type": "registry:style"
+        }
+      ]
+    },
+    {
+      "name": "sparkline",
+      "type": "registry:ui",
+      "title": "Sparkline",
+      "description": "A small smooth area chart for a trend, such as power use through the day, with a dot at the latest value.",
+      "dependencies": [],
+      "registryDependencies": [
+        "utilities"
+      ],
+      "meta": {
+        "category": "Display",
+        "status": "stable",
+        "exports": [
+          "Sparkline"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/chart.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/chart.css",
+          "type": "registry:style"
+        }
+      ]
+    },
+    {
+      "name": "table",
+      "type": "registry:ui",
+      "title": "Table",
+      "description": "A simple table that scrolls sideways when the screen is narrow, instead of squeezing its columns.",
+      "dependencies": [],
+      "registryDependencies": [
+        "utilities"
+      ],
+      "meta": {
+        "category": "Display",
+        "status": "stable",
+        "exports": [
+          "Table"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/table.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/table.css",
+          "type": "registry:style"
+        }
+      ]
+    },
+    {
+      "name": "loading",
+      "type": "registry:ui",
+      "title": "Loading",
+      "description": "A calm waiting state: a softly breathing mark and a short line. Use it instead of a bare “Loading…”.",
+      "dependencies": [],
+      "registryDependencies": [
+        "utilities"
+      ],
+      "meta": {
+        "category": "Feedback",
+        "status": "stable",
+        "exports": [
+          "Loading"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/loading.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/loading.css",
+          "type": "registry:style"
+        }
+      ]
+    },
+    {
+      "name": "notice",
+      "type": "registry:ui",
+      "title": "Notice",
+      "description": "An inline message that stays on the page: something to know, something that worked, or something to fix.",
+      "dependencies": [],
+      "registryDependencies": [
+        "badge",
+        "icon",
+        "utilities"
+      ],
+      "meta": {
+        "category": "Feedback",
+        "status": "stable",
+        "exports": [
+          "Notice"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/notice.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/notice.css",
+          "type": "registry:style"
+        }
+      ]
+    },
+    {
+      "name": "toast",
+      "type": "registry:ui",
+      "title": "Toast",
+      "description": "A short notice at the bottom of the screen: what just happened, with Undo when it can be undone. Long messages wrap, and it never vanishes mid-sentence.",
+      "dependencies": [],
+      "registryDependencies": [
+        "button",
+        "color-controls",
+        "haptics",
+        "icon",
+        "utilities"
+      ],
+      "meta": {
+        "category": "Feedback",
+        "status": "stable",
+        "exports": [
+          "Toast",
+          "toastDuration"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/toast.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/toast.css",
+          "type": "registry:style"
+        }
+      ]
+    },
+    {
+      "name": "bottom-sheet",
+      "type": "registry:ui",
+      "title": "Bottom sheet",
+      "description": "A sheet that rises from the bottom edge, where a thumb reaches. Drag it down or flick to dismiss. Used for a device's full controls.",
+      "dependencies": [
+        "@base-ui/react"
+      ],
+      "registryDependencies": [
+        "button",
+        "haptics",
+        "icon",
+        "utilities"
+      ],
+      "meta": {
+        "category": "Overlays",
+        "status": "stable",
+        "exports": [
+          "BottomSheet"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/overlay.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/overlay.css",
+          "type": "registry:style"
+        },
+        {
+          "path": "ui/glass.css",
+          "type": "registry:style"
+        }
+      ]
+    },
+    {
+      "name": "modal",
+      "type": "registry:ui",
+      "title": "Modal",
+      "description": "A dialog that holds focus until it is dismissed, and ConfirmDialog, the passkey confirmation built on it. Use sparingly: most things can be undone instead.",
+      "dependencies": [
+        "@base-ui/react"
+      ],
+      "registryDependencies": [
+        "button",
+        "haptics",
+        "icon",
+        "utilities"
+      ],
+      "meta": {
+        "category": "Overlays",
+        "status": "stable",
+        "exports": [
+          "Modal",
+          "ConfirmDialog"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/overlay.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/overlay.css",
+          "type": "registry:style"
+        },
+        {
+          "path": "ui/glass.css",
+          "type": "registry:style"
+        }
+      ]
+    },
+    {
+      "name": "popover",
+      "type": "registry:ui",
+      "title": "Popover",
+      "description": "A small panel anchored to the control that opened it, for a little more than a tooltip can hold: a short explanation, or one or two actions.",
+      "dependencies": [
+        "@base-ui/react"
+      ],
+      "registryDependencies": [],
+      "meta": {
+        "category": "Overlays",
+        "status": "stable",
+        "exports": [
+          "Popover",
+          "PopoverClose"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/floating.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/floating.css",
+          "type": "registry:style"
+        }
+      ]
+    },
+    {
+      "name": "tooltip",
+      "type": "registry:ui",
+      "title": "Tooltip",
+      "description": "A short label for an icon button, shown on hover and keyboard focus. Never shown on touch, so it can only repeat what the control already says.",
+      "dependencies": [
+        "@base-ui/react"
+      ],
+      "registryDependencies": [],
+      "meta": {
+        "category": "Overlays",
+        "status": "stable",
+        "exports": [
+          "Tooltip",
+          "TooltipProvider"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/floating.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/floating.css",
+          "type": "registry:style"
+        }
+      ]
+    },
+    {
+      "name": "page-header",
+      "type": "registry:ui",
+      "title": "Page header",
+      "description": "The title of a page: the one h1, with an optional line under it.",
+      "dependencies": [],
+      "registryDependencies": [
+        "utilities"
+      ],
+      "meta": {
+        "category": "Navigation and layout",
+        "status": "stable",
+        "exports": [
+          "PageHeader"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/page-header.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/page-header.css",
+          "type": "registry:style"
+        }
+      ]
+    },
+    {
+      "name": "tabs",
+      "type": "registry:ui",
+      "title": "Tabs",
+      "description": "A row of pill tabs for switching between a few views of the same thing. A dark thumb slides to the chosen tab, and the row scrolls sideways when it does not fit.",
+      "dependencies": [],
+      "registryDependencies": [
+        "haptics",
+        "segmented",
+        "utilities"
+      ],
+      "meta": {
+        "category": "Navigation and layout",
+        "status": "stable",
+        "exports": [
+          "Tabs"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/tabs.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/tabs.css",
+          "type": "registry:style"
+        },
+        {
+          "path": "ui/use-indicator.ts",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "tile",
+      "type": "registry:ui",
+      "title": "Tile",
+      "description": "A card on the home grid, sized in columns and rows and tinted by tone. On a phone, inside an AccordionContext, tiles collapse to a header.",
+      "dependencies": [],
+      "registryDependencies": [
+        "haptics",
+        "icon",
+        "utilities"
+      ],
+      "meta": {
+        "category": "Navigation and layout",
+        "status": "stable",
+        "exports": [
+          "Tile",
+          "TileHeader",
+          "Grid",
+          "AccordionContext"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/tile.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/tile.css",
+          "type": "registry:style"
+        }
+      ]
+    },
+    {
+      "name": "action-row",
+      "type": "registry:ui",
+      "title": "Action row",
+      "description": "One step in a list of things to do: a verb followed by the controls that finish it, with a remove button. The automation, scene and routine builders are made of these.",
+      "dependencies": [
+        "@base-ui/react"
+      ],
+      "registryDependencies": [
+        "button",
+        "icon",
+        "select",
+        "utilities"
+      ],
+      "meta": {
+        "category": "Device controls",
+        "status": "stable",
+        "exports": [
+          "ActionRow"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/action-row.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/action-row.css",
+          "type": "registry:style"
+        },
+        {
+          "path": "ui/floating.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/floating.css",
+          "type": "registry:style"
+        }
+      ]
+    },
+    {
+      "name": "color-controls",
+      "type": "registry:ui",
+      "title": "Colour controls",
+      "description": "A colour wheel (angle is hue, distance from the centre is saturation) and a warm-to-cool strip for white light, for lamps that can do colour.",
+      "dependencies": [],
+      "registryDependencies": [
+        "haptics",
+        "utilities"
+      ],
+      "meta": {
+        "category": "Device controls",
+        "status": "stable",
+        "exports": [
+          "ColorWheel",
+          "WhiteStrip"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/color-control.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/color-control.css",
+          "type": "registry:style"
+        },
+        {
+          "path": "ui/use-drag.ts",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "cover-shade",
+      "type": "registry:ui",
+      "title": "Cover shade",
+      "description": "A window with a shade you pull, for blinds, curtains and roofs: drag down to close, up to open. Open, Stop and Close buttons sit beneath it.",
+      "dependencies": [],
+      "registryDependencies": [
+        "color-controls",
+        "haptics",
+        "utilities"
+      ],
+      "meta": {
+        "category": "Device controls",
+        "status": "stable",
+        "exports": [
+          "CoverShade"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/color-control.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/color-control.css",
+          "type": "registry:style"
+        },
+        {
+          "path": "ui/use-drag.ts",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "device-tile",
+      "type": "registry:ui",
+      "title": "Device tile",
+      "description": "The phone tile for one device. Tap to toggle, drag sideways to set its main value, hold or press the chevron for the full controls.",
+      "dependencies": [],
+      "registryDependencies": [
+        "color-controls",
+        "haptics",
+        "icon",
+        "utilities"
+      ],
+      "meta": {
+        "category": "Device controls",
+        "status": "stable",
+        "exports": [
+          "DeviceTile",
+          "AddTile"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/device-tile.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/device-tile.css",
+          "type": "registry:style"
+        },
+        {
+          "path": "ui/use-drag.ts",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "dial",
+      "type": "registry:ui",
+      "title": "Dial",
+      "description": "A radial control: drag around a 270° arc to set a value, like a thermostat's target or a fan's speed. It previews while you drag and commits when you let go.",
+      "dependencies": [],
+      "registryDependencies": [
+        "color-controls",
+        "haptics",
+        "utilities"
+      ],
+      "meta": {
+        "category": "Device controls",
+        "status": "stable",
+        "exports": [
+          "Dial"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/dial.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/dial.css",
+          "type": "registry:style"
+        },
+        {
+          "path": "ui/use-drag.ts",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "lock-tile",
+      "type": "registry:ui",
+      "title": "Lock tile",
+      "description": "A door tile for a dark surface. It turns amber when the door is unlocked. Unlocking is a sensitive action and asks for a passkey first.",
+      "dependencies": [],
+      "registryDependencies": [
+        "icon",
+        "utilities"
+      ],
+      "meta": {
+        "category": "Device controls",
+        "status": "stable",
+        "exports": [
+          "LockTile"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/lock-tile.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/lock-tile.css",
+          "type": "registry:style"
+        }
+      ]
+    },
+    {
+      "name": "mode-and-scene",
+      "type": "registry:ui",
+      "title": "Mode and scene",
+      "description": "ModeButton picks the household mode (Home, Away, Night). SceneCard runs a scene or routine, and can be outlined when Alice suggests it.",
+      "dependencies": [],
+      "registryDependencies": [
+        "icon",
+        "utilities"
+      ],
+      "meta": {
+        "category": "Device controls",
+        "status": "stable",
+        "exports": [
+          "ModeButton",
+          "SceneCard"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/choice.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/choice.css",
+          "type": "registry:style"
+        }
+      ]
+    },
+    {
+      "name": "haptics",
+      "type": "registry:ui",
+      "title": "Haptics",
+      "description": "Named haptic patterns with meanings: components say what happened and haptic() decides what it feels like, how often it may happen, and whether the person wants it.",
+      "dependencies": [],
+      "registryDependencies": [],
+      "meta": {
+        "category": "Utilities",
+        "status": "new",
+        "exports": [
+          "haptic",
+          "HAPTICS",
+          "hapticsSupported",
+          "setHapticsEnabled",
+          "useHapticsEnabled"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/haptics.ts",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "icon",
+      "type": "registry:ui",
+      "title": "Icon",
+      "description": "One icon set on a 24 px grid with a 1.7 stroke and round caps. Decorative by default; solid forms exist for the selected tab.",
+      "dependencies": [],
+      "registryDependencies": [],
+      "meta": {
+        "category": "Utilities",
+        "status": "stable",
+        "exports": [
+          "Icon",
+          "ICON_PATHS"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/icon.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/icon-paths.ts",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "utilities",
+      "type": "registry:ui",
+      "title": "Utilities",
+      "description": "The small helpers the components share: cn joins class names, useDrag turns a pointer drag into 0 to 1 positions and a release velocity, project lets a flick carry on, useDoubleTap and useSwipeSelect are the other two gestures, and Html renders trusted markup.",
+      "dependencies": [],
+      "registryDependencies": [],
+      "meta": {
+        "category": "Utilities",
+        "status": "stable",
+        "exports": [
+          "cn",
+          "useDrag",
+          "project",
+          "useDoubleTap",
+          "useSwipeSelect",
+          "Html"
+        ]
+      },
+      "files": [
+        {
+          "path": "ui/cn.ts",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/use-drag.ts",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/use-double-tap.ts",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/use-swipe-select.ts",
+          "type": "registry:ui"
+        },
+        {
+          "path": "ui/html.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    }
+  ]
+}

@@ -3,10 +3,10 @@
  * automations, mode helper and voice exposure to Home Assistant. Run it with `bun run worker`.
  * It needs DATABASE_URL (same file as the server) and ADMIN_SEAL_PRIVATE_KEY, and it must not share the server's environment.
  */
-import { env } from "@/core/config/env";
-import { createDb } from "@/core/database/client";
-import { logger } from "@/core/logging/logger";
-import { pemFromEnv } from "@/core/security/sealed";
+import { env } from "../core/config/env";
+import { createDb } from "../core/database/client";
+import { logger } from "../core/logging/logger";
+import { pemFromEnv } from "../core/security/sealed";
 import { ConfigWorker } from "./config-worker";
 import { HaAdminApi } from "./ha-admin-api";
 

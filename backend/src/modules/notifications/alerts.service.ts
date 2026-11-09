@@ -1,10 +1,10 @@
 import { and, desc, eq, isNull } from "drizzle-orm";
-import type { Db } from "@/core/database/client";
-import { alerts, households } from "@/core/database/schema";
-import { notFound } from "@/core/errors/errors";
-import type { AppEvent } from "@/core/events/app-events";
-import type { EventBus, Unsubscribe } from "@/core/events/event-bus";
-import { newId } from "@/core/ids";
+import type { Db } from "../../core/database/client";
+import { alerts, households } from "../../core/database/schema";
+import { notFound } from "../../core/errors/errors";
+import type { AppEvent } from "../../core/events/app-events";
+import type { EventBus, Unsubscribe } from "../../core/events/event-bus";
+import { newId } from "../../core/ids";
 import type { Caller, DevicesService } from "../devices/devices.service";
 import { powerLimitOf } from "../devices/settings";
 import type { ThingsService } from "../home-assistant/things/things.service";

@@ -2,7 +2,7 @@ import { Database } from "bun:sqlite";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { Db } from "@/core/database/client";
+import type { Db } from "../../core/database/client";
 
 export interface Inspection {
   ok: boolean;

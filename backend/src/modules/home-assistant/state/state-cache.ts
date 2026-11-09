@@ -1,4 +1,4 @@
-import type { Availability } from "@/core/events/app-events";
+import type { Availability } from "../../../core/events/app-events";
 import { normalizeState, type NormalizedState } from "../capabilities/state-normalizer";
 import { availabilityOf } from "../events/normalizer";
 import type { HaEntityState } from "../types";

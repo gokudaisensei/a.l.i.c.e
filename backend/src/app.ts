@@ -1,13 +1,13 @@
 import { cors } from "@elysiajs/cors";
 import { openapi } from "@elysiajs/openapi";
 import { Elysia } from "elysia";
-import { env } from "@/core/config/env";
-import { AppError } from "@/core/errors/errors";
-import { checkSameSite } from "@/core/http/csrf";
-import { logger } from "@/core/logging/logger";
-import { buildModules } from "@/modules";
-import { realtimeController } from "@/realtime/ws.controller";
-import type { Services } from "@/services";
+import { env } from "./core/config/env";
+import { AppError } from "./core/errors/errors";
+import { checkSameSite } from "./core/http/csrf";
+import { logger } from "./core/logging/logger";
+import { buildModules } from "./modules";
+import { realtimeController } from "./realtime/ws.controller";
+import type { Services } from "./services";
 
 export const buildApp = (services: Services) =>
   new Elysia({ name: "alice" })

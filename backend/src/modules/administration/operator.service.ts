@@ -1,10 +1,10 @@
 import { eq } from "drizzle-orm";
-import type { Db } from "@/core/database/client";
-import { households, operators } from "@/core/database/schema";
-import { AppError, notFound } from "@/core/errors/errors";
-import { newId } from "@/core/ids";
-import { writeAudit } from "@/core/security/audit";
-import { randomToken, sha256 } from "@/core/security/tokens";
+import type { Db } from "../../core/database/client";
+import { households, operators } from "../../core/database/schema";
+import { AppError, notFound } from "../../core/errors/errors";
+import { newId } from "../../core/ids";
+import { writeAudit } from "../../core/security/audit";
+import { randomToken, sha256 } from "../../core/security/tokens";
 import type { Caller, DevicesService } from "../devices/devices.service";
 import type { AdminService } from "./admin.service";
 import type { SupportService } from "./support.service";
