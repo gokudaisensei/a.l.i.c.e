@@ -21,6 +21,8 @@ const USAGE = `Usage: ./setup.sh [options]
       --frontend-port N          Web app port            (default 3000)
       --backend-port N           API + websocket port    (default 3001)
       --ha-port N                Test Home Assistant port (default 8123)
+      --public-url URL           Address people use when Alice is behind a reverse proxy or tunnel, e.g. https://alice.example.com
+                                 (sets the passkey origin, trusted origins, TRUST_PROXY and the same-origin websocket)
       --host NAME                Hostname you open the app at (default localhost; sets passkey origin)
       --ha MODE                  mock (Docker test HA) | existing | none   (default: mock if Docker works)
       --ha-url URL               Existing HA address, e.g. http://192.168.1.10:8123 (implies --ha existing)
@@ -46,7 +48,7 @@ const die = (m: string): never => { console.error(red(`✗ ${m}`)); process.exit
 
 // ---------- options ----------
 const opt = {
-  interactive: !!process.stdin.isTTY, feport: "", beport: "", haport: "", host: "", ha: "", haUrl: "",
+  interactive: !!process.stdin.isTTY, feport: "", beport: "", haport: "", host: "", publicUrl: "", ha: "", haUrl: "",
   haToken: process.env.HA_TOKEN ?? "", haUser: "", haPassword: process.env.HA_PASSWORD ?? "",
   virtualPasskey: false, seed: true, skipInstall: false, force: false, start: false,
 };
@@ -59,6 +61,7 @@ const opt = {
       case "--frontend-port": opt.feport = val(i++); break;
       case "--backend-port": opt.beport = val(i++); break;
       case "--ha-port": opt.haport = val(i++); break;
+      case "--public-url": opt.publicUrl = val(i++).replace(/\/$/, ""); break;
       case "--host": opt.host = val(i++); break;
       case "--ha": opt.ha = val(i++); break;
       case "--ha-url": opt.haUrl = val(i++).replace(/\/$/, ""); opt.ha ||= "existing"; break;
@@ -213,6 +216,14 @@ if (opt.ha === "mock" && !dockerOk) {
 
 // ---------- 3. ports and host ----------
 info("Choosing ports");
+if (!opt.publicUrl && opt.interactive && !opt.host && (await confirm("Will you open Alice through a reverse proxy or tunnel (an https address)?", false))) {
+  opt.publicUrl = await ask("Public address", "https://alice.example.com");
+}
+let publicOrigin = "";
+if (opt.publicUrl) {
+  try { const u = new URL(opt.publicUrl); if (!/^https?:$/.test(u.protocol)) throw 0; publicOrigin = u.origin; opt.host ||= u.hostname; }
+  catch { die(`--public-url '${opt.publicUrl}' is not a valid http(s) address`); }
+}
 const host = opt.host || (opt.interactive ? await ask("Hostname you'll open the app at (use the server's address if you browse from another machine)", "localhost") : "localhost");
 if (!/^[A-Za-z0-9.-]+$/.test(host)) die(`invalid host '${host}'`);
 const fePort = await choosePort("Frontend", 3000, opt.feport);
@@ -269,8 +280,9 @@ if (existsSync(envFile) && !opt.force && envGet(envFile, "SECRETS_KEY")) {
   ok("generated keys and setup code");
 }
 // Ports and origins are rewritten on every run so re-running with new ports works.
-let env = readFileSync(envFile, "utf8").split("\n").filter((l) => !/^(PORT|CORS_ORIGINS|WEBAUTHN_RP_ID|WEBAUTHN_ORIGIN)=/.test(l)).join("\n").replace(/\n*$/, "\n");
-env += `PORT=${bePort}\nCORS_ORIGINS=http://${host}:${fePort}\nWEBAUTHN_RP_ID=${host}\nWEBAUTHN_ORIGIN=http://${host}:${fePort}\n`;
+let env = readFileSync(envFile, "utf8").split("\n").filter((l) => !/^(PORT|CORS_ORIGINS|WEBAUTHN_RP_ID|WEBAUTHN_ORIGIN|TRUST_PROXY)=/.test(l)).join("\n").replace(/\n*$/, "\n");
+const appOrigin = publicOrigin || `http://${host}:${fePort}`;
+env += `PORT=${bePort}\nCORS_ORIGINS=${appOrigin}\nWEBAUTHN_RP_ID=${host}\nWEBAUTHN_ORIGIN=${appOrigin}\nTRUST_PROXY=${publicOrigin ? "true" : "false"}\n`;
 // A hand-edited .env may lack a setup code; the first sign-up needs one outside production.
 if (!/^SETUP_CODE=.+/m.test(env)) env += `SETUP_CODE=${hex(6)}\n`;
 writeFileSync(envFile, env);
@@ -279,7 +291,7 @@ if (!opt.virtualPasskey && opt.interactive && host === "localhost") {
   opt.virtualPasskey = await confirm("Use a software passkey in the browser instead of a real one? (dev only; Firefox on Linux often has no authenticator)", true);
 }
 writeFileSync(join(ROOT, "frontend/.env.local"),
-  `BACKEND_URL=http://localhost:${bePort}\nNEXT_PUBLIC_WS_URL=ws://localhost:${bePort}/ws\n${opt.virtualPasskey ? "NEXT_PUBLIC_VIRTUAL_PASSKEY=1\n" : ""}`);
+  `BACKEND_URL=http://localhost:${bePort}\nNEXT_PUBLIC_WS_URL=${publicOrigin ? "same-origin" : `ws://localhost:${bePort}/ws`}\n${publicOrigin ? `PUBLIC_HOST=${host}\n` : ""}${opt.virtualPasskey ? "NEXT_PUBLIC_VIRTUAL_PASSKEY=1\n" : ""}`);
 ok("backend/.env, backend/.env.worker, frontend/.env.local");
 
 // ---------- 6. Home Assistant ----------
@@ -345,7 +357,7 @@ chmodSync(STATE, 0o600);
 console.log(`
 ${green(bold("Setup complete."))}
 ${opt.virtualPasskey ? "  Passkey:         software passkey (dev). It lives in this browser's site data: clearing it loses the login.\n" : ""}  Start it:        ./run.sh
-  Open:            http://${host}:${fePort}
+  Open:            ${appOrigin}${publicOrigin ? `\n  Proxy it to:     http://localhost:${fePort}  (one port: the app forwards /api and /ws to the backend; forward websockets)` : ""}
   First sign-up:   setup code  ${envGet(envFile, "SETUP_CODE")}   (you become the household admin)`);
 if (haUrl) {
   console.log("  Then connect Home Assistant in the app with:");
