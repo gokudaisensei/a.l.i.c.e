@@ -11,12 +11,16 @@ Two processes share one SQLite file (`DATABASE_URL`) on the same machine.
 
 The repository is a Bun workspace (`package.json` at the root lists `backend` and `frontend`): run `bun install` once at the root. The frontend talks to the backend through Eden Treaty, typed from the backend's own routes (`import type { App } from "alice-backend/app"`, used in `frontend/src/lib/api.ts`), so a changed route, request body or response shows up as a compile error in the frontend (`bunx tsc --noEmit` in `frontend/`). Backend files import each other by relative path (no `@/` alias), because the frontend type-checks them too.
 
+## Quick start
+
+`./setup.sh` once (interactive; `./setup.sh --help` lists the flags for `-y` runs), then `./run.sh`. The manual steps below are what it automates.
+
 ## First-time setup
 
 1. Generate keys: `bun run keys:generate`. It prints `SECRETS_KEY`, `ADMIN_SEAL_PUBLIC_KEY` and `ADMIN_SEAL_PRIVATE_KEY`.
 2. Put `SECRETS_KEY` and `ADMIN_SEAL_PUBLIC_KEY` in the **server's** environment (see `.env.example`).
 3. Put `ADMIN_SEAL_PRIVATE_KEY` (and the same `DATABASE_URL`) in the **worker's** environment only. Do not give the server the private key: that is the point of the split.
-4. Start the server, sign up the first user (the household admin), then in the app connect Home Assistant (`PUT /ha/connection`) and add an admin token (`PUT /ha/connection/admin-token`; a long-lived token of a Home Assistant administrator).
+4. Start the server (in production it logs a one-time setup code when nobody exists yet, or set `SETUP_CODE` yourself), sign up the first user with that code (the household admin), then in the app connect Home Assistant (`PUT /ha/connection`) and add an admin token (`PUT /ha/connection/admin-token`; a long-lived token of a Home Assistant administrator).
 5. Start the worker. `GET /admin/config-sync` shows `canApply: true` once the worker has checked in.
 
 ## Push notifications (optional)

@@ -15,7 +15,7 @@ services:
     image: ghcr.io/home-assistant/home-assistant:2026.10.4
     container_name: alice-ha-mock
     ports:
-      - "127.0.0.1:8123:8123"
+      - "127.0.0.1:${HA_PORT:-8123}:8123"
     volumes:
       - ha-data:/config
       - ./configuration.yaml:/config/configuration.yaml:ro
