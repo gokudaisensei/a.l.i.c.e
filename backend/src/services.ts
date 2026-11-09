@@ -97,7 +97,7 @@ export interface Services {
 }
 
 export const defaultAuthConfig = (): AuthConfig => ({
-  rpId: env.webauthn.rpId, rpName: env.webauthn.rpName, origin: env.webauthn.origin, sessionTtlHours: env.sessionTtlHours,
+  rpId: env.webauthn.rpId, rpName: env.webauthn.rpName, origin: env.webauthn.origin, sessionTtlHours: env.sessionTtlHours, setupCode: env.setupCode,
 });
 
 /** The push channels the environment is set up for. */

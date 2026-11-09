@@ -11,7 +11,7 @@ const anyJson = t.Any();
 /** Authentication routes. `/auth/*` is the only public surface besides /health. */
 export const authController = ({ auth, households, limits }: Services) => {
   const setCookie = (cookie: Record<string, { set: (o: object) => unknown }>, s: SignedIn["session"]) =>
-    cookie[COOKIE]!.set({ value: s.token, ...sessionCookieOptions(s.expiresAt, env.nodeEnv === "production") });
+    cookie[COOKIE]!.set({ value: s.token, ...sessionCookieOptions(s.expiresAt, env.webauthn.origin.startsWith("https:")) });
 
   /** Per-IP limit on every public auth call; `secret` adds the strict limits for code-guessing endpoints. */
   const throttle = (ctx: { request: Request; server?: unknown }, opts: { secret?: boolean } = {}) => {
@@ -27,11 +27,11 @@ export const authController = ({ auth, households, limits }: Services) => {
 
   return new Elysia({ name: "module.auth", prefix: "/auth", tags: ["auth"] })
     .use(sessionPlugin(auth, households))
-    .get("/setup", (ctx) => { throttle(ctx); return { needsSetup: auth.needsSetup() }; }, { detail: { summary: "Is this a brand new install? (public; says only whether anyone has registered)" } })
+    .get("/setup", (ctx) => { throttle(ctx); return { needsSetup: auth.needsSetup(), setupCodeRequired: auth.setupCodeRequired() }; }, { detail: { summary: "Is this a brand new install? (public; says only whether anyone has registered)" } })
     // ---- registration ----
-    .post("/register/options", (ctx) => { throttle(ctx, { secret: !!ctx.body.inviteCode }); return auth.registrationOptions(ctx.body); }, {
-      body: t.Object({ displayName: t.String(), inviteCode: t.Optional(t.String()) }),
-      detail: { summary: "Start passkey registration (first user, or with an invitation code)" },
+    .post("/register/options", (ctx) => { throttle(ctx, { secret: !!ctx.body.inviteCode || auth.setupCodeRequired() }); return auth.registrationOptions(ctx.body); }, {
+      body: t.Object({ displayName: t.String(), inviteCode: t.Optional(t.String()), setupCode: t.Optional(t.String({ maxLength: 100 })) }),
+      detail: { summary: "Start passkey registration (first user with the setup code when one is set, or with an invitation code)" },
     })
     .post("/register/verify", async ({ body, cookie, headers, ...ctx }) => {
       throttle(ctx as never);

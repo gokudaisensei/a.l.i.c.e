@@ -29,6 +29,16 @@ async function register(name: string, inviteCode?: string, dev = device) {
   const { challengeId, options } = await auth.registrationOptions({ displayName: name, inviteCode });
   return auth.verifyRegistration({ challengeId, response: dev.create(options), deviceLabel: "test phone" });
 }
+test("with a setup code, the first person cannot register without it, and it is not needed afterwards", async () => {
+  auth = new AuthService(db, households, { rpId: RP, rpName: "Alice", origin: ORIGIN, sessionTtlHours: 24, setupCode: "s3cret" }, () => now);
+  expect(auth.setupCodeRequired()).toBe(true);
+  await expect(auth.registrationOptions({ displayName: "Intruder" })).rejects.toMatchObject({ code: "setup_code_required" });
+  await expect(auth.registrationOptions({ displayName: "Intruder", setupCode: "wrong" })).rejects.toMatchObject({ code: "setup_code_required" });
+  const { challengeId, options } = await auth.registrationOptions({ displayName: "Owner", setupCode: "s3cret" });
+  await auth.verifyRegistration({ challengeId, response: device.create(options) });
+  expect(auth.setupCodeRequired()).toBe(false);
+});
+
 async function login(dev = device, credentialId?: string) {
   const { challengeId, options } = await auth.loginOptions();
   return auth.verifyLogin({ challengeId, response: dev.get(options, { credentialId }) });

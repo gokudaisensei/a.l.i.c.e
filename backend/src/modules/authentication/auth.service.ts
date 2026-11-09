@@ -22,6 +22,8 @@ export interface AuthConfig {
   rpName: string;
   origin: string;
   sessionTtlHours: number;
+  /** When set, the first person to register on a new install must give it. */
+  setupCode?: string | null;
   /** How long after a passkey assertion a session counts as "stepped up". */
   stepUpTtlMs?: number;
   challengeTtlMs?: number;
@@ -49,6 +51,7 @@ export interface SignedIn {
 
 const HOUR = 3_600_000;
 const unauthorized = (msg = "Authentication failed") => new AppError(401, "invalid_credentials", msg);
+const timingSafeEq = (a: string, b: string) => sha256(a) === sha256(b); // equal-length digests; a plain compare on the raw codes would leak length and prefix
 const b64ToBytes = (s: string) => new Uint8Array(Buffer.from(s, "base64url"));
 const bytesToB64 = (b: Uint8Array) => Buffer.from(b).toString("base64url");
 
@@ -91,15 +94,22 @@ export class AuthService {
     return this.db.select({ id: users.id }).from(users).limit(1).get() === undefined;
   }
 
+  /** Does the first registration need a setup code? */
+  setupCodeRequired(): boolean {
+    return !!this.cfg.setupCode && this.needsSetup();
+  }
+
   // ---- registration (first user, or invited user) ----
 
-  async registrationOptions(input: { displayName: string; inviteCode?: string }) {
+  async registrationOptions(input: { displayName: string; inviteCode?: string; setupCode?: string }) {
     const displayName = input.displayName.trim();
     if (displayName.length < 1 || displayName.length > 60) throw new AppError(400, "validation_error", "Name must be 1 to 60 characters");
     const first = this.db.select({ id: users.id }).from(users).limit(1).get() === undefined;
     if (!first) {
       if (!input.inviteCode) throw new AppError(403, "invite_required", "You need an invitation to join this home");
       this.households.findValidInvitation(input.inviteCode);
+    } else if (this.cfg.setupCode && !timingSafeEq(input.setupCode ?? "", this.cfg.setupCode)) {
+      throw new AppError(403, "setup_code_required", "Enter the setup code from the server log (or the SETUP_CODE setting)");
     }
     const userId = newId("usr");
     const options = await generateRegistrationOptions({

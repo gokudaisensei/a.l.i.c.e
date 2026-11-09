@@ -193,6 +193,20 @@ describe("the worker", () => {
     expect(w.services.configJobs.status(householdId()).workerOnline).toBe(false);
   });
 
+  test("a job left running by a dead worker goes back in the queue, and applied old jobs are deleted", async () => {
+    const id = queue(script());
+    w.db.update(configJobs).set({ status: "running" }).where(eq(configJobs.id, id)).run();
+    expect(w.worker.recoverInterrupted()).toBe(1);
+    expect(w.services.configJobs.get(id)!.status).toBe("pending");
+    await w.worker.drain();
+    expect(w.services.configJobs.prune()).toBe(0); // not applied yet
+    w.services.configJobs.applyResults();
+    expect(w.services.configJobs.prune()).toBe(0); // too recent
+    w.clock.now += 8 * 86_400_000;
+    expect(w.services.configJobs.prune()).toBe(1);
+    expect(w.services.configJobs.get(id)).toBeNull();
+  });
+
   test("with no Home Assistant connection there is nothing to queue", async () => {
     const w2 = createWorld();
     await w2.browser().register("Solo");

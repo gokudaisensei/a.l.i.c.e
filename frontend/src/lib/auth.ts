@@ -12,7 +12,7 @@ export interface Me {
 export type AuthState =
   | { status: "loading" }
   | { status: "offline"; message: string }
-  | { status: "setup" }
+  | { status: "setup"; codeRequired: boolean }
   | { status: "anon" }
   | { status: "in"; me: Me };
 
@@ -38,7 +38,7 @@ export async function loadSession() {
     enter(toMe(s.userId, name, s));
   } catch (e) {
     if (e instanceof ApiError && e.status === 401) {
-      try { set((await ok(v1.auth.setup.get())).needsSetup ? { status: "setup" } : { status: "anon" }); }
+      try { const s = await ok(v1.auth.setup.get()); set(s.needsSetup ? { status: "setup", codeRequired: s.setupCodeRequired } : { status: "anon" }); }
       catch (e2) { set({ status: "offline", message: (e2 as Error).message }); }
     } else set({ status: "offline", message: (e as Error).message });
   }
@@ -56,8 +56,8 @@ export function passkeyMessage(e: unknown): string {
 export const passkeysSupported = () => typeof window !== "undefined" && browserSupportsWebAuthn();
 
 /** Creates the first home (no invitation) or joins one (with the invitation code). Returns the one-time recovery codes. */
-export async function register(displayName: string, inviteCode?: string): Promise<string[]> {
-  const o = await ok(v1.auth.register.options.post({ displayName, inviteCode: inviteCode || undefined }));
+export async function register(displayName: string, inviteCode?: string, setupCode?: string): Promise<string[]> {
+  const o = await ok(v1.auth.register.options.post({ displayName, inviteCode: inviteCode || undefined, setupCode: setupCode || undefined }));
   const response = await startRegistration({ optionsJSON: o.options });
   const r = await ok(v1.auth.register.verify.post({ challengeId: o.challengeId, response, deviceLabel: deviceLabel() }));
   // Hold the codes on screen before entering the app: they are shown once.

@@ -42,7 +42,7 @@ Home Assistant is the source of truth for devices and their state. The backend o
  ┌──────▼─────────────────────────────── backend (Elysia) ───────────────┐
  │ plugins: auth · household scope · permission guard · rate limit       │
  │ ┌─ domain modules ───────────────────────────────────────────────┐   │
- │ │ auth users households memberships permissions devices areas    │   │
+ │ │ auth users households permissions devices areas       │   │
  │ │ groups favorites scenes routines automations modes activity    │   │
  │ │ notifications energy insights history backups updates admin ai │   │
  │ └───────────────┬────────────────────────────────────────────────┘   │
@@ -59,7 +59,7 @@ Home Assistant is the source of truth for devices and their state. The backend o
             Home Assistant ◄──── admin token ── config-worker (separate process)
 ```
 
-## 4. Source layout (target)
+## 4. Source layout
 
 ```
 backend/src/
@@ -69,8 +69,7 @@ backend/src/
       clients/ connections/ discovery/ state/ commands/ capabilities/ events/
       things/    (role classifier, name cleaner, grouping, Thing builder, alias index)
   realtime/    ws gateway, subscriptions, broadcaster
-  workers/     job-runner (in-process jobs)
-backend/config-worker/   separate entry point, its own admin credential
+  worker/      config-worker: its own process and entry point (`bun run worker`), holds the admin credential
 backend/docs/
 ```
 

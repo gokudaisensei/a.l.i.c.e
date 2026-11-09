@@ -73,7 +73,8 @@ async function perform(api: HaConfigApi, o: ConfigOperation): Promise<Record<str
  */
 export class ConfigWorker {
   private timer: ReturnType<typeof setInterval> | null = null;
-  private busy = false;
+  private busy: Promise<unknown> | null = null;
+  private stopping = false;
 
   constructor(
     private readonly deps: {
@@ -141,20 +142,30 @@ export class ConfigWorker {
   /** Runs jobs until none are due. For tests and one-shot use. */
   async drain(max = 200) {
     let n = 0;
-    while (n < max && (await this.tick())) n++;
+    while (n < max && !this.stopping && (await this.tick())) n++;
     return n;
   }
 
+  /** A job still `running` at start belongs to a worker that died: put it back in the queue (the operations are safe to repeat). */
+  recoverInterrupted(): number {
+    return this.deps.db.update(configJobs).set({ status: "pending" }).where(eq(configJobs.status, "running")).returning({ id: configJobs.id }).all().length;
+  }
+
   start(intervalMs = 1000) {
+    const n = this.recoverInterrupted();
+    if (n) this.deps.log.warn({ jobs: n }, "put jobs interrupted by the last shutdown back in the queue");
+    this.stopping = false;
     this.timer = setInterval(() => {
       if (this.busy) return;
-      this.busy = true;
-      this.drain().catch((err) => this.deps.log.error({ err: String(err) }, "worker loop failed")).finally(() => { this.busy = false; });
+      this.busy = this.drain().catch((err) => this.deps.log.error({ err: String(err) }, "worker loop failed")).finally(() => { this.busy = null; });
     }, intervalMs);
   }
 
-  stop() {
+  /** Stops taking jobs and resolves once the one in progress has finished. */
+  async stop() {
+    this.stopping = true;
     if (this.timer) clearInterval(this.timer);
     this.timer = null;
+    await this.busy;
   }
 }

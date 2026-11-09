@@ -5,7 +5,7 @@ function str(name: string, fallback?: string): string {
 }
 
 function int(name: string, fallback: number): number {
-  const n = Number(process.env[name] ?? fallback);
+  const n = Number(process.env[name] || fallback);
   if (!Number.isInteger(n)) throw new Error(`Env var ${name} must be an integer`);
   return n;
 }
@@ -27,6 +27,8 @@ export const env = {
     origin: str("WEBAUTHN_ORIGIN", "http://localhost:3000"),
   },
   sessionTtlHours: int("SESSION_TTL_HOURS", 720),
+  /** Needed to register the first person on a new install. In production, one is generated and logged at start when this is unset. */
+  setupCode: process.env.SETUP_CODE || null,
   /** Trust X-Forwarded-For for client IPs. Only behind a reverse proxy you control. */
   trustProxy: bool("TRUST_PROXY", false),
   /** 32-byte base64 key that encrypts stored Home Assistant tokens. Generate: openssl rand -base64 32 */

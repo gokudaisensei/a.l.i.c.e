@@ -24,4 +24,4 @@ const worker = new ConfigWorker({
 worker.start();
 logger.info("config-worker running");
 
-for (const sig of ["SIGINT", "SIGTERM"] as const) process.on(sig, () => { worker.stop(); process.exit(0); });
+for (const sig of ["SIGINT", "SIGTERM"] as const) process.on(sig, () => { void worker.stop().finally(() => process.exit(0)); });

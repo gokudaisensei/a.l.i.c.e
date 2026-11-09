@@ -47,16 +47,19 @@ const NoPasskeys = () => (!passkeysSupported() ? <Notice tone="warn">This browse
 
 function Setup() {
   const [name, setName] = useState("");
+  const [setup, setSetup] = useState("");
   const [codes, setCodes] = useState<string[] | null>(null);
   const { busy, err, run } = useAction();
+  const codeRequired = useAuth((s) => s.state.status === "setup" && s.state.codeRequired);
   if (codes) return <RecoveryCodes codes={codes} />;
   return (
     <Card title="Set up your home" lead="You'll be the admin. Alice uses a passkey instead of a password: your phone or computer will ask for your fingerprint, face or PIN.">
-      <form onSubmit={(e) => { e.preventDefault(); void run(async () => setCodes(await register(name.trim()))); }}>
+      <form onSubmit={(e) => { e.preventDefault(); void run(async () => setCodes(await register(name.trim(), undefined, setup.trim()))); }}>
         <Field label="Your name"><Input autoFocus={fine()} value={name} onChange={(e) => setName(e.target.value)} placeholder="Gokul" maxLength={60} required autoComplete="name" autoCapitalize="words" enterKeyHint="go" /></Field>
+        {codeRequired && <Field label="Setup code"><Input value={setup} onChange={(e) => setSetup(e.target.value)} autoComplete="off" spellCheck={false} enterKeyHint="go" required aria-describedby="setup-hint" /><p id="setup-hint" className="small">Find it in the server log, or in the SETUP_CODE setting.</p></Field>}
         <NoPasskeys />
         <ErrNote err={err} />
-        <Button variant="primary" size="lg" loading={busy} type="submit" disabled={busy || !name.trim() || !passkeysSupported()}>{busy ? "Waiting for your passkey…" : "Create passkey and continue"}</Button>
+        <Button variant="primary" size="lg" loading={busy} type="submit" disabled={busy || !name.trim() || (codeRequired && !setup.trim()) || !passkeysSupported()}>{busy ? "Waiting for your passkey…" : "Create passkey and continue"}</Button>
       </form>
     </Card>
   );

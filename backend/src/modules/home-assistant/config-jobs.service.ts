@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, isNull, lt } from "drizzle-orm";
 import type { Db } from "../../core/database/client";
 import { configJobs, configWorkerHeartbeat, haConnections } from "../../core/database/schema";
 import { AppError } from "../../core/errors/errors";
@@ -95,6 +95,12 @@ export class ConfigJobService {
       this.db.update(configJobs).set({ appliedAt: this.now() }).where(eq(configJobs.id, r.id)).run();
     }
     return rows.length;
+  }
+
+  /** Deletes finished jobs whose result has been applied and that are older than `keepDays`. Run daily. */
+  prune(keepDays = 7): number {
+    const cutoff = this.now() - keepDays * 86_400_000;
+    return this.db.delete(configJobs).where(and(inArray(configJobs.status, ["done", "failed"]), isNotNull(configJobs.appliedAt), lt(configJobs.completedAt, cutoff))).returning({ id: configJobs.id }).all().length;
   }
 
   start(intervalMs = 500) {

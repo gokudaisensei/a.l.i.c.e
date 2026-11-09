@@ -10,6 +10,6 @@ export const sessionPlugin = (auth: AuthService, households: HouseholdService) =
     const token = cookie[COOKIE]?.value as string | undefined;
     const session = auth.getSession(token);
     // A renewed session gets a cookie that lasts as long: otherwise the browser would drop it at the old expiry.
-    if (session?.renewedUntil && token) cookie[COOKIE]!.set({ value: token, ...sessionCookieOptions(session.renewedUntil, env.nodeEnv === "production") });
+    if (session?.renewedUntil && token) cookie[COOKIE]!.set({ value: token, ...sessionCookieOptions(session.renewedUntil, env.webauthn.origin.startsWith("https:")) });
     return { session, membership: session ? households.getMembership(session.userId) : null };
   });
