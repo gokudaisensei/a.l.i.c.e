@@ -32,6 +32,8 @@ private fun mono(w: Int) = FontFamily(
 )
 
 object AliceType {
+    /** The wordmark: ".brand", Bricolage at 78% width with a golden full stop. */
+    val brand = TextStyle(fontFamily = bricolage(800, 78f, 40f), fontWeight = FontWeight(800), fontSize = 30.sp, lineHeight = 30.sp, letterSpacing = (-0.035).em)
     /** Hero greeting: ".hl-a". */
     val hero = TextStyle(fontFamily = bricolage(760, 86f, 48f), fontWeight = FontWeight(760), fontSize = 40.sp, lineHeight = 42.sp, letterSpacing = (-0.015).em)
     /** Hero second line: ".hl-b". */

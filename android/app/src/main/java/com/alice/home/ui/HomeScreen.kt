@@ -117,9 +117,6 @@ import com.alice.home.ui.theme.Alice
 import com.alice.home.ui.theme.AliceType
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -137,7 +134,7 @@ private fun hero(t: Tod, dark: Boolean): List<Color> = when {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(vm: HomeViewModel = viewModel()) {
+fun HomeScreen(vm: HomeViewModel = viewModel(), brandAlpha: Float = 1f) {
     val c = Alice.c
     val scope = rememberCoroutineScope()
     val haptics = LocalHaptics.current
@@ -148,8 +145,8 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
     val morph = remember { Animatable(0f) }   // the card growing out of its tile (opening only; closing just fades)
     // the popup's bar is the screen minus the card's margins and padding; the bar reports its real width once it is drawn
     val screenW = LocalConfiguration.current.screenWidthDp
-    val scrub = remember { LevelScrub(haptics, with(density) { (screenW - 92).dp.toPx() }, with(density) { 12.dp.toPx() }) }
-    fun closePop() { scope.launch { pp.animateTo(0f, tween(220, easing = Motion.easeIn)); pop = null } }
+    val scrub = remember { LevelScrub(haptics, with(density) { (screenW - 92).dp.toPx() }) }
+    fun closePop() { scrub.end(); scope.launch { pp.animateTo(0f, tween(220, easing = Motion.easeIn)); pop = null } }
     LaunchedEffect(pop?.first) {
         if (pop != null) {
             morph.snapTo(0f)
@@ -182,7 +179,7 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
         Box(Modifier.fillMaxSize().recordBackdrop(backdrop).nestedScroll(scroll)) {
             PullToRefreshBox(refreshing, { haptics.play(Haptic.Medium); scope.launch { refreshing = true; delay(900); refreshing = false; haptics.play(Haptic.Success) } }) {
                 LazyColumn(Modifier.fillMaxWidth(), contentPadding = PaddingValues(bottom = 130.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    item { Hero(vm, suggested.name, suggested.icon) { run(suggested.name) } }
+                    item { Hero(vm, suggested.name, suggested.icon, brandAlpha) { run(suggested.name) } }
                     vm.alert?.let { a -> item { AlertBanner(a, vm::ack) } }
                     item { ModeTile(vm) }
                     item { Box(Modifier.padding(horizontal = 16.dp)) { SectionHeader("Favourites", "Tap · hold for more") } }
@@ -192,8 +189,9 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                                 DeviceTile(
                                     d, Modifier.weight(1f), { vm.toggle(d.id) }, { r -> pop = d.id to r }, { vm.commit(d.id, it) },
                                     // the finger that held the tile keeps going: sliding it sets the level in the popup
-                                    onHoldDragStart = { scrub.begin(if (d.on) d.level else 0, settle = true) },
+                                    onHoldDragStart = { scrub.begin(if (d.on) d.level else 0) },
                                     onHoldDrag = if (d.kind != Kind.Plug) ({ dy -> scrub.move(dy) { vm.commit(d.id, it) } }) else ({ }),
+                                    onHoldDragEnd = { scrub.end() },
                                 )
                             }
                             repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
@@ -226,10 +224,9 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
 }
 
 @Composable
-private fun Hero(vm: HomeViewModel, sceneName: String, sceneIcon: ImageVector, onScene: () -> Unit) {
+private fun Hero(vm: HomeViewModel, sceneName: String, sceneIcon: ImageVector, brandAlpha: Float, onScene: () -> Unit) {
     val t = tod()
     val (a, b, ink, chip) = hero(t, Alice.c.dark)
-    val now = LocalDateTime.now()
     val unlocked = vm.locks.count { !it.locked }
     val line = if (vm.alert != null || unlocked > 0) "A couple of things need a look." else "Everything is calm."
     Column(
@@ -237,7 +234,7 @@ private fun Hero(vm: HomeViewModel, sceneName: String, sceneIcon: ImageVector, o
             .statusBarsPadding().padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 22.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text(now.format(DateTimeFormatter.ofPattern("EEE d MMM · HH:mm", Locale.getDefault())).uppercase(), style = AliceType.mono, color = ink.copy(alpha = 0.75f))
+        AliceWordmark(size = 30.sp, color = ink, modifier = Modifier.graphicsLayer { alpha = brandAlpha })
         Text("${GREET[t]}, Gokul.", style = AliceType.hero, color = ink)
         Text(line, style = AliceType.heroSub, color = ink.copy(alpha = 0.92f))
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {

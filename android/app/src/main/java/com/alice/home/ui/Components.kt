@@ -121,23 +121,18 @@ fun Modifier.breatheOnHold(source: InteractionSource): Modifier = composed {
  * Turns horizontal finger movement into a level (right raises it), with the haptics: a tick every 5, a stronger tap at each quarter,
  * a bump at either end. It only ever uses how far the finger has MOVED, never where it is, and [travelPx] (the bar's width) is the
  * distance for the full 0 to 100, so the fill follows the finger one to one. One scrub is shared by the tile's hold-and-slide and
- * the popup's own bar, so both feel the same. With [begin]'s `settle`, the first [slopPx] of movement is ignored: a finger that
- * has just held a tile always drifts a little, and that must not change the level.
+ * the popup's own bar (see [active]), so both feel the same.
  */
-class LevelScrub(private val haptics: Haptics, var travelPx: Float, private val slopPx: Float) {
+class LevelScrub(private val haptics: Haptics, var travelPx: Float) {
+    /** True while a finger is moving the level, whether on the popup's bar or on the hold that opened it. */
+    var active by mutableStateOf(false)
+        private set
     private var value = 0f
     private var last = 0
-    private var dead = 0f
-    private var acc = 0f
-    fun begin(level: Int, settle: Boolean = false) { value = level.toFloat(); last = level; acc = 0f; dead = if (settle) slopPx else 0f }
+    fun begin(level: Int) { value = level.toFloat(); last = level; active = true }
+    fun end() { active = false }
     fun move(dx: Float, onLevel: (Int) -> Unit) {
-        var d = dx
-        if (dead > 0f) {
-            acc += d
-            if (abs(acc) <= dead) return
-            d = acc - sign(acc) * dead; dead = 0f; acc = 0f // only the movement beyond the settle zone counts
-        }
-        value = (value + d / travelPx * 100f).coerceIn(1f, 100f)
+        value = (value + dx / travelPx * 100f).coerceIn(1f, 100f)
         val n = value.roundToInt()
         if (n == last) return
         when {
@@ -221,7 +216,7 @@ fun Device.state(): String = when {
 @Composable
 fun DeviceTile(
     d: Device, modifier: Modifier = Modifier, onTap: () -> Unit, onHold: (Rect) -> Unit, onCommit: (Int) -> Unit,
-    onHoldDragStart: () -> Unit = {}, onHoldDrag: (Float) -> Unit = {},
+    onHoldDragStart: () -> Unit = {}, onHoldDrag: (Float) -> Unit = {}, onHoldDragEnd: () -> Unit = {},
 ) {
     var bounds by remember { mutableStateOf(Rect.Zero) }
     val c = Alice.c
@@ -282,6 +277,7 @@ fun DeviceTile(
                                 haptics.play(Haptic.Hold); haptics.play(Haptic.Medium); onHold(bounds); onHoldDragStart()
                                 // read how far it moved before consuming: a consumed change reports no movement
                                 drag(down.id) { ch -> val dx = ch.positionChange().x; ch.consume(); onHoldDrag(dx) }
+                                onHoldDragEnd()
                             }
                             1 -> if (dimmable) { // moved before the hold: a drag on the tile itself, relative to where it started
                                 base = if (cur.on) cur.level.toFloat() else 0f; travelled = 0f; live = base.roundToInt(); crossed = false

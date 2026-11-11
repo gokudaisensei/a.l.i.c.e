@@ -1,3 +1,16 @@
 <resources>
-    <style name="Theme.Alice" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.Alice" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/alice_bg</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+
+    <!-- Kept up until Compose has drawn, then faded out as one piece instead of letting the platform
+         animate the icon on its own and leave a blank background frame behind it. -->
+    <style name="Theme.Alice.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/alice_bg</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_wordmark</item>
+        <item name="windowSplashScreenAnimationDuration">180</item>
+        <item name="postSplashScreenTheme">@style/Theme.Alice</item>
+    </style>
 </resources>

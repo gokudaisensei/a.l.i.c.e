@@ -124,13 +124,14 @@ private fun Header(d: Device, onClose: () -> Unit) {
 private fun LevelControl(d: Device, scrub: LevelScrub, onCommit: (Int) -> Unit) {
     val c = Alice.c
     val cur by rememberUpdatedState(d)
-    var dragging by remember { mutableStateOf(false) }
     val shown = if (d.on) d.level else 0
-    val fill by animateFloatAsState(shown / 100f, tween(if (dragging) 0 else 160), label = "lv")
+    // While either gesture is moving the level (the bar itself or the hold that opened the popup), the fill tracks the
+    // finger one to one; only settle animations happen after the finger lifts.
+    val fill by animateFloatAsState(shown / 100f, tween(if (scrub.active) 0 else 160), label = "lv")
     val state = rememberDraggableState { dx -> scrub.move(dx) { onCommit(it) } }
     Box(
         Modifier.fillMaxWidth().height(120.dp).clip(RoundedCornerShape(28.dp)).background(c.tile2).onSizeChanged { scrub.travelPx = it.width.toFloat().coerceAtLeast(1f) }
-            .draggable(state, Orientation.Horizontal, onDragStarted = { scrub.begin(if (cur.on) cur.level else 0); dragging = true }, onDragStopped = { dragging = false }),
+            .draggable(state, Orientation.Horizontal, onDragStarted = { scrub.begin(if (cur.on) cur.level else 0) }, onDragStopped = { scrub.end() }),
     ) {
         Box(Modifier.fillMaxHeight().fillMaxWidth(fill).background(c.glow.copy(alpha = 0.55f)))
         Row(Modifier.fillMaxSize().padding(horizontal = 22.dp), verticalAlignment = Alignment.CenterVertically) {
