@@ -1,0 +1,51 @@
+# Reference compose for Alice Kotlin backend + config worker (JVM distributions).
+# Prereq: cd backend-kt && ./gradlew :server:installDist :worker:installDist
+# Usage: docker compose up --build
+#
+# Home Assistant is connected from inside Alice (Settings, Home Assistant), not through environment variables.
+# The server and worker share /data, which also holds the encryption key file (secrets.key) unless SECRETS_KEY is set.
+services:
+  server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    environment:
+      SERVER_HOST: 0.0.0.0
+      SERVER_PORT: 3002
+      DATABASE_PATH: /data/alice.db
+      # Where the app is reached and the passkey identity (must match the address in the browser or app):
+      # WEBAUTHN_ORIGIN: https://alice.example.com
+      # WEBAUTHN_RP_ID: alice.example.com
+      # WEBAUTHN_EXTRA_ORIGINS: android:apk-key-hash:<base64url sha256 of the app signing certificate>
+      # Behind a reverse proxy you control (uses the last X-Forwarded-For entry):
+      # TRUST_PROXY: "true"
+      # Secrets (generate each with: openssl rand -base64 32). Keep these backed up apart from /data.
+      # SECRETS_KEY: ...
+      # BACKUP_ENCRYPTION_KEY: ...
+      # Public half of the key pair the config worker holds, so admin tokens can be sealed for it:
+      # ADMIN_SEAL_PUBLIC_KEY: ...
+      # APP_VERSION: 0.1.0
+    ports:
+      - "3002:3002"
+    volumes:
+      - alice_data:/data
+    # The image defines its own HEALTHCHECK (no curl required).
+
+  worker:
+    image: eclipse-temurin:21-jre
+    working_dir: /app
+    command: ["/app/bin/worker"]
+    user: "10001"
+    environment:
+      DATABASE_PATH: /data/alice.db
+      # The private half of ADMIN_SEAL_PUBLIC_KEY (or CONFIG_WORKER_PRIVATE_KEY_FILE pointing at a mounted file):
+      # CONFIG_WORKER_PRIVATE_KEY: ...
+    volumes:
+      - ./worker/build/install/worker:/app:ro
+      - alice_data:/data
+    depends_on:
+      server:
+        condition: service_healthy
+
+volumes:
+  alice_data:

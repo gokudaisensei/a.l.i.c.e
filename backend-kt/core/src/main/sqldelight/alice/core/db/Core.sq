@@ -1,0 +1,326 @@
+-- Phase 0 schema.
+--
+-- Conventions carried over from backend/docs/DATABASE.md:
+--   * ids are ULIDs (prefixed in code), stored as TEXT
+--   * timestamps are unix milliseconds (INTEGER)
+--   * household-owned tables carry household_id (added with the identity phase)
+--   * JSON columns are TEXT, validated by @Serializable types at the edge
+--
+-- The remaining tables (identity, HA projection, Things, commands, ...) are
+-- ported from backend/drizzle/0013 in the phases described in docs/PARITY.md.
+
+CREATE TABLE application_settings (
+  key        TEXT    NOT NULL PRIMARY KEY,
+  value      TEXT    NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE audit_log (
+  id           TEXT    NOT NULL PRIMARY KEY,
+  household_id TEXT,
+  actor_type   TEXT    NOT NULL,
+  actor_id     TEXT,
+  action       TEXT    NOT NULL,
+  resource     TEXT,
+  detail       TEXT,
+  created_at   INTEGER NOT NULL
+);
+
+CREATE INDEX audit_log_created_at ON audit_log (created_at);
+CREATE INDEX audit_log_household_idx ON audit_log (household_id, created_at, id);
+
+CREATE TABLE jobs (
+  id              TEXT    NOT NULL PRIMARY KEY,
+  type            TEXT    NOT NULL,
+  payload         TEXT    NOT NULL,
+  status          TEXT    NOT NULL,
+  attempts        INTEGER NOT NULL DEFAULT 0,
+  max_attempts    INTEGER NOT NULL DEFAULT 3,
+  run_at          INTEGER NOT NULL,
+  locked_at       INTEGER,
+  locked_by       TEXT,
+  idempotency_key TEXT UNIQUE,
+  result          TEXT,
+  created_at      INTEGER NOT NULL,
+  started_at      INTEGER,
+  completed_at    INTEGER
+);
+
+CREATE INDEX jobs_status_run_at ON jobs (status, run_at);
+
+CREATE TABLE rate_limits (
+  key      TEXT    NOT NULL PRIMARY KEY,
+  count    INTEGER NOT NULL,
+  reset_at INTEGER NOT NULL
+);
+
+-- Fixed-window rate limit counters. Shared by the server and the worker so a
+-- restart does not reset a limiter. See core/http/RateLimiter.kt.
+selectRateLimit:
+SELECT count, reset_at FROM rate_limits WHERE key = ?;
+
+upsertRateLimit:
+INSERT INTO rate_limits (key, count, reset_at)
+VALUES (?, ?, ?)
+ON CONFLICT (key) DO UPDATE SET count = excluded.count, reset_at = excluded.reset_at;
+
+hitRateLimit:
+INSERT INTO rate_limits (key, count, reset_at)
+VALUES (?, 1, ?)
+ON CONFLICT (key) DO UPDATE SET
+  count = CASE WHEN rate_limits.reset_at <= ? THEN 1 ELSE rate_limits.count + 1 END,
+  reset_at = CASE WHEN rate_limits.reset_at <= ? THEN ? ELSE rate_limits.reset_at END
+RETURNING count, reset_at;
+
+deleteRateLimit:
+DELETE FROM rate_limits WHERE key = ?;
+
+deleteExpiredRateLimits:
+DELETE FROM rate_limits WHERE reset_at <= ?;
+
+countAuditLog:
+SELECT count(*) FROM audit_log;
+
+insertAuditLog:
+INSERT INTO audit_log (id, household_id, actor_type, actor_id, action, resource, detail, created_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+selectRecentAuditLog:
+SELECT * FROM audit_log ORDER BY created_at DESC LIMIT ?;
+
+-- One home's audit entries, newest first, optionally only actions that start with a prefix, after a (time, id) cursor.
+selectAuditPage:
+SELECT * FROM audit_log
+WHERE household_id = :household
+  AND (:prefix IS NULL OR action LIKE :prefix || '%')
+  AND (:cursorAt IS NULL OR created_at < :cursorAt OR (created_at = :cursorAt AND id < :cursorId))
+ORDER BY created_at DESC, id DESC
+LIMIT :limit;
+
+selectAuditByActorType:
+SELECT * FROM audit_log WHERE household_id = ? AND actor_type = ? ORDER BY created_at DESC, id DESC LIMIT ?;
+
+selectAuditLogByAction:
+SELECT * FROM audit_log WHERE action = ? ORDER BY created_at ASC;
+
+selectAllSessionTokenHashes:
+SELECT token_hash FROM sessions;
+
+upsertSetting:
+INSERT INTO application_settings (key, value, updated_at)
+VALUES (?, ?, ?)
+ON CONFLICT (key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at;
+
+selectSetting:
+SELECT value FROM application_settings WHERE key = ?;
+
+insertJob:
+INSERT INTO jobs (id, type, payload, status, run_at, created_at, max_attempts, idempotency_key)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+countPendingJobs:
+SELECT count(*) FROM jobs WHERE status = 'pending' AND run_at <= ?;
+
+-- Phase 13: backups, support, operators
+
+CREATE TABLE backup_records (
+  id               TEXT    NOT NULL PRIMARY KEY,
+  household_id     TEXT    NOT NULL,
+  kind             TEXT    NOT NULL,
+  destination      TEXT    NOT NULL,
+  destination_ref  TEXT,
+  name             TEXT    NOT NULL,
+  size_bytes       INTEGER,
+  sha256           TEXT,
+  encrypted        INTEGER NOT NULL DEFAULT 0,
+  schema_version   INTEGER,
+  status           TEXT    NOT NULL,
+  error            TEXT,
+  trigger_kind     TEXT    NOT NULL,
+  created_by       TEXT,
+  created_at       INTEGER NOT NULL,
+  finished_at      INTEGER,
+  verify_status    TEXT    NOT NULL DEFAULT 'none',
+  verified_at      INTEGER,
+  verify_note      TEXT
+);
+
+CREATE INDEX backup_records_household_idx ON backup_records (household_id, created_at);
+
+CREATE TABLE support_sessions (
+  id           TEXT    NOT NULL PRIMARY KEY,
+  household_id TEXT    NOT NULL,
+  granted_by   TEXT    NOT NULL,
+  scope        TEXT    NOT NULL,
+  starts_at    INTEGER NOT NULL,
+  ends_at      INTEGER NOT NULL,
+  ended_at     INTEGER,
+  ended_by     TEXT,
+  created_at   INTEGER NOT NULL
+);
+
+CREATE INDEX support_sessions_household_idx ON support_sessions (household_id, created_at);
+
+CREATE TABLE operators (
+  id          TEXT    NOT NULL PRIMARY KEY,
+  label       TEXT    NOT NULL UNIQUE,
+  token_hash  TEXT    NOT NULL,
+  created_at  INTEGER NOT NULL,
+  revoked_at  INTEGER,
+  last_seen_at INTEGER,
+  expires_at  INTEGER
+);
+
+selectBackupRecordsByHousehold:
+SELECT * FROM backup_records WHERE household_id = ? ORDER BY created_at DESC, id DESC;
+
+selectRunningAppBackups:
+SELECT * FROM backup_records WHERE kind = 'app' AND status = 'running';
+
+selectBackupRecordById:
+SELECT * FROM backup_records WHERE id = ? AND household_id = ?;
+
+selectBackupRecordByIdOnly:
+SELECT * FROM backup_records WHERE id = ?;
+
+insertBackupRecord:
+INSERT INTO backup_records (
+  id, household_id, kind, destination, destination_ref, name, size_bytes, sha256, encrypted, schema_version,
+  status, error, trigger_kind, created_by, created_at, finished_at, verify_status, verified_at, verify_note
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateBackupRecord:
+UPDATE backup_records SET
+  destination_ref = ?, size_bytes = ?, sha256 = ?, encrypted = ?, status = ?, error = ?, finished_at = ?
+WHERE id = ?;
+
+updateBackupVerify:
+UPDATE backup_records SET verify_status = ?, verified_at = ?, verify_note = ? WHERE id = ?;
+
+deleteBackupRecordById:
+DELETE FROM backup_records WHERE id = ?;
+
+selectSupportSessionsByHousehold:
+SELECT * FROM support_sessions WHERE household_id = ? ORDER BY created_at DESC;
+
+selectActiveSupportSession:
+SELECT * FROM support_sessions WHERE household_id = ? AND ended_at IS NULL AND ends_at > ? ORDER BY created_at DESC LIMIT 1;
+
+selectSupportSessionById:
+SELECT * FROM support_sessions WHERE id = ? AND household_id = ?;
+
+insertSupportSession:
+INSERT INTO support_sessions (id, household_id, granted_by, scope, starts_at, ends_at, ended_at, ended_by, created_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateSupportSessionExtend:
+UPDATE support_sessions SET ends_at = ? WHERE id = ?;
+
+endSupportSession:
+UPDATE support_sessions SET ended_at = ?, ended_by = ? WHERE id = ? AND ended_at IS NULL;
+
+expireSupportSessions:
+UPDATE support_sessions SET ended_at = ends_at, ended_by = 'expiry' WHERE ended_at IS NULL AND ends_at <= ?;
+
+selectOperatorByTokenHash:
+SELECT * FROM operators WHERE token_hash = ?;
+
+selectOperatorByLabel:
+SELECT * FROM operators WHERE label = ?;
+
+insertOperator:
+INSERT INTO operators (id, label, token_hash, created_at, revoked_at, last_seen_at, expires_at)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+updateOperatorLastSeen:
+UPDATE operators SET last_seen_at = ? WHERE id = ?;
+
+revokeOperatorByLabel:
+UPDATE operators SET revoked_at = ? WHERE label = ? AND revoked_at IS NULL;
+
+-- Phase 13: Alice-side attribute log (L75) for attributes HA recorder may not keep
+CREATE TABLE entity_attribute_log (
+  id           TEXT    NOT NULL PRIMARY KEY,
+  household_id TEXT    NOT NULL,
+  entity_id    TEXT    NOT NULL,
+  values_json  TEXT    NOT NULL,
+  recorded_at  INTEGER NOT NULL
+);
+
+CREATE INDEX entity_attribute_log_lookup ON entity_attribute_log (household_id, entity_id, recorded_at);
+
+insertEntityAttributeLog:
+INSERT INTO entity_attribute_log (id, household_id, entity_id, values_json, recorded_at)
+VALUES (?, ?, ?, ?, ?);
+
+selectEntityAttributeLog:
+SELECT * FROM entity_attribute_log
+WHERE household_id = ? AND entity_id = ? AND recorded_at >= ? AND recorded_at <= ?
+ORDER BY recorded_at ASC;
+
+deleteEntityAttributeLogBefore:
+DELETE FROM entity_attribute_log WHERE recorded_at < ?;
+
+deleteAuditLogBefore:
+DELETE FROM audit_log WHERE created_at < ?;
+
+
+-- Phase 14: update records
+CREATE TABLE update_records (
+  id             TEXT    NOT NULL PRIMARY KEY,
+  household_id   TEXT    NOT NULL REFERENCES households (id) ON DELETE CASCADE,
+  from_version   TEXT    NOT NULL,
+  version        TEXT    NOT NULL,
+  status         TEXT    NOT NULL,
+  trigger_kind   TEXT    NOT NULL,
+  reason         TEXT,
+  requested_by   TEXT,
+  scheduled_for  INTEGER,
+  backup_id      TEXT,
+  ha_backup_id   TEXT,
+  error          TEXT,
+  created_at     INTEGER NOT NULL,
+  started_at     INTEGER,
+  finished_at    INTEGER
+);
+
+CREATE INDEX update_records_household_idx ON update_records (household_id, created_at);
+
+selectUpdateRecordsByHousehold:
+SELECT * FROM update_records WHERE household_id = ? ORDER BY created_at DESC, id DESC LIMIT ?;
+
+selectUpdateRecordById:
+SELECT * FROM update_records WHERE id = ? AND household_id = ?;
+
+selectActiveUpdateRecord:
+SELECT * FROM update_records
+WHERE household_id = ? AND status IN ('scheduled', 'preparing', 'installing')
+ORDER BY created_at DESC LIMIT 1;
+
+selectLastUpdateRecordByHousehold:
+SELECT * FROM update_records WHERE household_id = ? ORDER BY created_at DESC LIMIT 1;
+
+selectTriedUpdateForVersion:
+SELECT * FROM update_records
+WHERE household_id = ? AND version = ? AND status IN ('failed', 'rolled_back')
+LIMIT 1;
+
+insertUpdateRecord:
+INSERT INTO update_records (
+  id, household_id, from_version, version, status, trigger_kind, reason, requested_by,
+  scheduled_for, backup_id, ha_backup_id, error, created_at, started_at, finished_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateUpdateRecordStatus:
+UPDATE update_records SET status = ?, error = ?, finished_at = ? WHERE id = ?;
+
+updateUpdateRecordStart:
+UPDATE update_records SET status = ?, started_at = ?, finished_at = ? WHERE id = ?;
+
+updateUpdateRecordBackup:
+UPDATE update_records SET backup_id = ? WHERE id = ?;
+
+updateUpdateRecordHaBackup:
+UPDATE update_records SET ha_backup_id = ? WHERE id = ?;
+
+CREATE INDEX operators_token_idx ON operators (token_hash);

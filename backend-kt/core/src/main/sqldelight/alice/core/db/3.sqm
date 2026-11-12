@@ -1,0 +1,4 @@
+CREATE INDEX IF NOT EXISTS sessions_expires_idx ON sessions (expires_at);
+CREATE INDEX IF NOT EXISTS config_jobs_dedupe_idx ON config_jobs (household_id, dedupe_key);
+CREATE INDEX IF NOT EXISTS groups_household_idx ON groups (household_id);
+CREATE INDEX IF NOT EXISTS operators_token_idx ON operators (token_hash);

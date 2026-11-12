@@ -1,0 +1,52 @@
+# Throwaway Home Assistant pair for the parity harness. Runbook §5.2.
+# Only the `alice-parity` project and `alice-parity-*` containers/volumes are created.
+# Start through env/up.ts, which sets PARITY_HA_CONFIG to the generated configuration copy.
+name: alice-parity
+
+x-ha: &ha
+  image: ghcr.io/home-assistant/home-assistant:2026.10.4
+  restart: "no"
+  environment:
+    TZ: UTC
+
+services:
+  init-a:
+    <<: *ha
+    entrypoint: ["sh", "-c", "touch /config/scripts.yaml /config/automations.yaml"]
+    volumes:
+      - ha-a:/config
+  init-b:
+    <<: *ha
+    entrypoint: ["sh", "-c", "touch /config/scripts.yaml /config/automations.yaml"]
+    volumes:
+      - ha-b:/config
+
+  ha-a:
+    <<: *ha
+    container_name: alice-parity-ha-a
+    depends_on:
+      init-a:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:18123:8123"
+    volumes:
+      - ha-a:/config
+      - ${PARITY_HA_CONFIG:?set PARITY_HA_CONFIG to the generated configuration.yaml}:/config/configuration.yaml:ro
+      - ./ha-parity-pack.yaml:/config/parity-pack.yaml:ro
+
+  ha-b:
+    <<: *ha
+    container_name: alice-parity-ha-b
+    depends_on:
+      init-b:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:18124:8123"
+    volumes:
+      - ha-b:/config
+      - ${PARITY_HA_CONFIG:?set PARITY_HA_CONFIG to the generated configuration.yaml}:/config/configuration.yaml:ro
+      - ./ha-parity-pack.yaml:/config/parity-pack.yaml:ro
+
+volumes:
+  ha-a: {}
+  ha-b: {}

@@ -1,0 +1,49 @@
+-- Per-connection settings were keyed without the household, so two households sharing an entity id shared one row.
+CREATE TABLE entity_settings_new (
+  connection_id      TEXT    NOT NULL,
+  entity_id          TEXT    NOT NULL,
+  household_id       TEXT    NOT NULL REFERENCES households (id) ON DELETE CASCADE,
+  power_limit_w      INTEGER,
+  left_open_after_ms INTEGER,
+  voice_exposed      INTEGER NOT NULL DEFAULT 0,
+  voice_sync_status  TEXT    NOT NULL DEFAULT 'none',
+  voice_sync_error   TEXT,
+  updated_at         INTEGER NOT NULL,
+  PRIMARY KEY (household_id, connection_id, entity_id)
+);
+INSERT INTO entity_settings_new SELECT connection_id, entity_id, household_id, power_limit_w, left_open_after_ms, voice_exposed, voice_sync_status, voice_sync_error, updated_at FROM entity_settings;
+DROP TABLE entity_settings;
+ALTER TABLE entity_settings_new RENAME TO entity_settings;
+
+CREATE TABLE thing_overrides_new (
+  id            TEXT    NOT NULL PRIMARY KEY,
+  household_id  TEXT    NOT NULL REFERENCES households (id) ON DELETE CASCADE,
+  connection_id TEXT    NOT NULL,
+  ref           TEXT    NOT NULL,
+  display_name  TEXT,
+  hidden        INTEGER,
+  area_id       TEXT,
+  updated_by    TEXT    REFERENCES users (id),
+  updated_at    INTEGER NOT NULL,
+  UNIQUE (household_id, connection_id, ref)
+);
+INSERT INTO thing_overrides_new SELECT id, household_id, connection_id, ref, display_name, hidden, area_id, updated_by, updated_at FROM thing_overrides;
+DROP TABLE thing_overrides;
+ALTER TABLE thing_overrides_new RENAME TO thing_overrides;
+
+CREATE TABLE entity_overrides_new (
+  household_id  TEXT    NOT NULL REFERENCES households (id) ON DELETE CASCADE,
+  connection_id TEXT    NOT NULL,
+  entity_id     TEXT    NOT NULL,
+  role          TEXT,
+  display_name  TEXT,
+  attach_to     TEXT,
+  hidden        INTEGER,
+  on_means      TEXT,
+  updated_by    TEXT    REFERENCES users (id),
+  updated_at    INTEGER NOT NULL,
+  PRIMARY KEY (household_id, connection_id, entity_id)
+);
+INSERT INTO entity_overrides_new SELECT household_id, connection_id, entity_id, role, display_name, attach_to, hidden, on_means, updated_by, updated_at FROM entity_overrides;
+DROP TABLE entity_overrides;
+ALTER TABLE entity_overrides_new RENAME TO entity_overrides;

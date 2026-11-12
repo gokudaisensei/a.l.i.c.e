@@ -1,0 +1,77 @@
+# Extra Home Assistant configuration loaded as a package by the parity instances (runbook §5.2, T0.4).
+# It is mounted at /config/parity-pack.yaml and pulled in by the generated configuration copy, so the
+# shared backend/dev/ha/configuration.yaml is never edited.
+#
+# Persons: three stable identities for visibility tests (person.parity_admin/member/guest).
+person:
+  - name: Parity Admin
+    id: parity_admin
+    device_trackers: []
+  - name: Parity Member
+    id: parity_member
+    device_trackers: []
+  - name: Parity Guest
+    id: parity_guest
+    device_trackers: []
+
+input_boolean:
+  parity_door:
+    name: Parity Door
+
+input_select:
+  parity_mode:
+    name: Parity Mode
+    options:
+      - Home
+      - Away
+      - Night
+      - Vacation
+    initial: Home
+
+input_number:
+  parity_kettle_power:
+    name: Parity Kettle Power
+    min: 0
+    max: 3000
+    step: 1
+    unit_of_measurement: W
+  parity_tv_power:
+    name: Parity TV Power
+    min: 0
+    max: 1000
+    step: 1
+    unit_of_measurement: W
+  parity_washer_power:
+    name: Parity Washer Power
+    min: 0
+    max: 2000
+    step: 1
+    unit_of_measurement: W
+
+template:
+  # A door sensor driven by a helper, so a test can open/close a "door" without hardware.
+  - binary_sensor:
+      - name: Parity door
+        unique_id: alice_parity_door
+        device_class: door
+        state: "{{ is_state('input_boolean.parity_door', 'on') }}"
+  # Power sensors driven by helpers, so power-limit alerts and energy have real numbers.
+  - sensor:
+      - name: Parity kettle power
+        unique_id: alice_parity_kettle_power
+        unit_of_measurement: W
+        device_class: power
+        state_class: measurement
+        state: "{{ states('input_number.parity_kettle_power') | float(0) }}"
+      - name: Parity TV power
+        unique_id: alice_parity_tv_power
+        unit_of_measurement: W
+        device_class: power
+        state_class: measurement
+        state: "{{ states('input_number.parity_tv_power') | float(0) }}"
+      - name: Parity washer power
+        unique_id: alice_parity_washer_power
+        unit_of_measurement: W
+        device_class: power
+        state_class: measurement
+        state: "{{ states('input_number.parity_washer_power') | float(0) }}"

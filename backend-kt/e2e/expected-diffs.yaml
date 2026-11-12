@@ -1,0 +1,12 @@
+# Accepted differences between the TS oracle and Kotlin.
+# Every entry REQUIRES approvedBy (an agent may not self-approve; RUNBOOK §8.4).
+# Format:
+#   - id: D-001
+#     route: "GET /api/v1/home"
+#     field: "$.extra"
+#     kind: kotlin_additive | ts_quirk_not_copied | intended_fix
+#     reason: "..."
+#     reference: "backend-kt/docs/PARITY.md#1"
+#     approvedBy: "<user>"
+#     approvedOn: "2026-.."
+# This file starts empty and grows only through user review.

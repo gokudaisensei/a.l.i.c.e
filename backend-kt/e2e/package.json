@@ -1,0 +1,16 @@
+{
+  "name": "alice-e2e-parity",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "End-to-end parity harness for backend-kt against the TypeScript backend. See ../docs/E2E_RUNBOOK.md.",
+  "scripts": {
+    "preflight": "bun env/preflight.ts",
+    "up": "bun env/up.ts",
+    "down": "bun env/down.ts",
+    "stack": "bun env/stack.ts",
+    "snapshot": "bun env/snapshot.ts",
+    "run": "bun run.ts",
+    "test": "bun test"
+  }
+}

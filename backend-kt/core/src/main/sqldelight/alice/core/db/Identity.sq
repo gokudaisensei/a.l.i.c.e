@@ -1,0 +1,1404 @@
+-- Identity, sessions and households.
+--
+-- Ported from backend/src/core/database/schema/{identity,households}.ts
+-- (the current Drizzle 0013 shape). Timestamps are unix milliseconds; JSON
+-- columns are TEXT and are validated by @Serializable types at the edge.
+-- Booleans are INTEGER 0/1, mapped to Boolean in Kotlin rather than relying on
+-- an extra primitive-adapters dependency.
+
+CREATE TABLE users (
+  id           TEXT    NOT NULL PRIMARY KEY,
+  display_name TEXT    NOT NULL,
+  avatar_color INTEGER NOT NULL DEFAULT 1,
+  locale       TEXT    NOT NULL DEFAULT 'en',
+  created_at   INTEGER NOT NULL
+);
+
+CREATE TABLE user_preferences (
+  user_id      TEXT    NOT NULL PRIMARY KEY REFERENCES users (id) ON DELETE CASCADE,
+  quiet_hours  TEXT,
+  push_enabled INTEGER NOT NULL DEFAULT 1,
+  extra        TEXT
+);
+
+CREATE TABLE passkeys (
+  id           TEXT    NOT NULL PRIMARY KEY,
+  user_id      TEXT    NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  public_key   TEXT    NOT NULL,
+  counter      INTEGER NOT NULL DEFAULT 0,
+  transports   TEXT,
+  device_label TEXT,
+  created_at   INTEGER NOT NULL,
+  last_used_at INTEGER
+);
+
+CREATE INDEX passkeys_user_idx ON passkeys (user_id);
+
+CREATE TABLE sessions (
+  id             TEXT    NOT NULL PRIMARY KEY,
+  user_id        TEXT    NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  token_hash     TEXT    NOT NULL UNIQUE,
+  created_at     INTEGER NOT NULL,
+  expires_at     INTEGER NOT NULL,
+  last_seen_at   INTEGER NOT NULL,
+  revoked_at     INTEGER,
+  user_agent     TEXT,
+  last_step_up_at INTEGER,
+  restricted     INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX sessions_user_idx ON sessions (user_id);
+
+CREATE TABLE recovery_codes (
+  id         TEXT    NOT NULL PRIMARY KEY,
+  user_id    TEXT    NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  code_hash  TEXT    NOT NULL UNIQUE,
+  used_at    INTEGER,
+  created_at INTEGER NOT NULL
+);
+
+CREATE INDEX recovery_codes_user_idx ON recovery_codes (user_id);
+
+CREATE TABLE webauthn_challenges (
+  id         TEXT    NOT NULL PRIMARY KEY,
+  user_id    TEXT,
+  challenge  TEXT    NOT NULL,
+  purpose    TEXT    NOT NULL,
+  data       TEXT,
+  expires_at INTEGER NOT NULL,
+  used_at    INTEGER
+);
+
+CREATE TABLE households (
+  id         TEXT    NOT NULL PRIMARY KEY,
+  name       TEXT    NOT NULL,
+  timezone   TEXT    NOT NULL DEFAULT 'UTC',
+  created_at INTEGER NOT NULL
+);
+
+CREATE TABLE household_settings (
+  household_id    TEXT NOT NULL PRIMARY KEY REFERENCES households (id) ON DELETE CASCADE,
+  mode            TEXT NOT NULL DEFAULT 'home',
+  mode_changed_at INTEGER,
+  mode_changed_by TEXT,
+  settings        TEXT
+);
+
+CREATE TABLE household_members (
+  id           TEXT    NOT NULL PRIMARY KEY,
+  household_id TEXT    NOT NULL REFERENCES households (id) ON DELETE CASCADE,
+  user_id      TEXT    NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  role         TEXT    NOT NULL,
+  expires_at   INTEGER,
+  joined_at    INTEGER NOT NULL,
+  UNIQUE (household_id, user_id)
+);
+
+CREATE INDEX household_members_user_idx ON household_members (user_id);
+
+CREATE TABLE invitations (
+  id              TEXT    NOT NULL PRIMARY KEY,
+  household_id    TEXT    NOT NULL REFERENCES households (id) ON DELETE CASCADE,
+  code_hash       TEXT    NOT NULL UNIQUE,
+  role            TEXT    NOT NULL,
+  guest_access_ms INTEGER,
+  created_by      TEXT    NOT NULL REFERENCES users (id),
+  created_at      INTEGER NOT NULL,
+  expires_at      INTEGER NOT NULL,
+  used_by         TEXT REFERENCES users (id),
+  used_at         INTEGER,
+  revoked_at      INTEGER
+);
+
+CREATE INDEX invitations_household_idx ON invitations (household_id);
+
+-- ---- users ----------------------------------------------------------------
+
+countUsers:
+SELECT count(*) FROM users;
+
+selectAnyUserId:
+SELECT id FROM users LIMIT 1;
+
+selectUserById:
+SELECT * FROM users WHERE id = ?;
+
+updateUserDisplayName:
+UPDATE users SET display_name = ? WHERE id = ?;
+
+updateUserAvatarColor:
+UPDATE users SET avatar_color = ? WHERE id = ?;
+
+updateUserLocale:
+UPDATE users SET locale = ? WHERE id = ?;
+
+insertUser:
+INSERT INTO users (id, display_name, created_at)
+VALUES (?, ?, ?);
+
+insertUserPreferences:
+INSERT INTO user_preferences (user_id) VALUES (?);
+
+selectUserPreferences:
+SELECT * FROM user_preferences WHERE user_id = ?;
+
+-- ---- passkeys -------------------------------------------------------------
+
+selectPasskeyById:
+SELECT * FROM passkeys WHERE id = ?;
+
+selectPasskeysByUser:
+SELECT * FROM passkeys WHERE user_id = ? ORDER BY created_at ASC, rowid ASC;
+
+countPasskeysByUser:
+SELECT count(*) FROM passkeys WHERE user_id = ?;
+
+insertPasskey:
+INSERT INTO passkeys (id, user_id, public_key, counter, transports, device_label, created_at, last_used_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+updatePasskeyUsage:
+UPDATE passkeys SET counter = ?, last_used_at = ? WHERE id = ?;
+
+deletePasskeyById:
+DELETE FROM passkeys WHERE id = ?;
+
+-- ---- sessions -------------------------------------------------------------
+
+insertSession:
+INSERT INTO sessions (id, user_id, token_hash, created_at, expires_at, last_seen_at, user_agent, last_step_up_at, restricted)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+selectSessionByTokenHash:
+SELECT * FROM sessions WHERE token_hash = ?;
+
+selectSessionById:
+SELECT * FROM sessions WHERE id = ?;
+
+updateSessionLastSeen:
+UPDATE sessions SET last_seen_at = ? WHERE id = ?;
+
+updateSessionExpiry:
+UPDATE sessions SET expires_at = ? WHERE id = ?;
+
+updateSessionStepUp:
+UPDATE sessions SET last_step_up_at = ? WHERE id = ?;
+
+unrestrictSession:
+UPDATE sessions SET restricted = 0, last_step_up_at = ? WHERE id = ?;
+
+revokeSessionById:
+UPDATE sessions SET revoked_at = ? WHERE id = ?;
+
+revokeAllSessionsByUser:
+UPDATE sessions SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL;
+
+revokeAllSessionsByUserExcept:
+UPDATE sessions SET revoked_at = ? WHERE user_id = ? AND id != ? AND revoked_at IS NULL;
+
+selectActiveSessionsByUser:
+SELECT * FROM sessions
+WHERE user_id = ? AND revoked_at IS NULL AND expires_at > ?
+ORDER BY last_seen_at DESC;
+
+-- ---- recovery codes -------------------------------------------------------
+
+insertRecoveryCode:
+INSERT INTO recovery_codes (id, user_id, code_hash, created_at)
+VALUES (?, ?, ?, ?);
+
+-- Single use even when two requests race: the WHERE clause is the guard.
+consumeRecoveryCode:
+UPDATE recovery_codes SET used_at = ?
+WHERE code_hash = ? AND used_at IS NULL
+RETURNING *;
+
+deleteUnusedRecoveryCodes:
+DELETE FROM recovery_codes WHERE user_id = ? AND used_at IS NULL;
+
+-- ---- challenges -----------------------------------------------------------
+
+insertChallenge:
+INSERT INTO webauthn_challenges (id, user_id, challenge, purpose, data, expires_at)
+VALUES (?, ?, ?, ?, ?, ?);
+
+-- Single use, even if verification then fails, so a captured challenge cannot
+-- be retried.
+takeChallenge:
+UPDATE webauthn_challenges SET used_at = ?
+WHERE id = ? AND purpose = ? AND used_at IS NULL AND expires_at > ?
+RETURNING *;
+
+deleteExpiredChallenges:
+DELETE FROM webauthn_challenges WHERE expires_at <= ?;
+
+-- ---- households -----------------------------------------------------------
+
+insertHousehold:
+INSERT INTO households (id, name, created_at) VALUES (?, ?, ?);
+
+selectHouseholdById:
+SELECT * FROM households WHERE id = ?;
+
+updateHousehold:
+UPDATE households
+SET name = COALESCE(?, name), timezone = COALESCE(?, timezone)
+WHERE id = ?;
+
+insertHouseholdSettings:
+INSERT INTO household_settings (household_id) VALUES (?);
+
+selectHouseholdSettings:
+SELECT * FROM household_settings WHERE household_id = ?;
+
+updateHouseholdMode:
+UPDATE household_settings SET mode = ?, mode_changed_at = ?, mode_changed_by = ? WHERE household_id = ?;
+
+insertHouseholdMember:
+INSERT INTO household_members (id, household_id, user_id, role, expires_at, joined_at)
+VALUES (?, ?, ?, ?, ?, ?);
+
+selectMembershipByUser:
+SELECT * FROM household_members WHERE user_id = ? ORDER BY joined_at ASC, rowid ASC LIMIT 1;
+
+selectHouseholdMember:
+SELECT * FROM household_members WHERE id = ? AND household_id = ?;
+
+countHouseholdAdmins:
+SELECT count(*) FROM household_members WHERE household_id = ? AND role = 'admin';
+
+selectHouseholdMembersWithUsers:
+SELECT m.id, m.user_id, m.role, m.expires_at, m.joined_at, u.display_name, u.avatar_color
+FROM household_members m
+JOIN users u ON u.id = m.user_id
+WHERE m.household_id = ?
+ORDER BY m.joined_at ASC;
+
+updateHouseholdMemberRole:
+UPDATE household_members SET role = ? WHERE id = ?;
+
+updateHouseholdMemberExpiry:
+UPDATE household_members SET expires_at = ? WHERE id = ?;
+
+deleteHouseholdMemberById:
+DELETE FROM household_members WHERE id = ?;
+
+CREATE TABLE device_policies (
+  id            TEXT    NOT NULL PRIMARY KEY,
+  household_id  TEXT    NOT NULL REFERENCES households (id) ON DELETE CASCADE,
+  connection_id TEXT    NOT NULL,
+  entity_id     TEXT    NOT NULL,
+  subject_type  TEXT    NOT NULL,
+  subject_id    TEXT    NOT NULL,
+  effect        TEXT    NOT NULL,
+  operations    TEXT,
+  created_by    TEXT    REFERENCES users (id),
+  created_at    INTEGER NOT NULL
+);
+
+CREATE INDEX device_policies_household_idx ON device_policies (household_id, entity_id);
+
+CREATE TABLE sensitive_operation_rules (
+  id           TEXT    NOT NULL PRIMARY KEY,
+  household_id TEXT    NOT NULL REFERENCES households (id) ON DELETE CASCADE,
+  domain       TEXT    NOT NULL,
+  action       TEXT    NOT NULL,
+  device_class TEXT    NOT NULL DEFAULT '',
+  sensitive    INTEGER NOT NULL,
+  updated_by   TEXT    REFERENCES users (id),
+  updated_at   INTEGER NOT NULL,
+  UNIQUE (household_id, domain, action, device_class)
+);
+
+insertInvitation:
+INSERT INTO invitations (id, household_id, code_hash, role, guest_access_ms, created_by, created_at, expires_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+selectInvitationByCodeHash:
+SELECT * FROM invitations WHERE code_hash = ?;
+
+selectInvitationById:
+SELECT * FROM invitations WHERE id = ?;
+
+selectActiveInvitations:
+SELECT * FROM invitations
+WHERE household_id = ? AND used_at IS NULL AND revoked_at IS NULL AND expires_at > ?;
+
+markInvitationUsed:
+UPDATE invitations SET used_by = ?, used_at = ? WHERE id = ?;
+
+revokeInvitation:
+UPDATE invitations SET revoked_at = ?
+WHERE id = ? AND household_id = ? AND used_at IS NULL;
+
+-- ---- smart serving (Phase 8) ---------------------------------------------
+
+CREATE TABLE interaction_stats (
+  household_id TEXT    NOT NULL,
+  user_id      TEXT    NOT NULL,
+  thing_id     TEXT    NOT NULL,
+  hour_bucket  INTEGER NOT NULL,
+  views        REAL    NOT NULL DEFAULT 0,
+  commands     REAL    NOT NULL DEFAULT 0,
+  undos        REAL    NOT NULL DEFAULT 0,
+  last_used_at INTEGER NOT NULL,
+  updated_at   INTEGER NOT NULL,
+  PRIMARY KEY (household_id, user_id, thing_id, hour_bucket)
+);
+
+CREATE TABLE action_defaults (
+  household_id TEXT    NOT NULL,
+  user_id      TEXT    NOT NULL,
+  thing_id     TEXT    NOT NULL,
+  action       TEXT    NOT NULL,
+  params       TEXT    NOT NULL,
+  uses         INTEGER NOT NULL DEFAULT 1,
+  last_used_at INTEGER NOT NULL,
+  PRIMARY KEY (household_id, user_id, thing_id, action)
+);
+
+CREATE TABLE query_history (
+  household_id TEXT    NOT NULL,
+  user_id      TEXT    NOT NULL,
+  query_norm   TEXT    NOT NULL,
+  hits         INTEGER NOT NULL DEFAULT 1,
+  last_used_at INTEGER NOT NULL,
+  PRIMARY KEY (household_id, user_id, query_norm)
+);
+
+CREATE TABLE scene_usage (
+  household_id TEXT    NOT NULL,
+  user_id      TEXT    NOT NULL,
+  scene_id     TEXT    NOT NULL,
+  hour_bucket  INTEGER NOT NULL,
+  runs         REAL    NOT NULL DEFAULT 0,
+  last_run_at  INTEGER NOT NULL,
+  PRIMARY KEY (household_id, user_id, scene_id, hour_bucket)
+);
+
+CREATE TABLE home_orders (
+  household_id TEXT    NOT NULL,
+  user_id      TEXT    NOT NULL,
+  generation   INTEGER NOT NULL,
+  order_json   TEXT    NOT NULL,
+  issued_at    INTEGER NOT NULL,
+  PRIMARY KEY (household_id, user_id)
+);
+
+selectInteractionStats:
+SELECT * FROM interaction_stats WHERE household_id = ? AND user_id = ?;
+
+selectInteractionStatsForThing:
+SELECT * FROM interaction_stats WHERE household_id = ? AND user_id = ? AND thing_id = ?;
+
+upsertInteractionStat:
+INSERT INTO interaction_stats (household_id, user_id, thing_id, hour_bucket, views, commands, undos, last_used_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT (household_id, user_id, thing_id, hour_bucket) DO UPDATE SET
+  views = excluded.views,
+  commands = excluded.commands,
+  undos = excluded.undos,
+  last_used_at = excluded.last_used_at,
+  updated_at = excluded.updated_at;
+
+selectActionDefault:
+SELECT * FROM action_defaults WHERE household_id = ? AND user_id = ? AND thing_id = ? AND action = ?;
+
+selectActionDefaultsForUser:
+SELECT * FROM action_defaults WHERE household_id = ? AND user_id = ?;
+
+upsertActionDefault:
+INSERT INTO action_defaults (household_id, user_id, thing_id, action, params, uses, last_used_at)
+VALUES (?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT (household_id, user_id, thing_id, action) DO UPDATE SET
+  params = excluded.params,
+  uses = excluded.uses,
+  last_used_at = excluded.last_used_at;
+
+selectQueryHistory:
+SELECT * FROM query_history WHERE household_id = ? AND user_id = ? ORDER BY last_used_at DESC LIMIT ?;
+
+upsertQueryHistory:
+INSERT INTO query_history (household_id, user_id, query_norm, hits, last_used_at)
+VALUES (?, ?, ?, ?, ?)
+ON CONFLICT (household_id, user_id, query_norm) DO UPDATE SET
+  hits = excluded.hits,
+  last_used_at = excluded.last_used_at;
+
+selectSceneUsage:
+SELECT * FROM scene_usage WHERE household_id = ? AND user_id = ?;
+
+upsertSceneUsage:
+INSERT INTO scene_usage (household_id, user_id, scene_id, hour_bucket, runs, last_run_at)
+VALUES (?, ?, ?, ?, ?, ?)
+ON CONFLICT (household_id, user_id, scene_id, hour_bucket) DO UPDATE SET
+  runs = excluded.runs,
+  last_run_at = excluded.last_run_at;
+
+selectHomeOrder:
+SELECT * FROM home_orders WHERE household_id = ? AND user_id = ?;
+
+upsertHomeOrder:
+INSERT INTO home_orders (household_id, user_id, generation, order_json, issued_at)
+VALUES (?, ?, ?, ?, ?)
+ON CONFLICT (household_id, user_id) DO UPDATE SET
+  generation = excluded.generation,
+  order_json = excluded.order_json,
+  issued_at = excluded.issued_at;
+
+selectDevicePoliciesByHousehold:
+SELECT * FROM device_policies WHERE household_id = ?;
+
+selectDevicePoliciesByEntity:
+SELECT * FROM device_policies WHERE household_id = ? AND entity_id = ?;
+
+insertDevicePolicy:
+INSERT INTO device_policies (id, household_id, connection_id, entity_id, subject_type, subject_id, effect, operations, created_by, created_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+deleteDevicePolicy:
+DELETE FROM device_policies WHERE id = ? AND household_id = ?;
+
+-- ---- sensitive operation rules --------------------------------------------
+
+selectSensitiveRulesByHousehold:
+SELECT * FROM sensitive_operation_rules WHERE household_id = ?;
+
+insertSensitiveRule:
+INSERT INTO sensitive_operation_rules (id, household_id, domain, action, device_class, sensitive, updated_by, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+deleteSensitiveRulesByHousehold:
+DELETE FROM sensitive_operation_rules WHERE household_id = ?;
+
+deleteSensitiveRule:
+DELETE FROM sensitive_operation_rules WHERE id = ? AND household_id = ?;
+
+-- ---- commands -----------------------------------------------------------
+
+CREATE TABLE commands (
+  id              TEXT    NOT NULL PRIMARY KEY,
+  household_id    TEXT    NOT NULL REFERENCES households (id) ON DELETE CASCADE,
+  connection_id   TEXT,
+  entity_id       TEXT    NOT NULL,
+  domain          TEXT    NOT NULL,
+  action          TEXT    NOT NULL,
+  parameters      TEXT,
+  state           TEXT    NOT NULL,
+  requested_state TEXT,
+  actual_state    TEXT,
+  requested_by    TEXT,
+  source          TEXT    NOT NULL,
+  ha_context_id   TEXT,
+  failure_code    TEXT,
+  failure_message TEXT,
+  confirmed_by    TEXT,
+  created_at      INTEGER NOT NULL,
+  dispatched_at   INTEGER,
+  accepted_at     INTEGER,
+  finished_at     INTEGER,
+  timeout_at      INTEGER,
+  previous_state  TEXT,
+  undo_of         TEXT,
+  undone_by       TEXT,
+  group_id        TEXT
+);
+
+CREATE INDEX commands_household_idx ON commands (household_id, created_at);
+CREATE INDEX commands_state_idx ON commands (state);
+
+insertCommand:
+INSERT INTO commands (id, household_id, connection_id, entity_id, domain, action, parameters, state, requested_state, actual_state,
+  requested_by, source, ha_context_id, failure_code, failure_message, confirmed_by, created_at, dispatched_at, accepted_at,
+  finished_at, timeout_at, previous_state, undo_of, undone_by, group_id)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- Only the fields a command changes after it is created.
+updateCommandProgress:
+UPDATE commands SET state = ?, actual_state = ?, ha_context_id = ?, failure_code = ?, failure_message = ?, confirmed_by = ?,
+  dispatched_at = ?, accepted_at = ?, finished_at = ?, timeout_at = ?, undone_by = ?
+WHERE id = ?;
+
+selectCommandById:
+SELECT * FROM commands WHERE id = ?;
+
+selectCommands:
+SELECT * FROM commands
+WHERE (:household IS NULL OR household_id = :household)
+  AND (:state IS NULL OR state = :state)
+  AND (:entity IS NULL OR entity_id = :entity)
+ORDER BY created_at DESC, id DESC
+LIMIT :limit;
+
+selectUnfinishedCommands:
+SELECT * FROM commands WHERE state IN ('pending', 'authorized', 'dispatched', 'accepted');
+
+deleteFinishedCommandsBefore:
+DELETE FROM commands WHERE created_at < ? AND state IN ('confirmed', 'failed', 'timed_out', 'cancelled');
+
+CREATE TABLE idempotency_keys (
+  user_id    TEXT    NOT NULL,
+  key        TEXT    NOT NULL,
+  fingerprint TEXT   NOT NULL,
+  command_id TEXT    NOT NULL,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, key)
+);
+
+selectIdempotencyKey:
+SELECT * FROM idempotency_keys WHERE user_id = ? AND key = ?;
+
+insertIdempotencyKey:
+INSERT INTO idempotency_keys (user_id, key, fingerprint, command_id, created_at)
+VALUES (?, ?, ?, ?, ?)
+ON CONFLICT (user_id, key) DO UPDATE SET fingerprint = excluded.fingerprint, command_id = excluded.command_id, created_at = excluded.created_at;
+
+deleteExpiredIdempotencyKeys:
+DELETE FROM idempotency_keys WHERE created_at < ?;
+
+-- ---- entity settings ------------------------------------------------------
+
+CREATE TABLE entity_settings (
+  connection_id      TEXT    NOT NULL,
+  entity_id          TEXT    NOT NULL,
+  household_id       TEXT    NOT NULL REFERENCES households (id) ON DELETE CASCADE,
+  power_limit_w      INTEGER,
+  left_open_after_ms INTEGER,
+  voice_exposed      INTEGER NOT NULL DEFAULT 0,
+  voice_sync_status  TEXT    NOT NULL DEFAULT 'none',
+  voice_sync_error   TEXT,
+  updated_at         INTEGER NOT NULL,
+  PRIMARY KEY (household_id, connection_id, entity_id)
+);
+
+selectEntitySettings:
+SELECT * FROM entity_settings WHERE household_id = ? AND connection_id = ? AND entity_id = ?;
+
+upsertEntitySettings:
+INSERT INTO entity_settings (connection_id, entity_id, household_id, power_limit_w, left_open_after_ms, voice_exposed, voice_sync_status, voice_sync_error, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT (household_id, connection_id, entity_id) DO UPDATE SET
+  power_limit_w = excluded.power_limit_w,
+  left_open_after_ms = excluded.left_open_after_ms,
+  voice_exposed = excluded.voice_exposed,
+  voice_sync_status = excluded.voice_sync_status,
+  voice_sync_error = excluded.voice_sync_error,
+  updated_at = excluded.updated_at;
+
+-- ---- favorites -----------------------------------------------------------
+
+CREATE TABLE favorites (
+  user_id       TEXT    NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  connection_id TEXT    NOT NULL,
+  ref           TEXT    NOT NULL,
+  position      INTEGER NOT NULL,
+  PRIMARY KEY (user_id, connection_id, ref)
+);
+
+selectFavoritesByUser:
+SELECT * FROM favorites WHERE user_id = ? ORDER BY position ASC;
+
+insertFavorite:
+INSERT INTO favorites (user_id, connection_id, ref, position)
+VALUES (?, ?, ?, ?);
+
+deleteFavorite:
+DELETE FROM favorites WHERE user_id = ? AND connection_id = ? AND ref = ?;
+
+deleteAllFavoritesByUser:
+DELETE FROM favorites WHERE user_id = ?;
+
+-- ---- account lockouts ----------------------------------------------------
+
+CREATE TABLE account_lockouts (
+  user_id       TEXT    NOT NULL PRIMARY KEY,
+  failed_count  INTEGER NOT NULL DEFAULT 0,
+  locked_until  INTEGER,
+  last_failed_at INTEGER
+);
+
+selectAccountLockout:
+SELECT * FROM account_lockouts WHERE user_id = ?;
+
+upsertAccountLockout:
+INSERT INTO account_lockouts (user_id, failed_count, locked_until, last_failed_at)
+VALUES (?, ?, ?, ?)
+ON CONFLICT (user_id) DO UPDATE SET
+  failed_count = excluded.failed_count,
+  locked_until = excluded.locked_until,
+  last_failed_at = excluded.last_failed_at;
+
+resetAccountLockout:
+DELETE FROM account_lockouts WHERE user_id = ?;
+
+-- ---- household modes (settings already has mode column) -------------------
+
+-- ---- person links ---------------------------------------------------------
+
+CREATE TABLE person_links (
+  household_id     TEXT    NOT NULL REFERENCES households (id) ON DELETE CASCADE,
+  user_id          TEXT    NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  connection_id    TEXT    NOT NULL,
+  person_entity_id TEXT    NOT NULL,
+  created_at       INTEGER NOT NULL,
+  PRIMARY KEY (household_id, user_id),
+  UNIQUE (household_id, connection_id, person_entity_id)
+);
+
+selectPersonLinksByHousehold:
+SELECT * FROM person_links WHERE household_id = ?;
+
+selectPersonLinkByUser:
+SELECT * FROM person_links WHERE household_id = ? AND user_id = ?;
+
+insertPersonLink:
+INSERT INTO person_links (household_id, user_id, connection_id, person_entity_id, created_at)
+VALUES (?, ?, ?, ?, ?)
+ON CONFLICT (household_id, user_id) DO UPDATE SET
+  connection_id = excluded.connection_id,
+  person_entity_id = excluded.person_entity_id,
+  created_at = excluded.created_at;
+
+deletePersonLink:
+DELETE FROM person_links WHERE household_id = ? AND user_id = ?;
+
+-- ---- ha connections ------------------------------------------------------
+
+CREATE TABLE ha_connections (
+  id                  TEXT    NOT NULL PRIMARY KEY,
+  household_id        TEXT    NOT NULL REFERENCES households (id) ON DELETE CASCADE,
+  name                TEXT    NOT NULL,
+  base_url            TEXT    NOT NULL,
+  operational_token_enc TEXT  NOT NULL,
+  admin_token_enc     TEXT,
+  status              TEXT    NOT NULL DEFAULT 'disconnected',
+  last_connected_at   INTEGER,
+  last_error          TEXT,
+  ha_version          TEXT,
+  created_at          INTEGER NOT NULL,
+  updated_at          INTEGER NOT NULL,
+  UNIQUE (household_id)
+);
+
+selectHaConnectionsByHousehold:
+SELECT * FROM ha_connections WHERE household_id = ?;
+
+insertHaConnection:
+INSERT INTO ha_connections (id, household_id, name, base_url, operational_token_enc, admin_token_enc, status, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateHaConnection:
+UPDATE ha_connections SET name = ?, base_url = ?, operational_token_enc = ?, updated_at = ? WHERE id = ?;
+
+updateHaConnectionStatus:
+UPDATE ha_connections SET status = ?, last_connected_at = ?, last_error = ?, ha_version = ?, updated_at = ? WHERE id = ?;
+
+updateHaConnectionAdminToken:
+UPDATE ha_connections SET admin_token_enc = ?, updated_at = ? WHERE id = ?;
+
+deleteHaConnectionById:
+DELETE FROM ha_connections WHERE id = ?;
+
+-- ---- groups --------------------------------------------------------------
+
+CREATE TABLE groups (
+  id           TEXT    NOT NULL PRIMARY KEY,
+  household_id TEXT    NOT NULL REFERENCES households (id) ON DELETE CASCADE,
+  name         TEXT    NOT NULL,
+  icon         TEXT,
+  created_by   TEXT    REFERENCES users (id),
+  created_at   INTEGER NOT NULL
+);
+
+CREATE TABLE group_members (
+  group_id     TEXT    NOT NULL REFERENCES groups (id) ON DELETE CASCADE,
+  connection_id TEXT   NOT NULL,
+  ref          TEXT    NOT NULL,
+  position     INTEGER NOT NULL,
+  PRIMARY KEY (group_id, connection_id, ref)
+);
+
+selectGroupsByHousehold:
+SELECT * FROM groups WHERE household_id = ?;
+
+insertGroup:
+INSERT INTO groups (id, household_id, name, icon, created_by, created_at)
+VALUES (?, ?, ?, ?, ?, ?);
+
+selectGroupById:
+SELECT * FROM groups WHERE id = ?;
+
+updateGroup:
+UPDATE groups SET name = ?, icon = ? WHERE id = ?;
+
+deleteGroup:
+DELETE FROM groups WHERE id = ?;
+
+selectGroupMembers:
+SELECT * FROM group_members WHERE group_id = ? ORDER BY position ASC;
+
+insertGroupMember:
+INSERT INTO group_members (group_id, connection_id, ref, position)
+VALUES (?, ?, ?, ?);
+
+deleteGroupMembers:
+DELETE FROM group_members WHERE group_id = ?;
+
+
+-- ---- scenes --------------------------------------------------------------
+
+CREATE TABLE scenes (
+  id           TEXT    NOT NULL PRIMARY KEY,
+  household_id TEXT    NOT NULL REFERENCES households (id) ON DELETE CASCADE,
+  name         TEXT    NOT NULL,
+  icon         TEXT,
+  description  TEXT,
+  actions      TEXT    NOT NULL,
+  created_by   TEXT    REFERENCES users (id),
+  created_at   INTEGER NOT NULL,
+  updated_at   INTEGER NOT NULL,
+  last_run_at  INTEGER,
+  sync_status  TEXT    NOT NULL DEFAULT 'not_synced',
+  sync_error   TEXT,
+  synced_at    INTEGER,
+  ha_entity_id TEXT
+);
+
+CREATE INDEX scenes_household_idx ON scenes (household_id);
+
+selectScenesByHousehold:
+SELECT * FROM scenes WHERE household_id = ? ORDER BY name ASC;
+
+selectSceneById:
+SELECT * FROM scenes WHERE id = ?;
+
+insertScene:
+INSERT INTO scenes (id, household_id, name, icon, description, actions, created_by, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateScene:
+UPDATE scenes SET name = ?, icon = ?, description = ?, actions = ?, updated_at = ?, last_run_at = ?, sync_status = ?, sync_error = ?, synced_at = ?, ha_entity_id = ? WHERE id = ?;
+
+deleteScene:
+DELETE FROM scenes WHERE id = ?;
+
+-- ---- thing overrides ------------------------------------------------------
+
+CREATE TABLE thing_overrides (
+  id            TEXT    NOT NULL PRIMARY KEY,
+  household_id  TEXT    NOT NULL REFERENCES households (id) ON DELETE CASCADE,
+  connection_id TEXT    NOT NULL,
+  ref           TEXT    NOT NULL,
+  display_name  TEXT,
+  hidden        INTEGER,
+  area_id       TEXT,
+  updated_by    TEXT    REFERENCES users (id),
+  updated_at    INTEGER NOT NULL,
+  UNIQUE (household_id, connection_id, ref)
+);
+
+selectThingOverridesByHousehold:
+SELECT * FROM thing_overrides WHERE household_id = ?;
+
+upsertThingOverride:
+INSERT INTO thing_overrides (id, household_id, connection_id, ref, display_name, hidden, area_id, updated_by, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT (household_id, connection_id, ref) DO UPDATE SET
+  display_name = excluded.display_name,
+  hidden = excluded.hidden,
+  area_id = excluded.area_id,
+  updated_by = excluded.updated_by,
+  updated_at = excluded.updated_at;
+
+-- ---- entity overrides ----------------------------------------------------
+
+CREATE TABLE entity_overrides (
+  household_id  TEXT    NOT NULL REFERENCES households (id) ON DELETE CASCADE,
+  connection_id TEXT    NOT NULL,
+  entity_id     TEXT    NOT NULL,
+  role          TEXT,
+  display_name  TEXT,
+  attach_to     TEXT,
+  hidden        INTEGER,
+  on_means      TEXT,
+  updated_by    TEXT    REFERENCES users (id),
+  updated_at    INTEGER NOT NULL,
+  PRIMARY KEY (household_id, connection_id, entity_id)
+);
+
+selectEntityOverridesByHousehold:
+SELECT * FROM entity_overrides WHERE household_id = ?;
+
+selectEntityOverridesByConnection:
+SELECT * FROM entity_overrides WHERE connection_id = ?;
+
+upsertEntityOverride:
+INSERT INTO entity_overrides (household_id, connection_id, entity_id, role, display_name, attach_to, hidden, on_means, updated_by, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT (household_id, connection_id, entity_id) DO UPDATE SET
+  role = excluded.role,
+  display_name = excluded.display_name,
+  attach_to = excluded.attach_to,
+  hidden = excluded.hidden,
+  on_means = excluded.on_means,
+  updated_by = excluded.updated_by,
+  updated_at = excluded.updated_at;
+
+-- ---- thing links (merge/split) -------------------------------------------
+
+CREATE TABLE thing_links (
+  id            TEXT    NOT NULL PRIMARY KEY,
+  household_id  TEXT    NOT NULL REFERENCES households (id) ON DELETE CASCADE,
+  connection_id TEXT    NOT NULL,
+  kind          TEXT    NOT NULL,
+  refs          TEXT,
+  entity_id     TEXT,
+  created_by    TEXT    REFERENCES users (id),
+  created_at    INTEGER NOT NULL
+);
+
+selectThingLinksByHousehold:
+SELECT * FROM thing_links WHERE household_id = ? AND connection_id = ?;
+
+insertThingLink:
+INSERT INTO thing_links (id, household_id, connection_id, kind, refs, entity_id, created_by, created_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+deleteThingLinksByRefs:
+DELETE FROM thing_links WHERE household_id = ? AND connection_id = ? AND kind = 'merge' AND refs = ?;
+
+deleteThingLinkByEntityId:
+DELETE FROM thing_links WHERE connection_id = ? AND kind = 'split' AND entity_id = ?;
+
+-- ---- ha projection (persisted state for fast restart) ---------------------
+
+CREATE TABLE ha_entities (
+  connection_id TEXT    NOT NULL,
+  entity_id     TEXT    NOT NULL,
+  state         TEXT    NOT NULL,
+  attributes    TEXT,
+  last_changed  TEXT,
+  last_updated  TEXT,
+  synced_at     INTEGER NOT NULL,
+  PRIMARY KEY (connection_id, entity_id)
+);
+
+selectHaEntitiesByConnection:
+SELECT * FROM ha_entities WHERE connection_id = ?;
+
+upsertHaEntity:
+INSERT INTO ha_entities (connection_id, entity_id, state, attributes, last_changed, last_updated, synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT (connection_id, entity_id) DO UPDATE SET
+  state = excluded.state,
+  attributes = excluded.attributes,
+  last_changed = excluded.last_changed,
+  last_updated = excluded.last_updated,
+  synced_at = excluded.synced_at;
+
+deleteHaEntitiesByConnection:
+DELETE FROM ha_entities WHERE connection_id = ?;
+
+-- ---- config jobs (worker queue) ------------------------------------------
+
+CREATE TABLE config_jobs (
+  id             TEXT    NOT NULL PRIMARY KEY,
+  household_id   TEXT    NOT NULL REFERENCES households (id) ON DELETE CASCADE,
+  connection_id  TEXT    NOT NULL,
+  operation      TEXT    NOT NULL,
+  payload        TEXT    NOT NULL,
+  dedupe_key     TEXT,
+  status         TEXT    NOT NULL DEFAULT 'pending',
+  attempts       INTEGER NOT NULL DEFAULT 0,
+  run_after      INTEGER NOT NULL,
+  result         TEXT,
+  error          TEXT,
+  requested_by   TEXT,
+  created_at     INTEGER NOT NULL,
+  started_at     INTEGER,
+  completed_at   INTEGER,
+  applied_at     INTEGER
+);
+
+CREATE INDEX config_jobs_status_idx ON config_jobs (status, run_after);
+
+insertConfigJob:
+INSERT INTO config_jobs (id, household_id, connection_id, operation, payload, dedupe_key, status, attempts, run_after, requested_by, created_at)
+VALUES (?, ?, ?, ?, ?, ?, 'pending', 0, ?, ?, ?);
+
+selectConfigJobById:
+SELECT * FROM config_jobs WHERE id = ?;
+
+selectPendingConfigJobs:
+SELECT * FROM config_jobs WHERE connection_id = ? AND status IN ('pending', 'running');
+
+selectFailedConfigJobs:
+SELECT * FROM config_jobs WHERE connection_id = ? AND status = 'failed' AND applied_at IS NULL;
+
+selectUnappliedConfigJobs:
+SELECT * FROM config_jobs WHERE status IN ('done', 'failed') AND applied_at IS NULL;
+
+selectNextPendingConfigJob:
+SELECT * FROM config_jobs
+WHERE status = 'pending' AND run_after <= ?
+ORDER BY created_at ASC, rowid ASC
+LIMIT 1;
+
+claimConfigJob:
+UPDATE config_jobs
+SET status = 'running', started_at = ?, attempts = attempts + 1
+WHERE id = ? AND status = 'pending';
+
+resetRunningConfigJobs:
+UPDATE config_jobs SET status = 'pending' WHERE status = 'running';
+
+retryConfigJob:
+UPDATE config_jobs SET status = 'pending', error = ?, run_after = ? WHERE id = ?;
+
+finishConfigJob:
+UPDATE config_jobs SET status = ?, completed_at = ?, result = ?, error = ? WHERE id = ?;
+
+
+updateConfigJobStatus:
+UPDATE config_jobs SET status = ?, started_at = ?, completed_at = ?, result = ?, error = ?, applied_at = ? WHERE id = ?;
+
+deleteConfigJobsByDedupeKey:
+DELETE FROM config_jobs WHERE household_id = ? AND dedupe_key = ? AND status = 'pending';
+
+deleteOldConfigJobs:
+DELETE FROM config_jobs WHERE status IN ('done', 'failed') AND applied_at IS NOT NULL AND completed_at < ?;
+
+selectHaConnectionByHousehold:
+SELECT * FROM ha_connections WHERE household_id = ?;
+
+-- ---- command attempts (retry tracking) -----------------------------------
+
+CREATE TABLE command_attempts (
+  id           TEXT    NOT NULL PRIMARY KEY,
+  command_id   TEXT    NOT NULL REFERENCES commands (id) ON DELETE CASCADE,
+  attempt      INTEGER NOT NULL,
+  started_at   INTEGER NOT NULL,
+  finished_at  INTEGER,
+  outcome      TEXT,
+  error        TEXT
+);
+
+CREATE INDEX command_attempts_cmd_idx ON command_attempts (command_id, attempt);
+
+
+-- ---- routines -------------------------------------------------------------
+
+CREATE TABLE routines (
+  id            TEXT    NOT NULL PRIMARY KEY,
+  household_id  TEXT    NOT NULL REFERENCES households (id) ON DELETE CASCADE,
+  name          TEXT    NOT NULL,
+  icon          TEXT,
+  steps         TEXT    NOT NULL,
+  on_failure    TEXT    NOT NULL DEFAULT 'continue',
+  created_by    TEXT    REFERENCES users (id),
+  created_at    INTEGER NOT NULL,
+  updated_at    INTEGER NOT NULL,
+  last_run_at   INTEGER,
+  sync_status   TEXT    NOT NULL DEFAULT 'not_synced',
+  sync_error    TEXT,
+  synced_at     INTEGER,
+  ha_entity_id  TEXT
+);
+
+CREATE INDEX routines_household_idx ON routines (household_id);
+
+CREATE TABLE routine_runs (
+  id               TEXT    NOT NULL PRIMARY KEY,
+  routine_id       TEXT    NOT NULL,
+  routine_name     TEXT    NOT NULL,
+  household_id     TEXT    NOT NULL REFERENCES households (id) ON DELETE CASCADE,
+  user_id          TEXT    NOT NULL,
+  state            TEXT    NOT NULL,
+  started_at       INTEGER NOT NULL,
+  finished_at      INTEGER,
+  steps            TEXT    NOT NULL,
+  on_failure       TEXT    NOT NULL DEFAULT 'continue',
+  next_step        INTEGER NOT NULL DEFAULT 0,
+  resume_at        INTEGER,
+  step_up_until    INTEGER NOT NULL DEFAULT 0,
+  cancel_requested INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX routine_runs_household_idx ON routine_runs (household_id, started_at);
+CREATE INDEX routine_runs_state_idx ON routine_runs (state);
+
+-- ---- automations ----------------------------------------------------------
+
+CREATE TABLE automations (
+  id               TEXT    NOT NULL PRIMARY KEY,
+  household_id     TEXT    NOT NULL REFERENCES households (id) ON DELETE CASCADE,
+  name             TEXT    NOT NULL,
+  definition       TEXT    NOT NULL,
+  enabled          INTEGER NOT NULL DEFAULT 1,
+  sync_status      TEXT    NOT NULL DEFAULT 'not_synced',
+  sync_error       TEXT,
+  synced_at        INTEGER,
+  ha_entity_id     TEXT,
+  compiled_hash    TEXT,
+  last_triggered_at INTEGER,
+  created_by       TEXT    REFERENCES users (id),
+  created_at       INTEGER NOT NULL,
+  updated_at       INTEGER NOT NULL
+);
+
+CREATE INDEX automations_household_idx ON automations (household_id);
+
+CREATE TABLE automation_runs (
+  id             TEXT    NOT NULL PRIMARY KEY,
+  automation_id  TEXT    NOT NULL REFERENCES automations (id) ON DELETE CASCADE,
+  household_id   TEXT    NOT NULL REFERENCES households (id) ON DELETE CASCADE,
+  triggered_at   INTEGER NOT NULL,
+  source         TEXT
+);
+
+CREATE INDEX automation_runs_idx ON automation_runs (automation_id, triggered_at);
+
+selectRoutinesByHousehold:
+SELECT * FROM routines WHERE household_id = ? ORDER BY name ASC;
+
+selectRoutineById:
+SELECT * FROM routines WHERE id = ?;
+
+insertRoutine:
+INSERT INTO routines (id, household_id, name, icon, steps, on_failure, created_by, created_at, updated_at, last_run_at, sync_status, sync_error, synced_at, ha_entity_id)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateRoutine:
+UPDATE routines SET name = ?, icon = ?, steps = ?, on_failure = ?, updated_at = ?, last_run_at = ?, sync_status = ?, sync_error = ?, synced_at = ?, ha_entity_id = ? WHERE id = ?;
+
+updateRoutineLastRun:
+UPDATE routines SET last_run_at = ? WHERE id = ?;
+
+deleteRoutine:
+DELETE FROM routines WHERE id = ?;
+
+insertRoutineRun:
+INSERT INTO routine_runs (id, routine_id, routine_name, household_id, user_id, state, started_at, finished_at, steps, on_failure, next_step, resume_at, step_up_until, cancel_requested)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+selectRoutineRunById:
+SELECT * FROM routine_runs WHERE id = ?;
+
+selectRoutineRunsByHousehold:
+SELECT * FROM routine_runs WHERE household_id = ? ORDER BY started_at DESC LIMIT ?;
+
+selectRunningRoutineRuns:
+SELECT * FROM routine_runs WHERE state = 'running';
+
+updateRoutineRun:
+UPDATE routine_runs SET state = ?, finished_at = ?, steps = ?, next_step = ?, resume_at = ?, cancel_requested = ? WHERE id = ?;
+
+updateRoutineRunCancelRequested:
+UPDATE routine_runs SET cancel_requested = 1 WHERE id = ?;
+
+deleteOldCompletedRoutineRuns:
+DELETE FROM routine_runs WHERE started_at < ? AND state = 'completed';
+
+selectAutomationsByHousehold:
+SELECT * FROM automations WHERE household_id = ? ORDER BY name ASC;
+
+selectAutomationById:
+SELECT * FROM automations WHERE id = ?;
+
+insertAutomation:
+INSERT INTO automations (id, household_id, name, definition, enabled, sync_status, sync_error, synced_at, ha_entity_id, compiled_hash, last_triggered_at, created_by, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateAutomation:
+UPDATE automations SET name = ?, definition = ?, enabled = ?, sync_status = ?, sync_error = ?, synced_at = ?, ha_entity_id = ?, compiled_hash = ?, last_triggered_at = ?, updated_at = ? WHERE id = ?;
+
+deleteAutomation:
+DELETE FROM automations WHERE id = ?;
+
+insertAutomationRun:
+INSERT INTO automation_runs (id, automation_id, household_id, triggered_at, source)
+VALUES (?, ?, ?, ?, ?);
+
+selectAutomationRunsByAutomation:
+SELECT * FROM automation_runs WHERE automation_id = ? ORDER BY triggered_at DESC, id DESC LIMIT ?;
+
+
+
+selectAllAutomations:
+SELECT * FROM automations;
+
+selectAllPersonLinks:
+SELECT * FROM person_links;
+
+
+-- ---- config worker heartbeat ---------------------------------------------
+
+CREATE TABLE config_worker_heartbeat (
+  name         TEXT    NOT NULL PRIMARY KEY,
+  last_seen_at INTEGER NOT NULL,
+  info         TEXT
+);
+
+upsertConfigWorkerHeartbeat:
+INSERT INTO config_worker_heartbeat (name, last_seen_at, info)
+VALUES (?, ?, ?)
+ON CONFLICT(name) DO UPDATE SET last_seen_at = excluded.last_seen_at, info = excluded.info;
+
+selectConfigWorkerHeartbeat:
+SELECT * FROM config_worker_heartbeat WHERE name = ?;
+
+selectHaConnectionById:
+SELECT * FROM ha_connections WHERE id = ?;
+
+selectAllHaConnections:
+SELECT * FROM ha_connections;
+
+-- ---- Phase 12: notifications, alerts, push, activity, insights -----------
+
+CREATE TABLE alerts (
+  id           TEXT    NOT NULL PRIMARY KEY,
+  household_id TEXT    NOT NULL REFERENCES households (id) ON DELETE CASCADE,
+  kind         TEXT    NOT NULL,
+  connection_id TEXT   NOT NULL,
+  entity_id    TEXT    NOT NULL,
+  thing_ref    TEXT    NOT NULL,
+  title        TEXT    NOT NULL,
+  detail       TEXT    NOT NULL,
+  data         TEXT,
+  created_at   INTEGER NOT NULL,
+  cleared_at   INTEGER,
+  acked_by     TEXT,
+  acked_at     INTEGER
+);
+
+CREATE INDEX alerts_household_idx ON alerts (household_id, cleared_at);
+
+CREATE TABLE notifications (
+  id           TEXT    NOT NULL PRIMARY KEY,
+  household_id TEXT    NOT NULL REFERENCES households (id) ON DELETE CASCADE,
+  user_id      TEXT    NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  kind         TEXT    NOT NULL,
+  title        TEXT    NOT NULL,
+  body         TEXT    NOT NULL,
+  data         TEXT,
+  urgent       INTEGER NOT NULL DEFAULT 0,
+  push_status  TEXT    NOT NULL DEFAULT 'none',
+  created_at   INTEGER NOT NULL,
+  read_at      INTEGER
+);
+
+CREATE INDEX notifications_user_idx ON notifications (user_id, read_at, created_at);
+
+CREATE TABLE insight_dismissals (
+  household_id TEXT    NOT NULL REFERENCES households (id) ON DELETE CASCADE,
+  key          TEXT    NOT NULL,
+  until        INTEGER NOT NULL,
+  PRIMARY KEY (household_id, key)
+);
+
+CREATE TABLE push_subscriptions (
+  id           TEXT    NOT NULL PRIMARY KEY,
+  user_id      TEXT    NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  platform     TEXT    NOT NULL,
+  token        TEXT    NOT NULL,
+  keys         TEXT,
+  label        TEXT,
+  created_at   INTEGER NOT NULL,
+  last_used_at INTEGER,
+  UNIQUE (user_id, platform, token)
+);
+
+CREATE INDEX push_subscriptions_user_idx ON push_subscriptions (user_id);
+
+CREATE TABLE activity_events (
+  id            TEXT    NOT NULL PRIMARY KEY,
+  household_id  TEXT    NOT NULL REFERENCES households (id) ON DELETE CASCADE,
+  kind          TEXT    NOT NULL,
+  actor_user_id TEXT,
+  connection_id TEXT,
+  entity_id     TEXT,
+  summary       TEXT    NOT NULL,
+  tone          TEXT    NOT NULL DEFAULT 'info',
+  data          TEXT,
+  created_at    INTEGER NOT NULL
+);
+
+CREATE INDEX activity_events_idx ON activity_events (household_id, created_at);
+CREATE INDEX activity_events_entity_idx ON activity_events (household_id, entity_id);
+
+CREATE TABLE activity_reads (
+  user_id      TEXT    NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  household_id TEXT    NOT NULL REFERENCES households (id) ON DELETE CASCADE,
+  last_seen_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, household_id)
+);
+
+-- notifications
+insertNotification:
+INSERT INTO notifications (id, household_id, user_id, kind, title, body, data, urgent, push_status, created_at, read_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+selectNotificationByIdAndUser:
+SELECT * FROM notifications WHERE id = ? AND user_id = ?;
+
+selectNotificationsByUser:
+SELECT * FROM notifications
+WHERE user_id = ?
+  AND (:unreadOnly = 0 OR read_at IS NULL)
+  AND (:before IS NULL OR created_at < :before)
+ORDER BY created_at DESC, id DESC
+LIMIT :limit;
+
+selectUnreadNotificationsCount:
+SELECT count(*) FROM notifications WHERE user_id = ? AND read_at IS NULL;
+
+markNotificationRead:
+UPDATE notifications SET read_at = ?
+WHERE id = ? AND user_id = ? AND read_at IS NULL
+RETURNING id;
+
+markAllNotificationsRead:
+UPDATE notifications SET read_at = ?
+WHERE user_id = ? AND read_at IS NULL
+RETURNING id;
+
+updateNotificationPushStatus:
+UPDATE notifications SET push_status = ? WHERE id = ?;
+
+-- alerts
+insertAlert:
+INSERT INTO alerts (id, household_id, kind, connection_id, entity_id, thing_ref, title, detail, data, created_at, cleared_at, acked_by, acked_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+selectAlertById:
+SELECT * FROM alerts WHERE id = ?;
+
+selectActiveAlertByThingKind:
+SELECT * FROM alerts
+WHERE household_id = ? AND connection_id = ? AND thing_ref = ? AND kind = ? AND cleared_at IS NULL
+LIMIT 1;
+
+selectAlertsByHousehold:
+SELECT * FROM alerts
+WHERE household_id = ?
+  AND (:includeCleared = 1 OR cleared_at IS NULL)
+ORDER BY created_at DESC
+LIMIT 200;
+
+updateAlertDataDetail:
+UPDATE alerts SET data = ?, detail = ? WHERE id = ?;
+
+clearAlert:
+UPDATE alerts SET cleared_at = ? WHERE id = ?;
+
+ackAlert:
+UPDATE alerts SET acked_by = ?, acked_at = ? WHERE id = ?;
+
+-- activity
+insertActivityEvent:
+INSERT INTO activity_events (id, household_id, kind, actor_user_id, connection_id, entity_id, summary, tone, data, created_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+selectActivityEventById:
+SELECT * FROM activity_events WHERE id = ?;
+
+selectActivityPageDesc:
+SELECT * FROM activity_events
+WHERE household_id = ?
+  AND (:kind IS NULL OR kind = :kind)
+  AND (:cursorCreatedAt IS NULL OR created_at < :cursorCreatedAt OR (created_at = :cursorCreatedAt AND id < :cursorId))
+ORDER BY created_at DESC, id DESC
+LIMIT :limit;
+
+selectRecentActivityForNewCount:
+SELECT * FROM activity_events WHERE household_id = ?
+ORDER BY created_at DESC
+LIMIT 500;
+
+selectActivityRead:
+SELECT * FROM activity_reads WHERE user_id = ? AND household_id = ?;
+
+upsertActivityRead:
+INSERT INTO activity_reads (user_id, household_id, last_seen_at)
+VALUES (?, ?, ?)
+ON CONFLICT (user_id, household_id) DO UPDATE SET last_seen_at = excluded.last_seen_at;
+
+deleteOldActivityEvents:
+DELETE FROM activity_events WHERE created_at < ? RETURNING id;
+
+-- push subscriptions
+selectPushSubscriptionsByUser:
+SELECT * FROM push_subscriptions WHERE user_id = ? ORDER BY created_at ASC;
+
+selectPushSubscriptionByUnique:
+SELECT * FROM push_subscriptions WHERE user_id = ? AND platform = ? AND token = ?;
+
+insertPushSubscription:
+INSERT INTO push_subscriptions (id, user_id, platform, token, keys, label, created_at, last_used_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+updatePushSubscription:
+UPDATE push_subscriptions SET keys = ?, label = ? WHERE id = ?;
+
+updatePushSubscriptionLastUsed:
+UPDATE push_subscriptions SET last_used_at = ? WHERE id = ?;
+
+deletePushSubscriptionByIdAndUser:
+DELETE FROM push_subscriptions WHERE id = ? AND user_id = ? RETURNING id;
+
+deletePushSubscriptionById:
+DELETE FROM push_subscriptions WHERE id = ?;
+
+countPushSubscriptionsByUser:
+SELECT count(*) FROM push_subscriptions WHERE user_id = ?;
+
+deletePushSubscriptionsByPlatformTokenExceptUser:
+DELETE FROM push_subscriptions WHERE platform = ? AND token = ? AND user_id != ? RETURNING user_id;
+
+-- insights dismissals
+selectInsightDismissal:
+SELECT * FROM insight_dismissals WHERE household_id = ? AND key = ?;
+
+upsertInsightDismissal:
+INSERT INTO insight_dismissals (household_id, key, until)
+VALUES (?, ?, ?)
+ON CONFLICT (household_id, key) DO UPDATE SET until = excluded.until;
+
+-- preferences
+updateUserPreferences:
+INSERT INTO user_preferences (user_id, quiet_hours, push_enabled, extra)
+VALUES (?, ?, ?, ?)
+ON CONFLICT (user_id) DO UPDATE SET
+  quiet_hours = excluded.quiet_hours,
+  push_enabled = excluded.push_enabled,
+  extra = excluded.extra;
+
+
+updateHouseholdSettingsSettings:
+UPDATE household_settings SET settings = ? WHERE household_id = ?;
+
+selectAllHouseholds:
+SELECT * FROM households;
+
+
+-- ---- retention ------------------------------------------------------------
+
+deleteEndedSessionsBefore:
+DELETE FROM sessions WHERE expires_at < :cutoff OR (revoked_at IS NOT NULL AND revoked_at < :cutoff);
+
+deleteClosedInvitationsBefore:
+DELETE FROM invitations WHERE expires_at < :cutoff OR (used_at IS NOT NULL AND used_at < :cutoff) OR (revoked_at IS NOT NULL AND revoked_at < :cutoff);
+
+deleteReadNotificationsBefore:
+DELETE FROM notifications WHERE (read_at IS NOT NULL AND read_at < :cutoff) OR created_at < :hardCutoff;
+
+deleteClearedAlertsBefore:
+DELETE FROM alerts WHERE cleared_at IS NOT NULL AND cleared_at < ?;
+
+deleteAutomationRunsBefore:
+DELETE FROM automation_runs WHERE triggered_at < ?;
+
+CREATE INDEX sessions_expires_idx ON sessions (expires_at);
+CREATE INDEX config_jobs_dedupe_idx ON config_jobs (household_id, dedupe_key);
+CREATE INDEX groups_household_idx ON groups (household_id);
+

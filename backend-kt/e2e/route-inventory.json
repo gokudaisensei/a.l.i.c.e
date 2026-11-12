@@ -1,0 +1,1697 @@
+{
+  "generatedAt": "2026-11-12T09:44:10.137Z",
+  "ts": [
+    {
+      "method": "GET",
+      "path": "/api/v1/groups",
+      "module": "src/modules/groups/groups.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/groups",
+      "module": "src/modules/groups/groups.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/groups/:id",
+      "module": "src/modules/groups/groups.controller.ts"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/groups/:id",
+      "module": "src/modules/groups/groups.controller.ts"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/groups/:id",
+      "module": "src/modules/groups/groups.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/groups/:id/commands",
+      "module": "src/modules/groups/groups.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/household/mode",
+      "module": "src/modules/household-modes/modes.controller.ts"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/household/mode",
+      "module": "src/modules/household-modes/modes.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/insights",
+      "module": "src/modules/insights/insights.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/insights/:id/dismiss",
+      "module": "src/modules/insights/insights.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/automations",
+      "module": "src/modules/automations/automations.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/automations",
+      "module": "src/modules/automations/automations.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/automations/preview",
+      "module": "src/modules/automations/automations.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/automations/:id",
+      "module": "src/modules/automations/automations.controller.ts"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/automations/:id",
+      "module": "src/modules/automations/automations.controller.ts"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/automations/:id",
+      "module": "src/modules/automations/automations.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/automations/:id/enable",
+      "module": "src/modules/automations/automations.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/automations/:id/disable",
+      "module": "src/modules/automations/automations.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/automations/:id/test",
+      "module": "src/modules/automations/automations.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/automations/:id/runs",
+      "module": "src/modules/automations/automations.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/notifications",
+      "module": "src/modules/notifications/notifications.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/notifications/read-all",
+      "module": "src/modules/notifications/notifications.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/notifications/:id/read",
+      "module": "src/modules/notifications/notifications.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/alerts",
+      "module": "src/modules/notifications/notifications.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/alerts/:id/ack",
+      "module": "src/modules/notifications/notifications.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/permissions/me",
+      "module": "src/modules/permissions/permissions.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/permissions/policies",
+      "module": "src/modules/permissions/permissions.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/permissions/policies",
+      "module": "src/modules/permissions/permissions.controller.ts"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/permissions/policies/:id",
+      "module": "src/modules/permissions/permissions.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/security/sensitive-operations",
+      "module": "src/modules/permissions/permissions.controller.ts"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/security/sensitive-operations",
+      "module": "src/modules/permissions/permissions.controller.ts"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/security/sensitive-operations/:id",
+      "module": "src/modules/permissions/permissions.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/updates",
+      "module": "src/modules/updates/controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/updates/check",
+      "module": "src/modules/updates/controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/updates/history",
+      "module": "src/modules/updates/controller.ts"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/updates/settings",
+      "module": "src/modules/updates/controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/updates/schedule",
+      "module": "src/modules/updates/controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/updates/install",
+      "module": "src/modules/updates/controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/updates/emergency",
+      "module": "src/modules/updates/controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/updates/:id/rollback",
+      "module": "src/modules/updates/controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/updates/:id/cancel",
+      "module": "src/modules/updates/controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/devices",
+      "module": "src/modules/devices/devices.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/devices/merge",
+      "module": "src/modules/devices/devices.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/devices/:id",
+      "module": "src/modules/devices/devices.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/devices/:id/activity",
+      "module": "src/modules/devices/devices.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/devices/:id/capabilities",
+      "module": "src/modules/devices/devices.controller.ts"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/devices/:id/name",
+      "module": "src/modules/devices/devices.controller.ts"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/devices/:id/settings",
+      "module": "src/modules/devices/devices.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/devices/:id/hide",
+      "module": "src/modules/devices/devices.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/devices/:id/unhide",
+      "module": "src/modules/devices/devices.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/devices/:id/split",
+      "module": "src/modules/devices/devices.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/devices/:id/commands",
+      "module": "src/modules/devices/devices.controller.ts"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/entities/:entityId/role",
+      "module": "src/modules/devices/devices.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/commands",
+      "module": "src/modules/devices/devices.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/commands/:id",
+      "module": "src/modules/devices/devices.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/commands/:id/cancel",
+      "module": "src/modules/devices/devices.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/commands/:id/undo",
+      "module": "src/modules/devices/devices.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/areas",
+      "module": "src/modules/devices/devices.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/areas/:id/devices",
+      "module": "src/modules/devices/devices.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/ai/interpret",
+      "module": "src/modules/ai/controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/backups",
+      "module": "src/modules/backups/controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/backups/settings",
+      "module": "src/modules/backups/controller.ts"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/backups/settings",
+      "module": "src/modules/backups/controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/backups",
+      "module": "src/modules/backups/controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/backups/:id",
+      "module": "src/modules/backups/controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/backups/:id/verify",
+      "module": "src/modules/backups/controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/backups/:id/restore",
+      "module": "src/modules/backups/controller.ts"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/backups/:id",
+      "module": "src/modules/backups/controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/backups/:id/download",
+      "module": "src/modules/backups/controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/setup",
+      "module": "src/modules/authentication/auth.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/register/options",
+      "module": "src/modules/authentication/auth.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/register/verify",
+      "module": "src/modules/authentication/auth.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login/options",
+      "module": "src/modules/authentication/auth.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login/verify",
+      "module": "src/modules/authentication/auth.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/logout",
+      "module": "src/modules/authentication/auth.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/session",
+      "module": "src/modules/authentication/auth.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/sessions",
+      "module": "src/modules/authentication/auth.controller.ts"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/auth/sessions/:id",
+      "module": "src/modules/authentication/auth.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/step-up/options",
+      "module": "src/modules/authentication/auth.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/step-up/verify",
+      "module": "src/modules/authentication/auth.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/passkeys",
+      "module": "src/modules/authentication/auth.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/passkeys/options",
+      "module": "src/modules/authentication/auth.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/passkeys/verify",
+      "module": "src/modules/authentication/auth.controller.ts"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/auth/passkeys/:id",
+      "module": "src/modules/authentication/auth.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/recovery/verify",
+      "module": "src/modules/authentication/auth.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/recovery/regenerate",
+      "module": "src/modules/authentication/auth.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/users/me",
+      "module": "src/modules/users/users.controller.ts"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/users/me",
+      "module": "src/modules/users/users.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/users/me/preferences",
+      "module": "src/modules/users/users.controller.ts"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/users/me/preferences",
+      "module": "src/modules/users/users.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/users/me/push-subscriptions",
+      "module": "src/modules/users/users.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/users/me/push-subscriptions",
+      "module": "src/modules/users/users.controller.ts"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/users/me/push-subscriptions/:id",
+      "module": "src/modules/users/users.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/users/me/push-subscriptions/test",
+      "module": "src/modules/users/users.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/health",
+      "module": "src/modules/administration/admin.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/diagnostics",
+      "module": "src/modules/administration/admin.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/audit",
+      "module": "src/modules/administration/admin.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/config-sync",
+      "module": "src/modules/administration/admin.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/config-sync/verify",
+      "module": "src/modules/administration/admin.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/config-sync/resync",
+      "module": "src/modules/administration/admin.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/support",
+      "module": "src/modules/administration/admin.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support",
+      "module": "src/modules/administration/admin.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/:id/extend",
+      "module": "src/modules/administration/admin.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/:id/end",
+      "module": "src/modules/administration/admin.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/operator/homes",
+      "module": "src/modules/administration/operator.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/operator/homes/:id/health",
+      "module": "src/modules/administration/operator.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/operator/homes/:id/devices",
+      "module": "src/modules/administration/operator.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/ha/connection",
+      "module": "src/modules/home-assistant/controller.ts"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/ha/connection",
+      "module": "src/modules/home-assistant/controller.ts"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/ha/connection/admin-token",
+      "module": "src/modules/home-assistant/controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/ha/connection/test",
+      "module": "src/modules/home-assistant/controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/ha/connection/resync",
+      "module": "src/modules/home-assistant/controller.ts"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/ha/connection",
+      "module": "src/modules/home-assistant/controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/activity",
+      "module": "src/modules/activity/activity.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/activity/seen",
+      "module": "src/modules/activity/activity.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/history/devices/:id",
+      "module": "src/modules/history/history.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/scenes",
+      "module": "src/modules/scenes/scenes.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/scenes",
+      "module": "src/modules/scenes/scenes.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/scenes/:id",
+      "module": "src/modules/scenes/scenes.controller.ts"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/scenes/:id",
+      "module": "src/modules/scenes/scenes.controller.ts"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/scenes/:id",
+      "module": "src/modules/scenes/scenes.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/scenes/:id/activate",
+      "module": "src/modules/scenes/scenes.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/energy/summary",
+      "module": "src/modules/energy/energy.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/energy/history",
+      "module": "src/modules/energy/energy.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/energy/pattern",
+      "module": "src/modules/energy/energy.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/energy/devices",
+      "module": "src/modules/energy/energy.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/household",
+      "module": "src/modules/households/households.controller.ts"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/household",
+      "module": "src/modules/households/households.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/household/members",
+      "module": "src/modules/households/households.controller.ts"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/household/members/:id",
+      "module": "src/modules/households/households.controller.ts"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/household/members/:id",
+      "module": "src/modules/households/households.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/household/people",
+      "module": "src/modules/households/households.controller.ts"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/household/people/:userId",
+      "module": "src/modules/households/households.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/household/invitations",
+      "module": "src/modules/households/households.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/household/invitations",
+      "module": "src/modules/households/households.controller.ts"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/household/invitations/:id",
+      "module": "src/modules/households/households.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/routines",
+      "module": "src/modules/routines/routines.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/routines",
+      "module": "src/modules/routines/routines.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/routines/runs",
+      "module": "src/modules/routines/routines.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/routines/runs/:runId",
+      "module": "src/modules/routines/routines.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/routines/runs/:runId/cancel",
+      "module": "src/modules/routines/routines.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/routines/:id",
+      "module": "src/modules/routines/routines.controller.ts"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/routines/:id",
+      "module": "src/modules/routines/routines.controller.ts"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/routines/:id",
+      "module": "src/modules/routines/routines.controller.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/routines/:id/execute",
+      "module": "src/modules/routines/routines.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/favorites",
+      "module": "src/modules/favorites/favorites.controller.ts"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/favorites",
+      "module": "src/modules/favorites/favorites.controller.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/health",
+      "module": "src/app.ts"
+    }
+  ],
+  "kt": [
+    {
+      "method": "GET",
+      "path": "/api/v1/scenes",
+      "module": "server/src/main/kotlin/alice/server/routes/SceneRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/scenes",
+      "module": "server/src/main/kotlin/alice/server/routes/SceneRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/scenes/{id}",
+      "module": "server/src/main/kotlin/alice/server/routes/SceneRoutes.kt"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/scenes/{id}",
+      "module": "server/src/main/kotlin/alice/server/routes/SceneRoutes.kt"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/scenes/{id}",
+      "module": "server/src/main/kotlin/alice/server/routes/SceneRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/scenes/{id}/activate",
+      "module": "server/src/main/kotlin/alice/server/routes/SceneRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/household/mode",
+      "module": "server/src/main/kotlin/alice/server/routes/ModeRoutes.kt"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/household/mode",
+      "module": "server/src/main/kotlin/alice/server/routes/ModeRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/groups",
+      "module": "server/src/main/kotlin/alice/server/routes/GroupRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/groups",
+      "module": "server/src/main/kotlin/alice/server/routes/GroupRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/groups/{id}",
+      "module": "server/src/main/kotlin/alice/server/routes/GroupRoutes.kt"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/groups/{id}",
+      "module": "server/src/main/kotlin/alice/server/routes/GroupRoutes.kt"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/groups/{id}",
+      "module": "server/src/main/kotlin/alice/server/routes/GroupRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/groups/{id}/commands",
+      "module": "server/src/main/kotlin/alice/server/routes/GroupRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/ai/settings",
+      "module": "server/src/main/kotlin/alice/server/routes/AskAliceRoutes.kt"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/ai/settings",
+      "module": "server/src/main/kotlin/alice/server/routes/AskAliceRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/ai/interpret",
+      "module": "server/src/main/kotlin/alice/server/routes/AskAliceRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/backups",
+      "module": "server/src/main/kotlin/alice/server/routes/BackupRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/backups/{id}",
+      "module": "server/src/main/kotlin/alice/server/routes/BackupRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/backups/settings",
+      "module": "server/src/main/kotlin/alice/server/routes/BackupRoutes.kt"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/backups/settings",
+      "module": "server/src/main/kotlin/alice/server/routes/BackupRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/backups",
+      "module": "server/src/main/kotlin/alice/server/routes/BackupRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/backups/{id}/verify",
+      "module": "server/src/main/kotlin/alice/server/routes/BackupRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/backups/{id}/download",
+      "module": "server/src/main/kotlin/alice/server/routes/BackupRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/backups/{id}/restore",
+      "module": "server/src/main/kotlin/alice/server/routes/BackupRoutes.kt"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/backups/{id}",
+      "module": "server/src/main/kotlin/alice/server/routes/BackupRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/notifications",
+      "module": "server/src/main/kotlin/alice/server/routes/NotificationRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/notifications/read-all",
+      "module": "server/src/main/kotlin/alice/server/routes/NotificationRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/notifications/{id}/read",
+      "module": "server/src/main/kotlin/alice/server/routes/NotificationRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/activity",
+      "module": "server/src/main/kotlin/alice/server/routes/ActivityRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/activity/seen",
+      "module": "server/src/main/kotlin/alice/server/routes/ActivityRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/operator/homes",
+      "module": "server/src/main/kotlin/alice/server/routes/OperatorRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/operator/homes/{id}/health",
+      "module": "server/src/main/kotlin/alice/server/routes/OperatorRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/operator/homes/{id}/devices",
+      "module": "server/src/main/kotlin/alice/server/routes/OperatorRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/operators",
+      "module": "server/src/main/kotlin/alice/server/routes/OperatorRoutes.kt"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/operators",
+      "module": "server/src/main/kotlin/alice/server/routes/OperatorRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/things",
+      "module": "server/src/main/kotlin/alice/server/routes/ThingsRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/things/areas",
+      "module": "server/src/main/kotlin/alice/server/routes/ThingsRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/config-sync",
+      "module": "server/src/main/kotlin/alice/server/routes/ConfigSyncRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/config-sync/verify",
+      "module": "server/src/main/kotlin/alice/server/routes/ConfigSyncRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/config-sync/resync",
+      "module": "server/src/main/kotlin/alice/server/routes/ConfigSyncRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/permissions/me",
+      "module": "server/src/main/kotlin/alice/server/routes/PermissionRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/permissions/policies",
+      "module": "server/src/main/kotlin/alice/server/routes/PermissionRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/permissions/policies",
+      "module": "server/src/main/kotlin/alice/server/routes/PermissionRoutes.kt"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/permissions/policies/{id}",
+      "module": "server/src/main/kotlin/alice/server/routes/PermissionRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/security/sensitive-operations",
+      "module": "server/src/main/kotlin/alice/server/routes/PermissionRoutes.kt"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/security/sensitive-operations",
+      "module": "server/src/main/kotlin/alice/server/routes/PermissionRoutes.kt"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/security/sensitive-operations/{id}",
+      "module": "server/src/main/kotlin/alice/server/routes/PermissionRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/devices",
+      "module": "server/src/main/kotlin/alice/server/routes/DeviceRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/devices/{id}",
+      "module": "server/src/main/kotlin/alice/server/routes/DeviceRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/devices/{id}/capabilities",
+      "module": "server/src/main/kotlin/alice/server/routes/DeviceRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/devices/{id}/activity",
+      "module": "server/src/main/kotlin/alice/server/routes/DeviceRoutes.kt"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/devices/{id}/name",
+      "module": "server/src/main/kotlin/alice/server/routes/DeviceRoutes.kt"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/devices/{id}/settings",
+      "module": "server/src/main/kotlin/alice/server/routes/DeviceRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/devices/{id}/hide",
+      "module": "server/src/main/kotlin/alice/server/routes/DeviceRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/devices/{id}/unhide",
+      "module": "server/src/main/kotlin/alice/server/routes/DeviceRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/devices/{id}/split",
+      "module": "server/src/main/kotlin/alice/server/routes/DeviceRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/devices/merge",
+      "module": "server/src/main/kotlin/alice/server/routes/DeviceRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/devices/unmerge",
+      "module": "server/src/main/kotlin/alice/server/routes/DeviceRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/devices/{id}/commands",
+      "module": "server/src/main/kotlin/alice/server/routes/DeviceRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/areas",
+      "module": "server/src/main/kotlin/alice/server/routes/DeviceRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/areas/{id}/devices",
+      "module": "server/src/main/kotlin/alice/server/routes/DeviceRoutes.kt"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/entities/{entityId}/role",
+      "module": "server/src/main/kotlin/alice/server/routes/DeviceRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/commands",
+      "module": "server/src/main/kotlin/alice/server/routes/DeviceRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/commands/{id}",
+      "module": "server/src/main/kotlin/alice/server/routes/DeviceRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/commands/{id}/cancel",
+      "module": "server/src/main/kotlin/alice/server/routes/DeviceRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/commands/{id}/undo",
+      "module": "server/src/main/kotlin/alice/server/routes/DeviceRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/updates",
+      "module": "server/src/main/kotlin/alice/server/routes/UpdateRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/updates/check",
+      "module": "server/src/main/kotlin/alice/server/routes/UpdateRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/updates/history",
+      "module": "server/src/main/kotlin/alice/server/routes/UpdateRoutes.kt"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/updates/settings",
+      "module": "server/src/main/kotlin/alice/server/routes/UpdateRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/updates/schedule",
+      "module": "server/src/main/kotlin/alice/server/routes/UpdateRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/updates/install",
+      "module": "server/src/main/kotlin/alice/server/routes/UpdateRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/updates/emergency",
+      "module": "server/src/main/kotlin/alice/server/routes/UpdateRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/updates/{id}/rollback",
+      "module": "server/src/main/kotlin/alice/server/routes/UpdateRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/updates/{id}/cancel",
+      "module": "server/src/main/kotlin/alice/server/routes/UpdateRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/home",
+      "module": "server/src/main/kotlin/alice/server/routes/SmartRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/home/why",
+      "module": "server/src/main/kotlin/alice/server/routes/SmartRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/home/order/ack",
+      "module": "server/src/main/kotlin/alice/server/routes/SmartRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/search",
+      "module": "server/src/main/kotlin/alice/server/routes/SmartRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/users/me",
+      "module": "server/src/main/kotlin/alice/server/routes/UserRoutes.kt"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/users/me",
+      "module": "server/src/main/kotlin/alice/server/routes/UserRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/users/me/preferences",
+      "module": "server/src/main/kotlin/alice/server/routes/UserRoutes.kt"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/users/me/preferences",
+      "module": "server/src/main/kotlin/alice/server/routes/UserRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/users/me/push-subscriptions",
+      "module": "server/src/main/kotlin/alice/server/routes/UserRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/users/me/push-subscriptions",
+      "module": "server/src/main/kotlin/alice/server/routes/UserRoutes.kt"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/users/me/push-subscriptions/{id}",
+      "module": "server/src/main/kotlin/alice/server/routes/UserRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/users/me/push-subscriptions/test",
+      "module": "server/src/main/kotlin/alice/server/routes/UserRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/ha/connection",
+      "module": "server/src/main/kotlin/alice/server/routes/HaConnectionRoutes.kt"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/ha/connection",
+      "module": "server/src/main/kotlin/alice/server/routes/HaConnectionRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/ha/connection/test",
+      "module": "server/src/main/kotlin/alice/server/routes/HaConnectionRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/ha/connection/resync",
+      "module": "server/src/main/kotlin/alice/server/routes/HaConnectionRoutes.kt"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/ha/connection",
+      "module": "server/src/main/kotlin/alice/server/routes/HaConnectionRoutes.kt"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/ha/connection/admin-token",
+      "module": "server/src/main/kotlin/alice/server/routes/HaConnectionRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/energy/summary",
+      "module": "server/src/main/kotlin/alice/server/routes/EnergyRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/energy/history",
+      "module": "server/src/main/kotlin/alice/server/routes/EnergyRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/energy/pattern",
+      "module": "server/src/main/kotlin/alice/server/routes/EnergyRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/energy/devices",
+      "module": "server/src/main/kotlin/alice/server/routes/EnergyRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/health",
+      "module": "server/src/main/kotlin/alice/server/routes/Health.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/alerts",
+      "module": "server/src/main/kotlin/alice/server/routes/AlertRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/alerts/{id}/ack",
+      "module": "server/src/main/kotlin/alice/server/routes/AlertRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/favorites",
+      "module": "server/src/main/kotlin/alice/server/routes/FavoriteRoutes.kt"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/favorites",
+      "module": "server/src/main/kotlin/alice/server/routes/FavoriteRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/automations",
+      "module": "server/src/main/kotlin/alice/server/routes/AutomationRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/automations",
+      "module": "server/src/main/kotlin/alice/server/routes/AutomationRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/automations/preview",
+      "module": "server/src/main/kotlin/alice/server/routes/AutomationRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/automations/{id}",
+      "module": "server/src/main/kotlin/alice/server/routes/AutomationRoutes.kt"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/automations/{id}",
+      "module": "server/src/main/kotlin/alice/server/routes/AutomationRoutes.kt"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/automations/{id}",
+      "module": "server/src/main/kotlin/alice/server/routes/AutomationRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/automations/{id}/enable",
+      "module": "server/src/main/kotlin/alice/server/routes/AutomationRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/automations/{id}/disable",
+      "module": "server/src/main/kotlin/alice/server/routes/AutomationRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/automations/{id}/test",
+      "module": "server/src/main/kotlin/alice/server/routes/AutomationRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/automations/{id}/run",
+      "module": "server/src/main/kotlin/alice/server/routes/AutomationRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/automations/{id}/runs",
+      "module": "server/src/main/kotlin/alice/server/routes/AutomationRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/history/devices/{id}",
+      "module": "server/src/main/kotlin/alice/server/routes/HistoryRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/setup",
+      "module": "server/src/main/kotlin/alice/server/routes/AuthRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/register/options",
+      "module": "server/src/main/kotlin/alice/server/routes/AuthRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/register/verify",
+      "module": "server/src/main/kotlin/alice/server/routes/AuthRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login/options",
+      "module": "server/src/main/kotlin/alice/server/routes/AuthRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login/verify",
+      "module": "server/src/main/kotlin/alice/server/routes/AuthRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/logout",
+      "module": "server/src/main/kotlin/alice/server/routes/AuthRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/session",
+      "module": "server/src/main/kotlin/alice/server/routes/AuthRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/sessions",
+      "module": "server/src/main/kotlin/alice/server/routes/AuthRoutes.kt"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/auth/sessions/{id}",
+      "module": "server/src/main/kotlin/alice/server/routes/AuthRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/step-up/options",
+      "module": "server/src/main/kotlin/alice/server/routes/AuthRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/step-up/verify",
+      "module": "server/src/main/kotlin/alice/server/routes/AuthRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/passkeys",
+      "module": "server/src/main/kotlin/alice/server/routes/AuthRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/passkeys/options",
+      "module": "server/src/main/kotlin/alice/server/routes/AuthRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/passkeys/verify",
+      "module": "server/src/main/kotlin/alice/server/routes/AuthRoutes.kt"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/auth/passkeys/{id}",
+      "module": "server/src/main/kotlin/alice/server/routes/AuthRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/recovery/verify",
+      "module": "server/src/main/kotlin/alice/server/routes/AuthRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/recovery/regenerate",
+      "module": "server/src/main/kotlin/alice/server/routes/AuthRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/routines",
+      "module": "server/src/main/kotlin/alice/server/routes/RoutineRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/routines",
+      "module": "server/src/main/kotlin/alice/server/routes/RoutineRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/routines/runs",
+      "module": "server/src/main/kotlin/alice/server/routes/RoutineRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/routines/runs/{runId}",
+      "module": "server/src/main/kotlin/alice/server/routes/RoutineRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/routines/runs/{runId}/cancel",
+      "module": "server/src/main/kotlin/alice/server/routes/RoutineRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/routines/{id}",
+      "module": "server/src/main/kotlin/alice/server/routes/RoutineRoutes.kt"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/routines/{id}",
+      "module": "server/src/main/kotlin/alice/server/routes/RoutineRoutes.kt"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/routines/{id}",
+      "module": "server/src/main/kotlin/alice/server/routes/RoutineRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/routines/{id}/execute",
+      "module": "server/src/main/kotlin/alice/server/routes/RoutineRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/household",
+      "module": "server/src/main/kotlin/alice/server/routes/HouseholdRoutes.kt"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/household",
+      "module": "server/src/main/kotlin/alice/server/routes/HouseholdRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/household/members",
+      "module": "server/src/main/kotlin/alice/server/routes/HouseholdRoutes.kt"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/household/members/{id}",
+      "module": "server/src/main/kotlin/alice/server/routes/HouseholdRoutes.kt"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/household/members/{id}",
+      "module": "server/src/main/kotlin/alice/server/routes/HouseholdRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/household/people",
+      "module": "server/src/main/kotlin/alice/server/routes/HouseholdRoutes.kt"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/household/people/{userId}",
+      "module": "server/src/main/kotlin/alice/server/routes/HouseholdRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/household/invitations",
+      "module": "server/src/main/kotlin/alice/server/routes/HouseholdRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/household/invitations",
+      "module": "server/src/main/kotlin/alice/server/routes/HouseholdRoutes.kt"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/household/invitations/{id}",
+      "module": "server/src/main/kotlin/alice/server/routes/HouseholdRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/health",
+      "module": "server/src/main/kotlin/alice/server/routes/AdminRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/diagnostics",
+      "module": "server/src/main/kotlin/alice/server/routes/AdminRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/metrics",
+      "module": "server/src/main/kotlin/alice/server/routes/AdminRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/audit",
+      "module": "server/src/main/kotlin/alice/server/routes/AdminRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/support",
+      "module": "server/src/main/kotlin/alice/server/routes/SupportRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support",
+      "module": "server/src/main/kotlin/alice/server/routes/SupportRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{id}/extend",
+      "module": "server/src/main/kotlin/alice/server/routes/SupportRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/support/{id}/end",
+      "module": "server/src/main/kotlin/alice/server/routes/SupportRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/insights",
+      "module": "server/src/main/kotlin/alice/server/routes/InsightsRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/insights/{id}/dismiss",
+      "module": "server/src/main/kotlin/alice/server/routes/InsightsRoutes.kt"
+    }
+  ],
+  "wsTypes": [
+    {
+      "type": "insights.changed",
+      "source": "backend/docs/API.md#websocket"
+    },
+    {
+      "type": "entity.updated",
+      "source": "backend/docs/API.md#websocket"
+    },
+    {
+      "type": "devices.changed",
+      "source": "backend/docs/API.md#websocket"
+    },
+    {
+      "type": "command.created",
+      "source": "backend/docs/API.md#websocket"
+    },
+    {
+      "type": "command.authorized",
+      "source": "backend/docs/API.md#websocket"
+    },
+    {
+      "type": "command.dispatched",
+      "source": "backend/docs/API.md#websocket"
+    },
+    {
+      "type": "command.accepted",
+      "source": "backend/docs/API.md#websocket"
+    },
+    {
+      "type": "command.confirmed",
+      "source": "backend/docs/API.md#websocket"
+    },
+    {
+      "type": "command.failed",
+      "source": "backend/docs/API.md#websocket"
+    },
+    {
+      "type": "command.cancelled",
+      "source": "backend/docs/API.md#websocket"
+    },
+    {
+      "type": "connection.connected",
+      "source": "backend/docs/API.md#websocket"
+    },
+    {
+      "type": "connection.disconnected",
+      "source": "backend/docs/API.md#websocket"
+    },
+    {
+      "type": "presence.changed",
+      "source": "backend/docs/API.md#websocket"
+    },
+    {
+      "type": "alert.created",
+      "source": "backend/docs/API.md#websocket"
+    },
+    {
+      "type": "alert.cleared",
+      "source": "backend/docs/API.md#websocket"
+    },
+    {
+      "type": "notification.created",
+      "source": "backend/docs/API.md#websocket"
+    },
+    {
+      "type": "activity.created",
+      "source": "backend/docs/API.md#websocket"
+    }
+  ],
+  "onlyTs": [],
+  "onlyKt": [
+    {
+      "method": "GET",
+      "path": "/api/v1/ai/settings",
+      "module": "server/src/main/kotlin/alice/server/routes/AskAliceRoutes.kt"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/ai/settings",
+      "module": "server/src/main/kotlin/alice/server/routes/AskAliceRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/operators",
+      "module": "server/src/main/kotlin/alice/server/routes/OperatorRoutes.kt"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/operators",
+      "module": "server/src/main/kotlin/alice/server/routes/OperatorRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/things",
+      "module": "server/src/main/kotlin/alice/server/routes/ThingsRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/things/areas",
+      "module": "server/src/main/kotlin/alice/server/routes/ThingsRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/devices/unmerge",
+      "module": "server/src/main/kotlin/alice/server/routes/DeviceRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/home",
+      "module": "server/src/main/kotlin/alice/server/routes/SmartRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/home/why",
+      "module": "server/src/main/kotlin/alice/server/routes/SmartRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/home/order/ack",
+      "module": "server/src/main/kotlin/alice/server/routes/SmartRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/search",
+      "module": "server/src/main/kotlin/alice/server/routes/SmartRoutes.kt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/automations/{id}/run",
+      "module": "server/src/main/kotlin/alice/server/routes/AutomationRoutes.kt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/metrics",
+      "module": "server/src/main/kotlin/alice/server/routes/AdminRoutes.kt"
+    }
+  ],
+  "counts": {
+    "ts": 148,
+    "kt": 161,
+    "ws": 17,
+    "onlyTs": 0,
+    "onlyKt": 13
+  }
+}

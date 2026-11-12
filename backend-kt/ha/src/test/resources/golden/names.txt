@@ -1,0 +1,65 @@
+thing||<null> -> 
+thing||Kitchen -> 
+thing|None|<null> -> None
+thing|Kitchen None|Kitchen -> Kitchen
+thing|Kitchen Floor lamp|Kitchen -> Floor lamp
+thing|Kitchenette lamp|Kitchen -> Kitchenette lamp
+thing|Living room TV|Living room -> TV
+thing|living room floor lamp|Living room -> Floor Lamp
+thing|outdoor_temp_2|<null> -> Outdoor Temp
+thing|Bedroom 2|<null> -> Bedroom
+thing|Bedroom 3|<null> -> Bedroom
+thing|Bedroom 4|<null> -> Bedroom
+thing|Bedroom 5|<null> -> Bedroom
+thing|Bedroom 6|<null> -> Bedroom
+thing|Bedroom 7|<null> -> Bedroom
+thing|Bedroom 8|<null> -> Bedroom
+thing|Bedroom 9|<null> -> Bedroom
+thing|Bedroom 10|<null> -> Bedroom 10
+thing|Bedroom 12|<null> -> Bedroom 12
+thing|Kitchen - Light|Kitchen -> Light
+thing|Kitchen _ Light|Kitchen -> Light
+thing|Kitchen: Light|Kitchen -> Light
+thing|Kitchen · Light|Kitchen -> Light
+thing|Kitchen/Light|Kitchen -> Kitchen/Light
+thing|  spaced   name  |<null> -> Spaced Name
+thing|ALL CAPS NAME|<null> -> All Caps Name
+thing|lower case|<null> -> Lower Case
+thing|MiXeD Case|<null> -> MiXeD Case
+thing|TV|<null> -> TV
+thing|living room tv|Living room -> TV
+thing|Kitchen TV|Kitchen -> TV
+thing|Kitchen|Kitchen -> Kitchen
+thing|Hall Front Door|Hall -> Front Door
+thing|Front Door|Hall -> Front Door
+thing|Floor lamp 2|<null> -> Floor lamp
+thing|Floor lamp 10|<null> -> Floor lamp 10
+thing|none|<null> -> None
+thing|Light None|<null> -> Light
+thing|Kitchen Light None|Kitchen -> Light
+thing|Kitchen - |Kitchen -> Kitchen - 
+entity|Echo Show Microphone mute|Microphone mute|true|Echo Show|Kitchen -> Microphone mute
+entity|Echo Show|<null>|true|Echo Show|Kitchen -> <null>
+entity|Living room Floor lamp|<null>|false|<null>|Living room -> Floor lamp
+entity|Kitchen Floor lamp|Floor lamp|false|Kitchen|Kitchen -> Floor lamp
+entity|Kitchen - Floor lamp|Floor lamp|false|Kitchen|Kitchen -> Floor lamp
+entity|Kitchen_Light|Light|false|Kitchen|Kitchen -> Light
+entity|Kitchen: Light|Light|false|Kitchen|Kitchen -> Light
+entity|Kitchen · Light|Light|false|Kitchen|Kitchen -> Light
+entity||<null>|false|<null>|<null> -> <null>
+entity|None|<null>|false|<null>|<null> -> <null>
+entity|Device 2|<null>|false|Device|<null> -> <null>
+entity|Device 10|<null>|false|Device|<null> -> 10
+entity|Device 12|<null>|false|Device|<null> -> 12
+entity|Area Device|Device|true|Area|Area -> Device
+entity|Area Device|Device|true|<null>|Area -> Device
+entity|Area Device|Device|true|Area|<null> -> Device
+entity|device name|ENTITY NAME|true|Device Name|Area -> Entity Name
+entity|Device Name|Device Name|true|Device Name|<null> -> <null>
+entity|  Device   Name  |<null>|false|<null>|<null> -> Device Name
+entity|all lower|all lower|true|other|<null> -> All Lower
+entity|TV|<null>|false|<null>|<null> -> TV
+entity|Living Room TV|<null>|false|<null>|Living Room -> TV
+entity|Kitchen|Kitchen|true|Kitchen|Kitchen -> <null>
+entity|Kitchen - |<null>|false|<null>|<null> -> Kitchen -
+entity|Bedroom 2|<null>|false|<null>|Bedroom -> Bedroom
